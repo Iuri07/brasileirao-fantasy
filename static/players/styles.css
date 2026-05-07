@@ -1,0 +1,855 @@
+/* ── Design system: dark mode + emerald green ── */
+:root {
+  --bg-base:       #0a0f1e;
+  --bg-card:       #111827;
+  --bg-card-alt:   #1a2236;
+  --bg-elevated:   #1f2d45;
+
+  --emerald:       #10b981;
+  --emerald-light: #34d399;
+  --emerald-dim:   #065f46;
+  --emerald-glow:  rgba(16, 185, 129, 0.15);
+
+  --amber:         #f59e0b;
+  --amber-light:   #fcd34d;
+
+  --text-1:        #f1f5f9;
+  --text-2:        #94a3b8;
+  --text-3:        #475569;
+
+  --border:        rgba(255, 255, 255, 0.06);
+  --border-green:  rgba(16, 185, 129, 0.25);
+
+  --shadow-sm:     0 1px 4px rgba(0, 0, 0, 0.5);
+  --shadow-md:     0 4px 16px rgba(0, 0, 0, 0.6);
+  --shadow-lg:     0 8px 32px rgba(0, 0, 0, 0.7);
+  --shadow-glow:   0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+/* ── Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(16, 185, 129, 0.08) 0%, transparent 60%);
+  color: var(--text-1);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout ── */
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding-bottom: 4rem;
+}
+
+/* ── Header ── */
+.header {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(10, 15, 30, 0.85);
+  border-bottom: 1px solid var(--border-green);
+  padding: 1.25rem 1.25rem 1rem;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--emerald-light) 0%, var(--emerald) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.header-bola {
+  color: var(--emerald-light);
+  flex-shrink: 0;
+  /* Precisa de cor explícita pois o gradiente no texto bloqueia herança */
+  -webkit-text-fill-color: unset;
+}
+
+.header p {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  margin-top: 0.2rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Container ── */
+.main {
+  padding: 0 0.75rem;
+}
+
+.ranking-container {
+  padding-top: 1.25rem;
+}
+
+.rodada-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0 0.25rem;
+}
+
+.rodada-badge {
+  background: var(--emerald-dim);
+  color: var(--emerald-light);
+  border: 1px solid var(--border-green);
+  padding: 0.3rem 0.9rem;
+  border-radius: 99px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+}
+
+.rodada-badge-pre {
+  background: rgba(30, 41, 59, 0.8);
+  color: var(--text-2);
+  border-color: var(--border);
+}
+
+.atualizacao-info {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.atualizacao-info::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--emerald);
+  box-shadow: 0 0 6px var(--emerald);
+  animation: pulsar 2s ease-in-out infinite;
+}
+
+@keyframes pulsar {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ── Abas ── */
+.tab-bar {
+  display: flex;
+  gap: 0.375rem;
+  margin-bottom: 1rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  padding: 0.3rem;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  letter-spacing: 0.01em;
+}
+
+.tab-btn:hover {
+  color: var(--text-2);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-ativa {
+  background: var(--bg-elevated) !important;
+  color: var(--text-1) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.tab-icone {
+  opacity: 0.75;
+}
+
+.tab-ativa .tab-icone {
+  opacity: 1;
+  color: var(--emerald-light);
+}
+
+/* Ponto pulsante "ao vivo" */
+.tab-dot-ao-vivo {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-3);
+  transition: background 0.15s;
+}
+
+.tab-ativa .tab-dot-ao-vivo {
+  background: #f87171;
+  box-shadow: 0 0 6px rgba(248, 113, 113, 0.6);
+  animation: pulsar 1.5s ease-in-out infinite;
+}
+
+/* ── Cards ── */
+.times-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.time-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.time-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--cor-time, var(--emerald)) 70%, transparent);
+  box-shadow: var(--shadow-md), 0 0 28px color-mix(in srgb, var(--cor-time, var(--emerald)) 50%, transparent);
+}
+
+.time-card:active {
+  transform: translateY(0);
+}
+
+/* 1º lugar — borda e brilho especial */
+.time-card.primeiro-lugar {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: linear-gradient(160deg, #1a1f0e 0%, var(--bg-card) 60%);
+  box-shadow: var(--shadow-md), 0 0 24px rgba(245, 158, 11, 0.12);
+}
+
+/* ── Linha principal ── */
+.time-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.1rem;
+  gap: 0.875rem;
+}
+
+.posicao-wrapper {
+  min-width: 2.5rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.posicao {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-2);
+  line-height: 1;
+}
+
+.time-card.primeiro-lugar .posicao {
+  font-size: 1.4rem;
+}
+
+.time-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.time-nome {
+  display: block;
+  font-weight: 700;
+  font-size: 0.97rem;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+  text-transform: uppercase;
+}
+
+.time-dono {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-3);
+  margin-top: 0.15rem;
+}
+
+.pontuacao-wrapper {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.pontuacao {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--emerald-light);
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.time-card.primeiro-lugar .pontuacao {
+  color: var(--amber-light);
+}
+
+.pontuacao-label {
+  font-size: 0.65rem;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.expandir-icone {
+  color: var(--text-3);
+  font-size: 0.7rem;
+  margin-left: 0.15rem;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.time-card:hover .expandir-icone {
+  color: var(--emerald);
+}
+
+/* ── Jogadores ── */
+.jogadores-lista {
+  border-top: 1px solid var(--border);
+  padding: 0.875rem 1.1rem 1rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* 4 colunas: nome | pos | esc | pts */
+.jogadores-header {
+  display: grid;
+  grid-template-columns: 1fr 3rem 2.5rem 3.5rem;
+  gap: 0.4rem;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.jogadores-header span:nth-child(2),
+.jogadores-header span:nth-child(3),
+.jogadores-header span:nth-child(4) {
+  text-align: center;
+}
+
+.jogador-linha {
+  display: grid;
+  grid-template-columns: 1fr 3rem 2.5rem 3.5rem;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  font-size: 0.875rem;
+  transition: opacity 0.1s;
+}
+
+.jogador-linha:last-child {
+  border-bottom: none;
+}
+
+.jogador-linha.esc-banco  { opacity: 0.75; }
+.jogador-linha.esc-nao    { opacity: 0.32; }
+
+/* Pré-rodada: sem coluna de pts */
+.pre-rodada-linha {
+  grid-template-columns: 1fr 3rem 2.5rem !important;
+}
+
+.jogador-nome {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-1);
+  font-size: 0.875rem;
+}
+
+/* ── Badges de posição ── */
+.posicao-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 0;
+  border-radius: 6px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.posicao-gol { background: rgba(59,  130, 246, 0.2); color: #93c5fd; }
+.posicao-zag { background: rgba(16,  185, 129, 0.2); color: #6ee7b7; }
+.posicao-lat { background: rgba(132, 204, 22,  0.2); color: #bef264; }
+.posicao-mei { background: rgba(245, 158, 11,  0.2); color: #fcd34d; }
+.posicao-atk { background: rgba(239, 68,  68,  0.2); color: #fca5a5; }
+.posicao-tec { background: rgba(139, 92,  246, 0.2); color: #c4b5fd; }
+
+/* ── Badges de escalação ── */
+.esc-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.4rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.esc-sim   { background: rgba(16,  185, 129, 0.15); color: #34d399; }
+.esc-banco { background: rgba(245, 158, 11,  0.15); color: #fbbf24; }
+.esc-nao   { background: rgba(71,  85,  105, 0.15); color: #64748b; }
+
+/* ── Pontuação do jogador ── */
+.jogador-pontuacao {
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.jogador-pontuacao.positivo { color: var(--emerald-light); }
+.jogador-pontuacao.zero     { color: var(--text-3); }
+
+/* ── Legenda ── */
+.legenda-esc {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 0.875rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.7rem;
+  color: var(--text-3);
+}
+
+.legenda-esc span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* ── Loading ── */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 2rem;
+  gap: 1.25rem;
+}
+
+.loading-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid rgba(16, 185, 129, 0.15);
+  border-top-color: var(--emerald);
+  border-radius: 50%;
+  animation: girar 0.7s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+.loading p {
+  color: var(--text-2);
+  font-size: 0.9rem;
+}
+
+/* ── Sem dados ── */
+.sem-dados {
+  text-align: center;
+  padding: 5rem 2rem;
+}
+
+.sem-dados-icone-svg {
+  color: var(--text-3);
+  margin-bottom: 1.25rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Bolinha inline ao lado do nome do time no modo ranking */
+.bola-inline {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.35rem;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.sem-dados h2 {
+  color: var(--text-1);
+  margin-bottom: 0.5rem;
+  font-size: 1.15rem;
+}
+
+.sem-dados p {
+  color: var(--text-3);
+  font-size: 0.875rem;
+  margin-bottom: 1.75rem;
+}
+
+.btn-atualizar {
+  background: var(--emerald-dim);
+  color: var(--emerald-light);
+  border: 1px solid var(--border-green);
+  padding: 0.6rem 1.5rem;
+  border-radius: 99px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.btn-atualizar:hover {
+  background: rgba(16, 185, 129, 0.2);
+  box-shadow: var(--shadow-glow);
+}
+
+/* ── 404 ── */
+.error-404 {
+  text-align: center;
+  padding: 5rem 2rem;
+}
+
+.error-404 h1  { color: var(--text-1); margin-bottom: 0.5rem; }
+.error-404 p   { color: var(--text-3); margin-bottom: 1rem; }
+.error-404 a   { color: var(--emerald); text-decoration: none; border-bottom: 1px solid var(--emerald); }
+
+/* ── Gráfico de linhas ── */
+.grafico-wrapper {
+  margin-top: 0.5rem;
+}
+
+.grafico-vazio {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-3);
+  font-size: 0.9rem;
+}
+
+.grafico-legenda {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.legenda-item {
+  display: grid;
+  grid-template-columns: 1.8rem 0.75rem 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+}
+
+.legenda-pos {
+  color: var(--text-3);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.legenda-cor {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legenda-nome {
+  color: var(--text-1);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legenda-total {
+  color: var(--emerald-light);
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tab-icone-classif {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+/* ── Responsivo ── */
+@media (max-width: 480px) {
+  .header h1       { font-size: 1.3rem; }
+  .time-header     { padding: 0.875rem 0.875rem; gap: 0.6rem; }
+  .pontuacao       { font-size: 1.25rem; }
+  .time-nome       { font-size: 0.9rem; }
+  .posicao-wrapper { min-width: 2rem; }
+  .legenda-esc     { gap: 0.6rem; }
+}
+
+/* ── Campo de futebol ── */
+.campo-wrapper {
+  border-top: 1px solid var(--border);
+}
+
+.campo-fundo {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  /* Grid fixo: 4 linhas com altura proporcional ao campo */
+  display: grid;
+  grid-template-rows: 1fr 1fr 1fr 1fr;
+  min-height: 460px;
+  background: none;
+  padding: 32px 0 8px;
+}
+
+/* Campo SVG inclinado em perspectiva — fica atrás dos jogadores */
+.campo-fundo::before {
+  content: '';
+  position: absolute;
+  top: -16%;
+  left: -8%;
+  right: -8%;
+  bottom: 0;
+  background: url('/campo.svg') center/100% 100% no-repeat;
+  transform: perspective(520px) rotateX(13deg);
+  transform-origin: 50% 100%;
+  z-index: 0;
+}
+
+.campo-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px;
+}
+
+/* Cartão do jogador no campo */
+.campo-jogador {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 50px;
+  max-width: 62px;
+  text-align: center;
+  transition: opacity 0.2s;
+}
+
+.campo-jogador-fraco {
+  opacity: 0.4;
+}
+
+.campo-avatar-wrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+}
+
+.campo-avatar {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2.5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.campo-avatar-escudo {
+  position: absolute;
+  bottom: -3px;
+  left: -3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #111827;
+  background: #111827;
+  z-index: 4;
+}
+
+.campo-avatar-foto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.campo-avatar-iniciais {
+  position: relative;
+  z-index: 1;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.campo-pos-badge {
+  font-size: 7px;
+  font-weight: 800;
+  color: #000;
+  border-radius: 3px;
+  padding: 1px 3px;
+  margin-top: -7px;
+  line-height: 1.5;
+  letter-spacing: 0.3px;
+}
+
+.campo-jogador-nome {
+  font-size: 9px;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,1);
+  font-weight: 700;
+  max-width: 58px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.campo-jogador-pts {
+  font-size: 10px;
+  font-weight: 800;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.campo-pts-verde { color: #00e676; }
+.campo-pts-zero  { color: rgba(255,255,255,0.3); }
+
+/* Banco de reservas */
+.campo-banco {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  background: rgba(0,0,0,0.35);
+  padding: 8px 12px 12px;
+}
+
+.campo-banco-label {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  text-align: center;
+  margin-bottom: 8px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.campo-banco-jogadores {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ── Header premium ── */
+.app-header {
+  background: linear-gradient(135deg, #07100d 0%, #0a1a0d 60%, #0d2212 100%);
+  border-bottom: 1px solid rgba(0,200,83,0.18);
+  padding: 13px 16px 11px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.app-header-logo {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  color: #00c853;
+}
+
+.app-header-info { flex: 1; }
+
+.app-header-titulo {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  color: #fff;
+  text-transform: uppercase;
+  line-height: 1.2;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.app-header-sub {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.app-header-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f44336;
+  animation: pulsar 1.5s infinite;
+  flex-shrink: 0;
+}
+
+.app-header-dot.pre {
+  background: rgba(255,255,255,0.22);
+  animation: none;
+}

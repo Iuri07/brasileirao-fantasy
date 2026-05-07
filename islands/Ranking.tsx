@@ -1,12 +1,21 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import { Bola } from "../components/Bola.tsx";
-import { GraficoLinhas, type TimeDados } from "../components/GraficoLinhas.tsx";
+import { CampoFutebol } from "../components/CampoFutebol.tsx";
+
+function BolaPNG({ size, corTime }: { size: number; corTime: string }) {
+  return (
+    <span style={`display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;overflow:hidden;flex-shrink:0;background:${corTime}`}>
+      <img src="/bola.png" alt="" style="width:100%;height:100%;object-fit:cover;mix-blend-mode:multiply;display:block;" />
+    </span>
+  );
+}
 
 interface Jogador {
   nome: string;
   posicao: string;
   pontuacao: number;
   escalacao: "Sim" | "Banco" | "Não";
+  status?: string;
+  clube?: string;
 }
 
 interface Time {
@@ -23,7 +32,7 @@ interface RodadaDados {
   times: Time[];
 }
 
-type Aba = "elenco" | "ao_vivo" | "classificacao";
+type Aba = "elenco" | "ao_vivo";
 
 const POSICAO_CSS: Record<string, string> = {
   "Goleiro": "gol", "Zagueiro": "zag", "Lateral": "lat",
@@ -35,16 +44,17 @@ const POSICAO_ABREV: Record<string, string> = {
   "Meia": "MEI", "Atacante": "ATK", "Técnico": "TEC",
 };
 
+
 const CORES_TIMES: Record<string, string> = {
-  "FILHOS DE KIEZA":     "#f79a99",
-  "BOTAFOFO FR":         "#FDCAAA",
-  "MALVADINHOS FC":      "#F8FAA9",
-  "CHUTOCA FC":          "#D1FA9E",
-  "BENDERMEM 23":        "#AFF8A9",
-  "888 PARTNERS":        "#B8F8D2",
-  "TODOS COM BOLSONARO": "#BEF3F6",
-  "PIRATAS DO CARILLE":  "#9FC5E8",
-  "DORIVAL JUNIORS":     "#E3C0F3",
+  "FILHOS DE KIEZA":     "#FF1032",
+  "BOTAFOFO FR":         "#FF6A00",
+  "MALVADINHOS FC":      "#FF8C00",
+  "CHUTOCA FC":          "#FFD400",
+  "BENDERMEM 23":        "#7CFF00",
+  "888 PARTNERS":        "#00A2FF",
+  "TODOS COM BOLSONARO": "#0066FF",
+  "PIRATAS DO CARILLE":  "#C000FF",
+  "DORIVAL JUNIORS":     "#FF007A",
 };
 
 const ORDEM_ELENCO: Record<string, number> = {
@@ -70,8 +80,6 @@ export default function Ranking() {
   const [expandidos, setExpandidos] = useState<Set<number>>(new Set());
   const [ultimaVerificacao, setUltimaVerificacao] = useState<Date | null>(null);
   const [minutosAtras, setMinutosAtras] = useState(0);
-  const [classificacao, setClassificacao] = useState<TimeDados[] | null>(null);
-  const [carregandoClassif, setCarregandoClassif] = useState(false);
   const abaInicializada = useRef(false);
 
   const buscarDados = async () => {
@@ -79,6 +87,7 @@ export default function Ranking() {
       const resposta = await fetch("/api/ranking");
       const json: RodadaDados | null = await resposta.json();
       if (json) {
+        json.times = json.times.map((t) => ({ ...t, nome: t.nome.trim() }));
         setDados(json);
         // Define aba padrão apenas na primeira carga
         if (!abaInicializada.current) {
@@ -99,17 +108,6 @@ export default function Ranking() {
     const intervalo = setInterval(buscarDados, INTERVALO_POLLING);
     return () => clearInterval(intervalo);
   }, []);
-
-  // Busca dados de classificação apenas quando a aba é aberta (lazy)
-  useEffect(() => {
-    if (aba !== "classificacao" || classificacao || carregandoClassif) return;
-    setCarregandoClassif(true);
-    fetch("/api/classificacao")
-      .then((r) => r.json())
-      .then((json) => setClassificacao(json))
-      .catch((e) => console.error("Erro classificação:", e))
-      .finally(() => setCarregandoClassif(false));
-  }, [aba]);
 
   useEffect(() => {
     const calcular = () => {
@@ -158,7 +156,7 @@ export default function Ranking() {
         class={`tab-btn${aba === "elenco" ? " tab-ativa" : ""}`}
         onClick={() => { setAba("elenco"); setExpandidos(new Set()); }}
       >
-        <Bola size={13} class="tab-icone" />
+        <BolaPNG size={13} corTime="#00FF88" />
         Elenco
       </button>
       <button
@@ -168,13 +166,6 @@ export default function Ranking() {
         <span class="tab-dot-ao-vivo" />
         Ao Vivo
       </button>
-      <button
-        class={`tab-btn${aba === "classificacao" ? " tab-ativa" : ""}`}
-        onClick={() => { setAba("classificacao"); setExpandidos(new Set()); }}
-      >
-        <span class="tab-icone-classif">📈</span>
-        Classificação
-      </button>
     </div>
   );
 
@@ -183,31 +174,11 @@ export default function Ranking() {
       <div class="ranking-container">
         {tabBar}
         <div class="sem-dados">
-          <Bola size={52} class="sem-dados-icone-svg" />
+          <BolaPNG size={52} corTime="#00FF88" />
           <h2>Aguardando início da rodada...</h2>
           <p>Os dados aparecerão aqui assim que a rodada começar.</p>
           <button class="btn-atualizar" onClick={buscarDados}>Verificar agora</button>
         </div>
-      </div>
-    );
-  }
-
-  // Aba classificação — renderiza independente dos dados de ranking
-  if (aba === "classificacao") {
-    return (
-      <div class="ranking-container">
-        {tabBar}
-        <div class="rodada-info">
-          <span class="rodada-badge rodada-badge-pre">Temporada</span>
-          <span class="atualizacao-info">{textoAtualizacao()}</span>
-        </div>
-        {carregandoClassif
-          ? <div class="loading"><div class="loading-spinner" /><p>Carregando classificação...</p></div>
-          : !classificacao
-            ? <div class="sem-dados">
-                <p style="color:var(--text-3);font-size:.9rem;">Nenhum dado de classificação disponível ainda.</p>
-              </div>
-            : <GraficoLinhas dados={classificacao} coresTimes={CORES_TIMES} />}
       </div>
     );
   }
@@ -242,7 +213,7 @@ export default function Ranking() {
       {/* Aba Ao Vivo sem rodada em andamento */}
       {aoVivoSemRodada && (
         <div class="sem-dados">
-          <Bola size={52} class="sem-dados-icone-svg" />
+          <BolaPNG size={52} corTime="#00FF88" />
           <h2>Rodada ainda não começou</h2>
           <p>O ranking aparecerá aqui assim que os jogos começarem.</p>
         </div>
@@ -257,6 +228,7 @@ export default function Ranking() {
               class={`time-card${!modoElenco && index === 0 ? " primeiro-lugar" : ""}${
                 expandidos.has(index) ? " expandido" : ""
               }`}
+              style={`--cor-time: ${CORES_TIMES[time.nome] ?? "#10b981"}`}
               onClick={() => toggleExpandir(index)}
               role="button"
               aria-expanded={expandidos.has(index)}
@@ -265,7 +237,7 @@ export default function Ranking() {
                 <div class="posicao-wrapper">
                   <span class="posicao">
                     {modoElenco
-                      ? <Bola size={18} color={CORES_TIMES[time.nome]} />
+                      ? <BolaPNG size={18} corTime={CORES_TIMES[time.nome] ?? "#00FF88"} />
                       : index === 0 ? "🏆" : `#${index + 1}`}
                   </span>
                 </div>
@@ -273,7 +245,7 @@ export default function Ranking() {
                 <div class="time-info">
                   <span class="time-nome">
                     {!modoElenco && (
-                      <Bola size={10} color={CORES_TIMES[time.nome]} class="bola-inline" />
+                      <BolaPNG size={10} corTime={CORES_TIMES[time.nome] ?? "#00FF88"} />
                     )}
                     {modoElenco
                       ? (NOMES_ELENCO[time.nome] ?? time.nome)
@@ -295,47 +267,12 @@ export default function Ranking() {
               </div>
 
               {expandidos.has(index) && (
-                <div class="jogadores-lista">
-                  <div class="jogadores-header">
-                    <span>Jogador</span>
-                    <span>Pos</span>
-                    <span>Esc</span>
-                    {!modoElenco && <span>Pts</span>}
-                  </div>
-                  {[...time.jogadores]
-                    .sort((a, b) => {
-                      const ordem: Record<string, number> = { "Sim": 0, "Banco": 1, "Não": 2 };
-                      const diff = (ordem[a.escalacao] ?? 3) - (ordem[b.escalacao] ?? 3);
-                      return diff !== 0 ? diff : b.pontuacao - a.pontuacao;
-                    })
-                    .map((jogador, jIdx) => {
-                      const posKey = POSICAO_CSS[jogador.posicao] ?? jogador.posicao.toLowerCase();
-                      const posAbrev = POSICAO_ABREV[jogador.posicao] ?? jogador.posicao.substring(0, 3).toUpperCase();
-                      const escClass = classeEscalacao(jogador.escalacao);
-                      return (
-                        <div
-                          key={jIdx}
-                          class={`jogador-linha${escClass ? ` ${escClass}` : ""}${modoElenco ? " pre-rodada-linha" : ""}`}
-                        >
-                          <span class="jogador-nome">{jogador.nome}</span>
-                          <span class={`posicao-badge posicao-${posKey}`}>{posAbrev}</span>
-                          <span class={`esc-badge esc-${jogador.escalacao === "Não" ? "nao" : jogador.escalacao === "Banco" ? "banco" : "sim"}`}>
-                            {jogador.escalacao === "Sim" ? "✓" : jogador.escalacao === "Banco" ? "B" : "—"}
-                          </span>
-                          {!modoElenco && (
-                            <span class={`jogador-pontuacao ${jogador.pontuacao > 0 ? "positivo" : "zero"}`}>
-                              {jogador.pontuacao.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  <div class="legenda-esc">
-                    <span><span class="esc-badge esc-sim">✓</span> Titular</span>
-                    <span><span class="esc-badge esc-banco">B</span> Banco</span>
-                    <span><span class="esc-badge esc-nao">—</span> Fora</span>
-                  </div>
-                </div>
+                <CampoFutebol
+                  jogadores={time.jogadores}
+                  modoAoVivo={aba === "ao_vivo"}
+                  corTime={CORES_TIMES[time.nome]}
+                  campoBg={time.nome === "FILHOS DE KIEZA" ? "/campo2.png" : undefined}
+                />
               )}
             </div>
           ))}
