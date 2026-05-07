@@ -271,8 +271,7 @@ export default function Ranking() {
                   jogadores={time.jogadores}
                   modoAoVivo={aba === "ao_vivo"}
                   corTime={CORES_TIMES[time.nome]}
-                  campoBg={time.nome === "FILHOS DE KIEZA" ? "/campo2.png" : undefined}
-                />
+                                  />
               )}
             </div>
           ))}
