@@ -22,6 +22,7 @@ function CampoSVG() {
   const g = "rgba(255,255,255,0.04)";
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450" preserveAspectRatio="none" class="campo-svg-bg" aria-hidden="true">
+      <rect x="12" y="16" width="276" height="418" fill="var(--cor-time)" fill-opacity="0.18"/>
       <rect x="12" y="16" width="276" height="418" fill="none" stroke={s} strokeWidth="2"/>
       <line x1="12" y1="225" x2="288" y2="225" stroke={s} strokeWidth="1.5"/>
       <circle cx="150" cy="225" r="44" fill="none" stroke={s} strokeWidth="1.5"/>

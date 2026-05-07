@@ -577,15 +577,6 @@ body {
   background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(255, 255, 255, 0.04) 0%, transparent 65%);
   padding: 32px 0 8px;
 }
-.campo-fundo::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--cor-time, #10b981);
-  opacity: 0.13;
-  z-index: 0;
-  pointer-events: none;
-}
 
 /* Campo SVG background */
 .campo-svg-bg {
