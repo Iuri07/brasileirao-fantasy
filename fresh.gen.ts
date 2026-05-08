@@ -4,6 +4,7 @@
 
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
+import * as $api_admin_seed from "./routes/api/admin/seed.ts";
 import * as $api_admin_sync_atletas from "./routes/api/admin/sync-atletas.ts";
 import * as $api_atletas_buscar from "./routes/api/atletas/buscar.ts";
 import * as $api_classificacao from "./routes/api/classificacao.ts";
@@ -21,6 +22,7 @@ const manifest = {
   routes: {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
+    "./routes/api/admin/seed.ts": $api_admin_seed,
     "./routes/api/admin/sync-atletas.ts": $api_admin_sync_atletas,
     "./routes/api/atletas/buscar.ts": $api_atletas_buscar,
     "./routes/api/classificacao.ts": $api_classificacao,
