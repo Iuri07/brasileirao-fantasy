@@ -803,6 +803,167 @@ img.campo-svg-bg {
 .legenda-nome { color: var(--text-1); font-weight: 800; font-size: 0.78rem; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.04em; }
 .legenda-total { color: var(--neon); font-weight: 900; font-size: 0.85rem; font-variant-numeric: tabular-nums; text-align: right; }
 
+/* ── Painel de gerenciamento de elenco ── */
+.elenco-mgmt {
+  border-top: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.38);
+  padding: 0.6rem 0.875rem 0.875rem;
+}
+
+.elenco-mgmt-titulo {
+  font-size: 0.55rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-3);
+  margin-bottom: 0.45rem;
+}
+
+.mgmt-jogador {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.28rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.025);
+}
+
+.mgmt-jogador:last-child { border-bottom: none; }
+
+.mgmt-jogador-nome {
+  flex: 1;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mgmt-esc-btns {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.mgmt-esc-btn {
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 0.58rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+
+.mgmt-esc-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-1); }
+.mgmt-esc-btn.ativo-sim   { background: rgba(0, 255, 136, 0.15); color: var(--neon); border-color: rgba(0, 255, 136, 0.35); }
+.mgmt-esc-btn.ativo-banco { background: rgba(255, 122, 0, 0.15); color: var(--accent-orange); border-color: rgba(255, 122, 0, 0.35); }
+.mgmt-esc-btn.ativo-nao   { background: rgba(255, 255, 255, 0.06); color: var(--text-2); border-color: rgba(255, 255, 255, 0.15); }
+
+.mgmt-trocar-btn {
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  padding: 0.18rem 0.4rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.mgmt-trocar-btn:hover { color: var(--accent-blue); border-color: rgba(0, 224, 255, 0.35); }
+
+/* ── Painel de troca de jogador ── */
+.swap-panel {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin: 0.2rem 0 0.3rem;
+}
+
+.swap-search {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text-1);
+  font-size: 0.78rem;
+  padding: 0.38rem 0.55rem;
+  outline: none;
+  font-family: inherit;
+  margin-bottom: 0.35rem;
+}
+
+.swap-search:focus { border-color: var(--accent-blue); }
+
+.swap-buscando {
+  font-size: 0.65rem;
+  color: var(--text-3);
+  padding: 0.15rem 0;
+}
+
+.swap-resultado {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.28rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-2);
+  transition: background 0.15s;
+}
+
+.swap-resultado:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-1); }
+
+.swap-resultado-clube {
+  font-size: 0.62rem;
+  color: var(--text-3);
+  margin-left: auto;
+}
+
+.swap-cancel-btn {
+  font-size: 0.62rem;
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem 0;
+  text-decoration: underline;
+  display: block;
+  margin-top: 0.25rem;
+  font-family: inherit;
+}
+
+/* ── Badge SUB (substituto) ── */
+.campo-sub-badge {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  background: #FF6B35;
+  color: #fff;
+  font-size: 5.5px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  padding: 1px 3px;
+  border-radius: 3px;
+  z-index: 6;
+  text-transform: uppercase;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
 /* ── Responsivo ── */
 @media (max-width: 480px) {
   .time-header     { padding: 0.75rem 0.875rem; gap: 0.6rem; }

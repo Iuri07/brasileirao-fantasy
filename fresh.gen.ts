@@ -4,9 +4,15 @@
 
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
+import * as $api_admin_sync_atletas from "./routes/api/admin/sync-atletas.ts";
+import * as $api_atletas_buscar from "./routes/api/atletas/buscar.ts";
 import * as $api_classificacao from "./routes/api/classificacao.ts";
+import * as $api_elenco__dono_ from "./routes/api/elenco/[dono].ts";
+import * as $api_elenco__dono__escalacao from "./routes/api/elenco/[dono]/escalacao.ts";
+import * as $api_elenco__dono__jogador_add from "./routes/api/elenco/[dono]/jogador/add.ts";
+import * as $api_elenco__dono__jogador_remove from "./routes/api/elenco/[dono]/jogador/remove.ts";
 import * as $api_ranking from "./routes/api/ranking.ts";
-import * as $api_update from "./routes/api/update.ts";
+import * as $api_status from "./routes/api/status.ts";
 import * as $index from "./routes/index.tsx";
 import * as $Ranking from "./islands/Ranking.tsx";
 import { type Manifest } from "$fresh/server.ts";
@@ -15,9 +21,15 @@ const manifest = {
   routes: {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
+    "./routes/api/admin/sync-atletas.ts": $api_admin_sync_atletas,
+    "./routes/api/atletas/buscar.ts": $api_atletas_buscar,
     "./routes/api/classificacao.ts": $api_classificacao,
+    "./routes/api/elenco/[dono].ts": $api_elenco__dono_,
+    "./routes/api/elenco/[dono]/escalacao.ts": $api_elenco__dono__escalacao,
+    "./routes/api/elenco/[dono]/jogador/add.ts": $api_elenco__dono__jogador_add,
+    "./routes/api/elenco/[dono]/jogador/remove.ts": $api_elenco__dono__jogador_remove,
     "./routes/api/ranking.ts": $api_ranking,
-    "./routes/api/update.ts": $api_update,
+    "./routes/api/status.ts": $api_status,
     "./routes/index.tsx": $index,
   },
   islands: {

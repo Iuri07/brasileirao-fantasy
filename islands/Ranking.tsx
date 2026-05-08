@@ -10,17 +10,23 @@ function BolaPNG({ size, corTime }: { size: number; corTime: string }) {
 }
 
 interface Jogador {
+  atleta_id: number;
   nome: string;
   posicao: string;
   pontuacao: number;
   escalacao: "Sim" | "Banco" | "Não";
-  status?: string;
-  clube?: string;
+  status: string;
+  clube: string;
+  substituido: boolean;
+  entrou_em_campo: boolean | null;
+  clube_casa: string | null;
+  clube_fora: string | null;
 }
 
 interface Time {
   nome: string;
   dono: string;
+  chave: string;
   pontuacao: number;
   jogadores: Jogador[];
 }
@@ -28,7 +34,8 @@ interface Time {
 interface RodadaDados {
   rodada: number;
   atualizadoEm: string;
-  status?: string;
+  status: "aguardando" | "aguardando_inicio" | "ao_vivo";
+  fechamento?: { dia: string; hora: string };
   times: Time[];
 }
 
@@ -43,7 +50,6 @@ const POSICAO_ABREV: Record<string, string> = {
   "Goleiro": "GOL", "Zagueiro": "ZAG", "Lateral": "LAT",
   "Meia": "MEI", "Atacante": "ATK", "Técnico": "TEC",
 };
-
 
 const CORES_TIMES: Record<string, string> = {
   "FILHOS DE KIEZA":     "#FF1032",
@@ -85,6 +91,130 @@ const ESCUDOS_TIMES: Record<string, string> = {
 
 const INTERVALO_POLLING = 2 * 60 * 1000;
 
+interface BuscaResultado {
+  atleta_id: number;
+  apelido: string;
+  clube: string;
+  posicao: string;
+}
+
+function PainelGerenciamento(
+  { jogadores, chave, onAtualizar }: { jogadores: Jogador[]; chave: string; onAtualizar: () => void },
+) {
+  const [trocando, setTrocando] = useState<{ atletaId: number; posicao: string; escalacaoAtual: "Sim" | "Banco" | "Não" } | null>(null);
+  const [buscaQ, setBuscaQ] = useState("");
+  const [resultados, setResultados] = useState<BuscaResultado[]>([]);
+  const [buscando, setBuscando] = useState(false);
+
+  useEffect(() => {
+    if (!buscaQ.trim() || !trocando) { setResultados([]); return; }
+    const t = setTimeout(async () => {
+      setBuscando(true);
+      try {
+        const r = await fetch(
+          `/api/atletas/buscar?q=${encodeURIComponent(buscaQ)}&posicao=${encodeURIComponent(trocando.posicao)}`,
+        );
+        setResultados(await r.json());
+      } finally {
+        setBuscando(false);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [buscaQ, trocando]);
+
+  const mudarEscalacao = async (atletaId: number, escalacao: "Sim" | "Banco" | "Não") => {
+    await fetch(`/api/elenco/${chave}/escalacao`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ atleta_id: atletaId, escalacao }),
+    });
+    onAtualizar();
+  };
+
+  const trocarJogador = async (novoAtletaId: number) => {
+    if (!trocando) return;
+    await fetch(`/api/elenco/${chave}/jogador/remove`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ atleta_id: trocando.atletaId }),
+    });
+    await fetch(`/api/elenco/${chave}/jogador/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ atleta_id: novoAtletaId, escalacao: trocando.escalacaoAtual }),
+    });
+    setTrocando(null);
+    setBuscaQ("");
+    setResultados([]);
+    onAtualizar();
+  };
+
+  const fecharTroca = () => { setTrocando(null); setBuscaQ(""); setResultados([]); };
+
+  const ordenados = [...jogadores].sort((a, b) => {
+    const ord: Record<string, number> = { "Sim": 0, "Banco": 1, "Não": 2 };
+    return (ord[a.escalacao] ?? 3) - (ord[b.escalacao] ?? 3);
+  });
+
+  return (
+    <div class="elenco-mgmt" onClick={(e) => e.stopPropagation()}>
+      <div class="elenco-mgmt-titulo">Gerenciar Elenco</div>
+      {ordenados.map((j) => (
+        <div key={j.atleta_id}>
+          <div class="mgmt-jogador">
+            <span class={`posicao-badge posicao-${POSICAO_CSS[j.posicao] ?? "gol"}`}>
+              {POSICAO_ABREV[j.posicao] ?? j.posicao}
+            </span>
+            <span class="mgmt-jogador-nome">{j.nome}</span>
+            <div class="mgmt-esc-btns">
+              {(["Sim", "Banco", "Não"] as const).map((esc) => (
+                <button
+                  key={esc}
+                  class={`mgmt-esc-btn${j.escalacao === esc ? ` ativo-${esc === "Não" ? "nao" : esc.toLowerCase()}` : ""}`}
+                  onClick={() => mudarEscalacao(j.atleta_id, esc)}
+                >
+                  {esc === "Sim" ? "S" : esc === "Banco" ? "B" : "N"}
+                </button>
+              ))}
+            </div>
+            <button
+              class="mgmt-trocar-btn"
+              onClick={() => {
+                setTrocando({ atletaId: j.atleta_id, posicao: j.posicao, escalacaoAtual: j.escalacao });
+                setBuscaQ("");
+                setResultados([]);
+              }}
+            >
+              Trocar
+            </button>
+          </div>
+          {trocando?.atletaId === j.atleta_id && (
+            <div class="swap-panel">
+              <input
+                class="swap-search"
+                type="text"
+                placeholder={`Buscar ${j.posicao.toLowerCase()}...`}
+                value={buscaQ}
+                // deno-lint-ignore no-explicit-any
+                onInput={(e) => setBuscaQ((e.target as any).value)}
+                autoFocus
+              />
+              {buscando && <div class="swap-buscando">Buscando...</div>}
+              {resultados.map((r) => (
+                <div key={r.atleta_id} class="swap-resultado" onClick={() => trocarJogador(r.atleta_id)}>
+                  <span>{r.apelido}</span>
+                  <span class="swap-resultado-clube">{r.clube}</span>
+                </div>
+              ))}
+              <button class="swap-cancel-btn" onClick={fecharTroca}>Cancelar</button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Ranking() {
   const [dados, setDados] = useState<RodadaDados | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -101,9 +231,8 @@ export default function Ranking() {
       if (json) {
         json.times = json.times.map((t) => ({ ...t, nome: t.nome.trim() }));
         setDados(json);
-        // Define aba padrão apenas na primeira carga
         if (!abaInicializada.current) {
-          setAba(json.status === "pre_rodada" ? "elenco" : "ao_vivo");
+          setAba(json.status !== "ao_vivo" ? "elenco" : "ao_vivo");
           abaInicializada.current = true;
         }
       }
@@ -146,12 +275,6 @@ export default function Ranking() {
     return `Verificado há ${minutosAtras} min`;
   };
 
-  const classeEscalacao = (esc: string) => {
-    if (esc === "Banco") return "esc-banco";
-    if (esc === "Não") return "esc-nao";
-    return "";
-  };
-
   if (carregando) {
     return (
       <div class="loading">
@@ -161,7 +284,6 @@ export default function Ranking() {
     );
   }
 
-  // Abas sempre visíveis — mesmo sem dados
   const tabBar = (
     <div class="tab-bar">
       <button
@@ -195,43 +317,44 @@ export default function Ranking() {
     );
   }
 
-  const preRodada = dados.status === "pre_rodada";
+  const preRodada = dados.status !== "ao_vivo";
   const modoElenco = aba === "elenco";
 
-  // Ordena conforme a aba ativa
   const timesSorted = [...dados.times].sort((a, b) =>
     modoElenco
       ? (ORDEM_ELENCO[a.nome] ?? 99) - (ORDEM_ELENCO[b.nome] ?? 99)
       : b.pontuacao - a.pontuacao
   );
 
-  // Aba "Ao Vivo" ainda sem dados de rodada
   const aoVivoSemRodada = aba === "ao_vivo" && preRodada;
+
+  const rodadaBadge = modoElenco
+    ? <span class="rodada-badge rodada-badge-pre">Elenco</span>
+    : dados.status === "ao_vivo"
+    ? <span class="rodada-badge">Rodada {dados.rodada}</span>
+    : dados.fechamento
+    ? <span class="rodada-badge rodada-badge-pre">Fecha {dados.fechamento.dia} {dados.fechamento.hora}</span>
+    : <span class="rodada-badge rodada-badge-pre">Aguardando</span>;
 
   return (
     <div class="ranking-container">
       {tabBar}
 
-      {/* Indicador de rodada / atualização */}
       <div class="rodada-info">
-        {modoElenco
-          ? <span class="rodada-badge rodada-badge-pre">Elenco</span>
-          : preRodada
-            ? <span class="rodada-badge rodada-badge-pre">Aguardando</span>
-            : <span class="rodada-badge">Rodada {dados.rodada}</span>}
+        {rodadaBadge}
         <span class="atualizacao-info">{textoAtualizacao()}</span>
       </div>
 
-      {/* Aba Ao Vivo sem rodada em andamento */}
       {aoVivoSemRodada && (
         <div class="sem-dados">
           <BolaPNG size={52} corTime="#00FF88" />
           <h2>Rodada ainda não começou</h2>
-          <p>O ranking aparecerá aqui assim que os jogos começarem.</p>
+          {dados.fechamento
+            ? <p>Fechamento: {dados.fechamento.dia} às {dados.fechamento.hora}</p>
+            : <p>O ranking aparecerá aqui assim que os jogos começarem.</p>}
         </div>
       )}
 
-      {/* Lista de times */}
       {!aoVivoSemRodada && (
         <div class="times-lista">
           {timesSorted.map((time, index) => (
@@ -241,11 +364,14 @@ export default function Ranking() {
                 expandidos.has(index) ? " expandido" : ""
               }`}
               style={`--cor-time: ${CORES_TIMES[time.nome] ?? "#10b981"}`}
-              onClick={() => toggleExpandir(index)}
-              role="button"
-              aria-expanded={expandidos.has(index)}
             >
-              <div class="time-header">
+              <div
+                class="time-header"
+                onClick={() => toggleExpandir(index)}
+                role="button"
+                tabIndex={0}
+                aria-expanded={expandidos.has(index)}
+              >
                 <div class="posicao-wrapper">
                   <span class="posicao">
                     {modoElenco
@@ -279,12 +405,21 @@ export default function Ranking() {
               </div>
 
               {expandidos.has(index) && (
-                <CampoFutebol
-                  jogadores={time.jogadores}
-                  modoAoVivo={aba === "ao_vivo"}
-                  corTime={CORES_TIMES[time.nome]}
-                  escudo={ESCUDOS_TIMES[time.nome]}
-                />
+                <>
+                  <CampoFutebol
+                    jogadores={time.jogadores}
+                    modoAoVivo={aba === "ao_vivo"}
+                    corTime={CORES_TIMES[time.nome]}
+                    escudo={ESCUDOS_TIMES[time.nome]}
+                  />
+                  {modoElenco && (
+                    <PainelGerenciamento
+                      jogadores={time.jogadores}
+                      chave={time.chave}
+                      onAtualizar={buscarDados}
+                    />
+                  )}
+                </>
               )}
             </div>
           ))}

@@ -8,4 +8,6 @@ import config from "./fresh.config.ts";
 import manifest from "./fresh.gen.ts";
 
 import { start } from "$fresh/server.ts";
+import { registrarCrons } from "./lib/crons.ts";
+registrarCrons();
 await start(manifest, config);

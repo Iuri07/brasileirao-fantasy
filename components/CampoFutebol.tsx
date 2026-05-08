@@ -1,12 +1,15 @@
 import { useState } from "preact/hooks";
 
 interface Jogador {
+  atleta_id?: number;
   nome: string;
   posicao: string;
   pontuacao: number;
   escalacao: "Sim" | "Banco" | "Não";
   status?: string;
   clube?: string;
+  substituido?: boolean;
+  entrou_em_campo?: boolean | null;
 }
 
 interface Props {
@@ -53,10 +56,12 @@ const POSICAO_ABREV: Record<string, string> = {
 };
 
 function corStatus(status?: string): string {
-  if (!status || status === "-") return "#607d8b";
+  if (!status) return "transparent";
   if (status === "✅") return "#00e676";
-  if (status === "?") return "#f59e0b";
-  return "#f44336";
+  if (status === "🏥" || status === "🟥") return "#f44336";
+  if (status === "⚠️") return "#f59e0b";
+  if (status === "⬛") return "#607d8b";
+  return "transparent";
 }
 
 function toSlug(nome: string): string {
@@ -82,17 +87,6 @@ function abreviarNome(nome: string): string {
   return `${inicial}. ${sobrenome.substring(0, 8).toUpperCase()}`;
 }
 
-function iniciaisNome(nome: string): string {
-  const partes = nome.trim().split(" ");
-  const temParentese = partes.some((p) => p.startsWith("(") || p.endsWith(")"));
-  if (temParentese) {
-    const primeiro = partes.find((p) => !p.startsWith("(") && !p.endsWith(")") && p.length > 1);
-    return (primeiro ?? partes[0]).substring(0, 2).toUpperCase();
-  }
-  if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
-  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
-}
-
 function PlayerCard(
   { jogador, modoAoVivo, fraco, corTime }: { jogador: Jogador; modoAoVivo: boolean; fraco: boolean; corTime: string },
 ) {
@@ -107,6 +101,9 @@ function PlayerCard(
     <div class={`campo-jogador${fraco ? " campo-jogador-fraco" : ""}`}>
       <div class="campo-player-card">
         <div class="campo-player-foto-wrap">
+          {modoAoVivo && jogador.substituido && (
+            <span class="campo-sub-badge">SUB</span>
+          )}
           <img
             src={fotoSrc}
             alt=""
