@@ -8,7 +8,7 @@ export default function App({ Component }: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="theme-color" content="#0a3d20" />
         <title>Fantasy Cartola - Ranking</title>
-        <link rel="stylesheet" href="/styles.css?v=52" />
+        <link rel="stylesheet" href="/styles.css?v=53" />
       </head>
       <body>
         <Component />

@@ -41,6 +41,10 @@ interface RodadaDados {
 
 type Aba = "elenco" | "ao_vivo";
 
+const POSICAO_ORDEM: Record<string, number> = {
+  "Goleiro": 0, "Zagueiro": 1, "Lateral": 2, "Meia": 3, "Atacante": 4, "Técnico": 5,
+};
+
 const POSICAO_CSS: Record<string, string> = {
   "Goleiro": "gol", "Zagueiro": "zag", "Lateral": "lat",
   "Meia": "mei", "Atacante": "atk", "Técnico": "tec",
@@ -99,7 +103,12 @@ interface BuscaResultado {
 }
 
 function PainelGerenciamento(
-  { jogadores, chave, onAtualizar }: { jogadores: Jogador[]; chave: string; onAtualizar: () => void },
+  { jogadores, chave, onAtualizar, onEscalacao }: {
+    jogadores: Jogador[];
+    chave: string;
+    onAtualizar: () => void;
+    onEscalacao: (atletaId: number, escalacao: "Sim" | "Banco" | "Não") => void;
+  },
 ) {
   const [trocando, setTrocando] = useState<{ atletaId: number; posicao: string; escalacaoAtual: "Sim" | "Banco" | "Não" } | null>(null);
   const [buscaQ, setBuscaQ] = useState("");
@@ -122,15 +131,6 @@ function PainelGerenciamento(
     return () => clearTimeout(t);
   }, [buscaQ, trocando]);
 
-  const mudarEscalacao = async (atletaId: number, escalacao: "Sim" | "Banco" | "Não") => {
-    await fetch(`/api/elenco/${chave}/escalacao`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ atleta_id: atletaId, escalacao }),
-    });
-    onAtualizar();
-  };
-
   const trocarJogador = async (novoAtletaId: number) => {
     if (!trocando) return;
     await fetch(`/api/elenco/${chave}/jogador/remove`, {
@@ -151,64 +151,72 @@ function PainelGerenciamento(
 
   const fecharTroca = () => { setTrocando(null); setBuscaQ(""); setResultados([]); };
 
-  const ordenados = [...jogadores].sort((a, b) => {
-    const ord: Record<string, number> = { "Sim": 0, "Banco": 1, "Não": 2 };
-    return (ord[a.escalacao] ?? 3) - (ord[b.escalacao] ?? 3);
-  });
+  const ordenados = [...jogadores].sort(
+    (a, b) => (POSICAO_ORDEM[a.posicao] ?? 6) - (POSICAO_ORDEM[b.posicao] ?? 6),
+  );
+
+  const grupos: { posicao: string; jogadores: Jogador[] }[] = [];
+  for (const j of ordenados) {
+    const ultimo = grupos[grupos.length - 1];
+    if (!ultimo || ultimo.posicao !== j.posicao) grupos.push({ posicao: j.posicao, jogadores: [j] });
+    else ultimo.jogadores.push(j);
+  }
 
   return (
     <div class="elenco-mgmt" onClick={(e) => e.stopPropagation()}>
       <div class="elenco-mgmt-titulo">Gerenciar Elenco</div>
-      {ordenados.map((j) => (
-        <div key={j.atleta_id}>
-          <div class="mgmt-jogador">
-            <span class={`posicao-badge posicao-${POSICAO_CSS[j.posicao] ?? "gol"}`}>
-              {POSICAO_ABREV[j.posicao] ?? j.posicao}
-            </span>
-            <span class="mgmt-jogador-nome">{j.nome}</span>
-            <div class="mgmt-esc-btns">
-              {(["Sim", "Banco", "Não"] as const).map((esc) => (
-                <button
-                  key={esc}
-                  class={`mgmt-esc-btn${j.escalacao === esc ? ` ativo-${esc === "Não" ? "nao" : esc.toLowerCase()}` : ""}`}
-                  onClick={() => mudarEscalacao(j.atleta_id, esc)}
-                >
-                  {esc === "Sim" ? "S" : esc === "Banco" ? "B" : "N"}
-                </button>
-              ))}
-            </div>
-            <button
-              class="mgmt-trocar-btn"
-              onClick={() => {
-                setTrocando({ atletaId: j.atleta_id, posicao: j.posicao, escalacaoAtual: j.escalacao });
-                setBuscaQ("");
-                setResultados([]);
-              }}
-            >
-              Trocar
-            </button>
-          </div>
-          {trocando?.atletaId === j.atleta_id && (
-            <div class="swap-panel">
-              <input
-                class="swap-search"
-                type="text"
-                placeholder={`Buscar ${j.posicao.toLowerCase()}...`}
-                value={buscaQ}
-                // deno-lint-ignore no-explicit-any
-                onInput={(e) => setBuscaQ((e.target as any).value)}
-                autoFocus
-              />
-              {buscando && <div class="swap-buscando">Buscando...</div>}
-              {resultados.map((r) => (
-                <div key={r.atleta_id} class="swap-resultado" onClick={() => trocarJogador(r.atleta_id)}>
-                  <span>{r.apelido}</span>
-                  <span class="swap-resultado-clube">{r.clube}</span>
+      {grupos.map(({ posicao, jogadores: jogs }, gi) => (
+        <div key={posicao} class="mgmt-posicao-grupo">
+          <div class={`mgmt-posicao-sep${gi === 0 ? " primeiro" : ""}`}>{posicao}</div>
+          {jogs.map((j) => (
+            <div key={j.atleta_id}>
+              <div class="mgmt-jogador">
+                <span class="mgmt-jogador-nome">{j.nome}</span>
+                <div class="mgmt-esc-btns">
+                  {(["Sim", "Banco", "Não"] as const).map((esc) => (
+                    <button
+                      key={esc}
+                      class={`mgmt-esc-btn${j.escalacao === esc ? ` ativo-${esc === "Não" ? "nao" : esc.toLowerCase()}` : ""}`}
+                      onClick={() => onEscalacao(j.atleta_id, esc)}
+                    >
+                      {esc === "Sim" ? "S" : esc === "Banco" ? "B" : "N"}
+                    </button>
+                  ))}
                 </div>
-              ))}
-              <button class="swap-cancel-btn" onClick={fecharTroca}>Cancelar</button>
+                <button
+                  class="mgmt-trocar-btn"
+                  onClick={() => {
+                    setTrocando({ atletaId: j.atleta_id, posicao: j.posicao, escalacaoAtual: j.escalacao });
+                    setBuscaQ("");
+                    setResultados([]);
+                  }}
+                >
+                  Trocar
+                </button>
+              </div>
+              {trocando?.atletaId === j.atleta_id && (
+                <div class="swap-panel">
+                  <input
+                    class="swap-search"
+                    type="text"
+                    placeholder={`Buscar ${j.posicao.toLowerCase()}...`}
+                    value={buscaQ}
+                    // deno-lint-ignore no-explicit-any
+                    onInput={(e) => setBuscaQ((e.target as any).value)}
+                    autoFocus
+                  />
+                  {buscando && <div class="swap-buscando">Buscando...</div>}
+                  {resultados.map((r) => (
+                    <div key={r.atleta_id} class="swap-resultado" onClick={() => trocarJogador(r.atleta_id)}>
+                      <span>{r.apelido}</span>
+                      <span class="swap-resultado-clube">{r.clube}</span>
+                    </div>
+                  ))}
+                  <button class="swap-cancel-btn" onClick={fecharTroca}>Cancelar</button>
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </div>
       ))}
     </div>
@@ -259,6 +267,28 @@ export default function Ranking() {
     const timer = setInterval(calcular, 30_000);
     return () => clearInterval(timer);
   }, [ultimaVerificacao]);
+
+  const mudarEscalacaoTime = (chave: string, atletaId: number, escalacao: "Sim" | "Banco" | "Não") => {
+    setDados((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        times: prev.times.map((t) =>
+          t.chave !== chave ? t : {
+            ...t,
+            jogadores: t.jogadores.map((j) =>
+              j.atleta_id !== atletaId ? j : { ...j, escalacao }
+            ),
+          }
+        ),
+      };
+    });
+    fetch(`/api/elenco/${chave}/escalacao`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ atleta_id: atletaId, escalacao }),
+    }).catch(console.error);
+  };
 
   const toggleExpandir = (index: number) => {
     setExpandidos((prev) => {
@@ -417,6 +447,7 @@ export default function Ranking() {
                       jogadores={time.jogadores}
                       chave={time.chave}
                       onAtualizar={buscarDados}
+                      onEscalacao={(atletaId, escalacao) => mudarEscalacaoTime(time.chave, atletaId, escalacao)}
                     />
                   )}
                 </>
