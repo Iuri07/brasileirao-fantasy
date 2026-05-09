@@ -6,7 +6,7 @@ interface Jogador {
   posicao: string;
   pontuacao: number;
   escalacao: "Sim" | "Banco" | "Não";
-  status?: string;
+  status_id?: number | null;
   clube?: string;
   substituido?: boolean;
   entrou_em_campo?: boolean | null;
@@ -55,13 +55,15 @@ const POSICAO_ABREV: Record<string, string> = {
   "Técnico":  "TEC",
 };
 
-function corStatus(status?: string): string {
-  if (!status) return "transparent";
-  if (status === "✅") return "#00e676";
-  if (status === "🏥" || status === "🟥") return "#f44336";
-  if (status === "⚠️") return "#f59e0b";
-  if (status === "⬛") return "#607d8b";
-  return "transparent";
+function statusInfo(id?: number | null): { sym: string; cor: string } | null {
+  switch (id) {
+    case 7: return { sym: "✓", cor: "#00e676" };
+    case 2: return { sym: "?", cor: "#ef4444" };
+    case 3: return { sym: "✕", cor: "#ef4444" };
+    case 5: return { sym: "+", cor: "#ef4444" };
+    case 6: return { sym: "–", cor: "#9ca3af" };
+    default: return null;
+  }
 }
 
 function toSlug(nome: string): string {
@@ -92,7 +94,7 @@ function PlayerCard(
 ) {
   const [fotoOk, setFotoOk] = useState(false);
   const [fotoSrc, setFotoSrc] = useState(`/players/${toSlug(jogador.nome)}.webp`);
-  const dotCor = corStatus(jogador.status);
+  const sInfo = statusInfo(jogador.status_id);
   const temPts = jogador.pontuacao > 0;
   const escudoSrc = jogador.clube ? `/escudos/${toSlug(jogador.clube)}.jpg` : null;
   const neonStyle = `border-color:${corTime}`;
@@ -122,7 +124,9 @@ function PlayerCard(
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
             />
           )}
-          <span class="campo-status-dot" style={`background:${dotCor}`} />
+          {sInfo && (
+            <span class="campo-status-sym" style={`color:${sInfo.cor}`}>{sInfo.sym}</span>
+          )}
         </div>
         <div class="campo-player-box" style={neonStyle}>
           <span class="campo-player-nome">{abreviarNome(jogador.nome)}</span>

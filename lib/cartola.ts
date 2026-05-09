@@ -47,3 +47,10 @@ export function fetchAtletasPontuados(): Promise<{
 }> {
   return fetchCartola("/atletas/pontuados");
 }
+
+export function fetchPartidas(): Promise<{
+  partidas: Array<{ clube_casa_id: number; clube_visitante_id: number }>;
+  clubes: Record<string, { abreviacao: string }>;
+}> {
+  return fetchCartola("/partidas");
+}

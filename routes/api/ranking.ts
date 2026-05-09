@@ -8,17 +8,6 @@ const H = {
   "Access-Control-Allow-Origin": "*",
 };
 
-function statusEmoji(status_id: number | null): string | undefined {
-  switch (status_id) {
-    case 5: return "✅";
-    case 2: return "🏥";
-    case 3: return "🟥";
-    case 7: return "⚠️";
-    case 6: return "⬛";
-    default: return undefined;
-  }
-}
-
 export const handler: Handlers = {
   async GET() {
     try {
@@ -42,7 +31,7 @@ export const handler: Handlers = {
           posicao:         j.posicao,
           pontuacao:       j.pontos ?? 0,
           escalacao:       j.escalacao,
-          status:          statusEmoji(j.status_id),
+          status_id:       j.status_id,
           clube:           j.clube,
           substituido:     j.substituido,
           entrou_em_campo: j.entrou_em_campo,

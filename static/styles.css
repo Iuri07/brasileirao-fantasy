@@ -737,15 +737,16 @@ img.campo-svg-bg {
   z-index: 4;
 }
 
-.campo-status-dot {
+.campo-status-sym {
   position: absolute;
   bottom: 1px;
-  right: 1px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  border: 1.5px solid #0B0F14;
+  right: 2px;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
   z-index: 5;
+  text-shadow: 0 0 3px #0B0F14, 0 0 2px #0B0F14;
+  pointer-events: none;
 }
 
 .campo-jogador-pts {
@@ -841,14 +842,38 @@ img.campo-svg-bg {
 
 .mgmt-jogador:last-child { border-bottom: none; }
 
-.mgmt-jogador-nome {
+.mgmt-jogador-info {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.mgmt-jogador-nome {
   font-size: 0.73rem;
   font-weight: 600;
   color: var(--text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.mgmt-status-sym {
+  font-size: 0.7rem;
+  font-weight: 900;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.mgmt-partida {
+  font-size: 0.58rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .mgmt-esc-btns {

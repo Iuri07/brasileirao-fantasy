@@ -15,7 +15,7 @@ interface Jogador {
   posicao: string;
   pontuacao: number;
   escalacao: "Sim" | "Banco" | "Não";
-  status: string;
+  status_id: number | null;
   clube: string;
   substituido: boolean;
   entrou_em_campo: boolean | null;
@@ -40,6 +40,17 @@ interface RodadaDados {
 }
 
 type Aba = "elenco" | "ao_vivo";
+
+function statusInfo(id: number | null): { sym: string; cor: string } | null {
+  switch (id) {
+    case 7: return { sym: "✓", cor: "#00e676" };
+    case 2: return { sym: "?", cor: "#ef4444" };
+    case 3: return { sym: "✕", cor: "#ef4444" };
+    case 5: return { sym: "+", cor: "#ef4444" };
+    case 6: return { sym: "–", cor: "#9ca3af" };
+    default: return null;
+  }
+}
 
 const POSICAO_ORDEM: Record<string, number> = {
   "Goleiro": 0, "Zagueiro": 1, "Lateral": 2, "Meia": 3, "Atacante": 4, "Técnico": 5,
@@ -171,7 +182,13 @@ function PainelGerenciamento(
           {jogs.map((j) => (
             <div key={j.atleta_id}>
               <div class="mgmt-jogador">
-                <span class="mgmt-jogador-nome">{j.nome}</span>
+                <div class="mgmt-jogador-info">
+                  <span class="mgmt-jogador-nome">{j.nome}</span>
+                  {(() => { const si = statusInfo(j.status_id); return si && <span class="mgmt-status-sym" style={`color:${si.cor}`}>{si.sym}</span>; })()}
+                  {j.clube_casa && j.clube_fora && (
+                    <span class="mgmt-partida">{j.clube_casa} X {j.clube_fora}</span>
+                  )}
+                </div>
                 <div class="mgmt-esc-btns">
                   {(["Sim", "Banco", "Não"] as const).map((esc) => (
                     <button

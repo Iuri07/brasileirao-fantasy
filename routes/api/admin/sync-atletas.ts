@@ -1,5 +1,5 @@
 import { Handlers } from "$fresh/server.ts";
-import { fetchAtletasMercado, POSICAO_ID_NOME, POSICAO_NOME_CHAVE } from "../../../lib/cartola.ts";
+import { fetchAtletasMercado, fetchPartidas, POSICAO_ID_NOME, POSICAO_NOME_CHAVE } from "../../../lib/cartola.ts";
 import { POSICAO_CHAVES_CACHE, getAllElencos, setElenco } from "../../../lib/kv.ts";
 import type { AtletaCacheKV } from "../../../lib/types.ts";
 
@@ -9,7 +9,10 @@ export const handler: Handlers = {
   async POST() {
     try {
       const kv = await Deno.openKv();
-      const data = await fetchAtletasMercado();
+      const [data, partidasData] = await Promise.all([
+        fetchAtletasMercado(),
+        fetchPartidas().catch(() => null),
+      ]);
       const now = new Date().toISOString();
 
       // Cache de atletas por posição (para busca/troca)
@@ -39,21 +42,37 @@ export const handler: Handlers = {
         await kv.set(["atletas_cache", chave], cache);
       }
 
-      // Atualiza status_id nos elencos (lesionado, suspenso, provável)
+      // Mapa clube_id → { casa, fora }
+      const matchMap = new Map<number, { casa: string; fora: string }>();
+      if (partidasData) {
+        for (const p of partidasData.partidas) {
+          const casaAbrev = partidasData.clubes[String(p.clube_casa_id)]?.abreviacao ?? String(p.clube_casa_id);
+          const foraAbrev = partidasData.clubes[String(p.clube_visitante_id)]?.abreviacao ?? String(p.clube_visitante_id);
+          matchMap.set(p.clube_casa_id, { casa: casaAbrev, fora: foraAbrev });
+          matchMap.set(p.clube_visitante_id, { casa: casaAbrev, fora: foraAbrev });
+        }
+      }
+
+      // Atualiza status_id e partida nos elencos
       const elencos = await getAllElencos(kv);
       let elencosTocados = 0;
       for (const [chave, elenco] of Object.entries(elencos)) {
         let alterado = false;
         for (const [id, jogador] of Object.entries(elenco.jogadores)) {
-          const sid = statusMap.get(jogador.atleta_id);
-          if (sid === undefined || jogador.status_id === sid) continue;
+          const sid = statusMap.has(jogador.atleta_id) ? statusMap.get(jogador.atleta_id)! : jogador.status_id;
+          const match = matchMap.get(jogador.clube_id);
+          const novoCasa = match ? match.casa : jogador.clube_casa;
+          const novaFora = match ? match.fora : jogador.clube_fora;
+          if (jogador.status_id === sid && jogador.clube_casa === novoCasa && jogador.clube_fora === novaFora) continue;
           elenco.jogadores[id] = {
             ...jogador,
             status_id: sid,
-            provavel:  sid === 5,
-            lesionado: sid === 2,
+            provavel:  sid === 7,
+            lesionado: sid === 5,
             suspenso:  sid === 3,
             nulo:      sid === 6,
+            clube_casa: novoCasa,
+            clube_fora: novaFora,
           };
           alterado = true;
         }
@@ -61,7 +80,7 @@ export const handler: Handlers = {
       }
 
       return new Response(
-        JSON.stringify({ ok: true, total: data.atletas.length, elencosTocados, atualizadoEm: now }),
+        JSON.stringify({ ok: true, total: data.atletas.length, elencosTocados, partidas: matchMap.size / 2, atualizadoEm: now }),
         { headers: H },
       );
     } catch (e) {
