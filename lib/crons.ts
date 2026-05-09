@@ -103,7 +103,7 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
   console.log(`[cron] atletas sincronizados: ${data.atletas.length}`);
 }
 
-async function atualizarTudo(kv: Deno.Kv): Promise<void> {
+export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
   const now = new Date().toISOString();
 
   // Sempre busca apenas o status do mercado (leve)
