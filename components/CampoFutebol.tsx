@@ -66,6 +66,8 @@ function statusInfo(id?: number | null): { sym: string; cor: string } | null {
   }
 }
 
+const CDN = "https://cdn.jsdelivr.net/gh/Ian-costermani/brasileirao-fantasy@master/static";
+
 function toSlug(nome: string): string {
   return nome
     .toLowerCase()
@@ -95,10 +97,10 @@ function PlayerCard(
   const [fotoOk, setFotoOk] = useState(false);
   const slugNome = toSlug(jogador.nome);
   const slugClube = jogador.clube ? toSlug(jogador.clube) : null;
-  const [fotoSrc, setFotoSrc] = useState(`/players/${slugNome}.webp`);
+  const [fotoSrc, setFotoSrc] = useState(`${CDN}/players/${slugNome}.webp`);
   const sInfo = statusInfo(jogador.status_id);
   const temPts = jogador.pontuacao > 0;
-  const escudoSrc = jogador.clube ? `/escudos/${toSlug(jogador.clube)}.jpg` : null;
+  const escudoSrc = jogador.clube ? `${CDN}/escudos/${toSlug(jogador.clube)}.jpg` : null;
   const neonStyle = `border-color:${corTime}`;
 
   return (
@@ -115,11 +117,11 @@ function PlayerCard(
             style={fotoOk ? "" : "display:none"}
             onLoad={() => setFotoOk(true)}
             onError={() => {
-              if (fotoSrc === `/players/${slugNome}.webp`) setFotoSrc(`/players/${slugNome}.jpg`);
-              else if (fotoSrc === `/players/${slugNome}.jpg`) setFotoSrc(`/players/${slugNome}.png`);
-              else if (fotoSrc === `/players/${slugNome}.png` && slugClube) setFotoSrc(`/players/${slugNome}-${slugClube}.webp`);
-              else if (slugClube && fotoSrc === `/players/${slugNome}-${slugClube}.webp`) setFotoSrc(`/players/${slugNome}-${slugClube}.jpg`);
-              else if (slugClube && fotoSrc === `/players/${slugNome}-${slugClube}.jpg`) setFotoSrc(`/players/${slugNome}-${slugClube}.png`);
+              if (fotoSrc === `${CDN}/players/${slugNome}.webp`) setFotoSrc(`${CDN}/players/${slugNome}.jpg`);
+              else if (fotoSrc === `${CDN}/players/${slugNome}.jpg`) setFotoSrc(`${CDN}/players/${slugNome}.png`);
+              else if (fotoSrc === `${CDN}/players/${slugNome}.png` && slugClube) setFotoSrc(`${CDN}/players/${slugNome}-${slugClube}.webp`);
+              else if (slugClube && fotoSrc === `${CDN}/players/${slugNome}-${slugClube}.webp`) setFotoSrc(`${CDN}/players/${slugNome}-${slugClube}.jpg`);
+              else if (slugClube && fotoSrc === `${CDN}/players/${slugNome}-${slugClube}.jpg`) setFotoSrc(`${CDN}/players/${slugNome}-${slugClube}.png`);
             }}
           />
           {escudoSrc && (
