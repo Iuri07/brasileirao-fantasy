@@ -62,6 +62,15 @@ export async function getAtletasCache(kv: Deno.Kv, posChave: string): Promise<At
   return r.value;
 }
 
+export async function getPartidasCache(kv: Deno.Kv): Promise<Record<string, { casa: string; fora: string }> | null> {
+  const r = await kv.get<Record<string, { casa: string; fora: string }>>(["partidas_cache"]);
+  return r.value;
+}
+
+export async function setPartidasCache(kv: Deno.Kv, data: Record<string, { casa: string; fora: string }>): Promise<void> {
+  await kv.set(["partidas_cache"], data);
+}
+
 export function donoToChave(dono: string): string | undefined {
   return DONOS_CHAVES[dono];
 }

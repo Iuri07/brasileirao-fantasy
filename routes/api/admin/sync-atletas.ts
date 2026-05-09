@@ -1,6 +1,6 @@
 import { Handlers } from "$fresh/server.ts";
 import { fetchAtletasMercado, fetchPartidas, POSICAO_ID_NOME, POSICAO_NOME_CHAVE } from "../../../lib/cartola.ts";
-import { POSICAO_CHAVES_CACHE, getAllElencos, setElenco } from "../../../lib/kv.ts";
+import { POSICAO_CHAVES_CACHE, getAllElencos, setElenco, setPartidasCache } from "../../../lib/kv.ts";
 import type { AtletaCacheKV } from "../../../lib/types.ts";
 
 const H = { "Content-Type": "application/json" };
@@ -29,7 +29,7 @@ export const handler: Handlers = {
         const clube = data.clubes[String(a.clube_id)];
         grupos[posChave][String(a.atleta_id)] = {
           apelido:    a.apelido,
-          clube:      clube?.nome ?? "",
+          clube:      clube?.nome_fantasia ?? clube?.nome ?? "",
           clube_id:   a.clube_id,
           posicao:    posNome,
           posicao_id: a.posicao_id,
@@ -52,6 +52,13 @@ export const handler: Handlers = {
           matchMap.set(p.clube_casa_id, { casa: casaAbrev, fora: foraAbrev });
           matchMap.set(p.clube_visitante_id, { casa: casaAbrev, fora: foraAbrev });
         }
+      }
+
+      // Persiste partidas_cache no KV
+      if (partidasData) {
+        const partidasRecord: Record<string, { casa: string; fora: string }> = {};
+        for (const [id, m] of matchMap) partidasRecord[String(id)] = m;
+        await setPartidasCache(kv, partidasRecord);
       }
 
       // Atualiza status_id e partida nos elencos

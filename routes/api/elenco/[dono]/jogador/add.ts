@@ -1,5 +1,5 @@
 import { Handlers } from "$fresh/server.ts";
-import { getElenco, setElenco, getAtletasCache, TODAS_CHAVES, POSICAO_CHAVES_CACHE } from "../../../../../lib/kv.ts";
+import { getElenco, setElenco, getAtletasCache, getPartidasCache, TODAS_CHAVES, POSICAO_CHAVES_CACHE } from "../../../../../lib/kv.ts";
 import type { JogadorKV } from "../../../../../lib/types.ts";
 
 const H = { "Content-Type": "application/json" };
@@ -42,6 +42,8 @@ export const handler: Handlers = {
     }
 
     const sid = atletaEncontrado.status_id ?? null;
+    const partidasCache = await getPartidasCache(kv);
+    const match = partidasCache?.[String(atletaEncontrado.clube_id)];
     const novoJogador: JogadorKV = {
       atleta_id:       body.atleta_id,
       apelido_api:     atletaEncontrado.apelido,
@@ -56,8 +58,8 @@ export const handler: Handlers = {
       suspenso:        sid === 3,
       nulo:            sid === 6,
       entrou_em_campo: null,
-      clube_casa:      null,
-      clube_fora:      null,
+      clube_casa:      match?.casa ?? null,
+      clube_fora:      match?.fora ?? null,
       pontos:          null,
     };
 

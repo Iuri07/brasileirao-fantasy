@@ -10,6 +10,7 @@ import {
   getAllElencos,
   setElenco,
   setRodadaStatus,
+  setPartidasCache,
   POSICAO_CHAVES_CACHE,
 } from "./kv.ts";
 import type { AtletaCacheKV } from "./types.ts";
@@ -35,7 +36,7 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
     const clube = data.clubes[String(a.clube_id)];
     grupos[posChave][String(a.atleta_id)] = {
       apelido:    a.apelido,
-      clube:      clube?.nome ?? "",
+      clube:      clube?.nome_fantasia ?? clube?.nome ?? "",
       clube_id:   a.clube_id,
       posicao:    posNome,
       posicao_id: a.posicao_id,
@@ -58,6 +59,10 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
       matchMap.set(p.clube_casa_id, { casa: casaAbrev, fora: foraAbrev });
       matchMap.set(p.clube_visitante_id, { casa: casaAbrev, fora: foraAbrev });
     }
+    // Persiste o matchMap no KV para uso por add/swap sem nova chamada à API
+    const partidasRecord: Record<string, { casa: string; fora: string }> = {};
+    for (const [id, m] of matchMap) partidasRecord[String(id)] = m;
+    await setPartidasCache(kv, partidasRecord);
   }
 
   // Atualiza status_id e partida nos elencos

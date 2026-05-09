@@ -34,7 +34,7 @@ export function fetchMercadoStatus(): Promise<CartolaMercadoStatus> {
 
 export function fetchAtletasMercado(): Promise<{
   atletas: CartolaAtleta[];
-  clubes: Record<string, { nome: string; abreviacao: string }>;
+  clubes: Record<string, { nome: string; abreviacao: string; nome_fantasia?: string }>;
   posicoes: Record<string, { nome: string; abreviacao: string }>;
   rodada_atual: number;
 }> {
