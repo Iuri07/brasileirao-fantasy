@@ -668,9 +668,6 @@ body {
   z-index: 2;
 }
 .bf-pin__name {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
   font-family: var(--bf-font-cond);
   font-weight: 700;
   font-size: 10px;
@@ -680,20 +677,23 @@ body {
   color: #fff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
   background: rgba(0, 0, 0, 0.55);
-  padding: 2px 6px;
+  padding: 2px 8px;
   border-radius: 999px;
   text-align: center;
-}
-.bf-pin__name > span {
-  /* Sem truncate — nomes longos podem expandir a pill ou quebrar de boa */
   word-break: break-word;
 }
-.bf-pin__name-escudo {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
+.bf-pin__shirt-escudo {
+  position: absolute;
+  bottom: -2px;
+  left: -2px;
+  width: 16px;
+  height: 16px;
+  background: var(--bf-ink);
+  border-radius: 999px;
+  padding: 1.5px;
   object-fit: contain;
-  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  z-index: 1;
 }
 .bf-pin__pos {
   font-family: var(--bf-font-cond);
