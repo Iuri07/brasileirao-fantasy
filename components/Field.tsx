@@ -107,9 +107,7 @@ function PlayerPin(
   const cls = ["bf-pin"];
   if (isEmpty) cls.push("bf-pin--empty");
   const pts = showPoints && p.pts != null ? p.pts : null;
-  const shirtStyle: Record<string, string> = {
-    "--shirt-color": COLOR_VAR[accent],
-  };
+  const shirtStyle: Record<string, string> = {};
   if (p.cores) {
     shirtStyle["--team-primary"] = p.cores.primary;
     shirtStyle["--team-secondary"] = p.cores.secondary;
@@ -135,7 +133,7 @@ function PlayerPin(
               <path
                 d={JERSEY_BODY_PATH}
                 fill="none"
-                stroke="var(--shirt-color)"
+                stroke="rgba(0,0,0,0.55)"
                 stroke-width="3"
                 stroke-linejoin="round"
               />
@@ -143,7 +141,7 @@ function PlayerPin(
               <path
                 d={COLLAR_PATH}
                 fill="var(--team-secondary)"
-                stroke="var(--shirt-color)"
+                stroke="rgba(0,0,0,0.55)"
                 stroke-width="2"
                 stroke-linejoin="round"
               />

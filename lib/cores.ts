@@ -17,7 +17,7 @@ export interface CoresClube {
 
 const CORES: Record<string, CoresClube> = {
   "Athletico-PR": {
-    primary: "#E31837",
+    primary: "#B8232C",
     secondary: "#000000",
     pattern: "vstripes",
   },
@@ -30,12 +30,12 @@ const CORES: Record<string, CoresClube> = {
   "Botafogo": { primary: "#000000", secondary: "#FFFFFF", pattern: "vstripes" },
   "Bragantino": {
     primary: "#FFFFFF",
-    secondary: "#E31837",
+    secondary: "#B8232C",
     pattern: "hstripes",
   },
   "RB Bragantino": {
     primary: "#FFFFFF",
-    secondary: "#E31837",
+    secondary: "#B8232C",
     pattern: "hstripes",
   },
   "Chapecoense": {
@@ -46,7 +46,7 @@ const CORES: Record<string, CoresClube> = {
   "Corinthians": { primary: "#FFFFFF", secondary: "#000000", pattern: "solid" },
   "Coritiba": { primary: "#FFFFFF", secondary: "#0F8D2A", pattern: "vstripes" },
   "Cruzeiro": { primary: "#003DA5", secondary: "#FFFFFF", pattern: "solid" },
-  "Flamengo": { primary: "#E5161B", secondary: "#000000", pattern: "hstripes" },
+  "Flamengo": { primary: "#B8232C", secondary: "#000000", pattern: "hstripes" },
   "Fluminense": {
     primary: "#7A0F1F",
     secondary: "#0F4730",
@@ -54,7 +54,7 @@ const CORES: Record<string, CoresClube> = {
   },
   "Grêmio": { primary: "#0E72B5", secondary: "#000000", pattern: "vstripes" },
   "Internacional": {
-    primary: "#E5161B",
+    primary: "#B8232C",
     secondary: "#FFFFFF",
     pattern: "solid",
   },
@@ -64,11 +64,11 @@ const CORES: Record<string, CoresClube> = {
   "Santos": { primary: "#FFFFFF", secondary: "#000000", pattern: "solid" },
   "São Paulo": {
     primary: "#FFFFFF",
-    secondary: "#E5161B",
+    secondary: "#B8232C",
     pattern: "hstripes",
   },
   "Vasco": { primary: "#000000", secondary: "#FFFFFF", pattern: "sash" },
-  "Vitória": { primary: "#E5161B", secondary: "#000000", pattern: "vstripes" },
+  "Vitória": { primary: "#B8232C", secondary: "#000000", pattern: "vstripes" },
 };
 
 const FALLBACK: CoresClube = {
