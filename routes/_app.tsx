@@ -12,9 +12,10 @@ export default function App({ Component }: AppProps) {
       </head>
       <body>
         {
-          /* Filtro global usado pra remover fundo branco das fotos de jogador.
-            new_alpha = 3 - (R+G+B)  → branco vira transparente, tons médios
-            preservam opacidade. */
+          /* Filtro global pra remover fundo branco das fotos.
+            α = 56 - 20*(R+G+B). Sharp threshold em R+G+B ≈ 2.8 (cada
+            canal ~0.93). Branco e quase-branco viram transparentes;
+            tons de pele e cabelo (sum < 2.5) permanecem 100% opacos. */
         }
         <svg
           width="0"
@@ -29,7 +30,7 @@ export default function App({ Component }: AppProps) {
                 values="1 0 0 0 0
                         0 1 0 0 0
                         0 0 1 0 0
-                        -1 -1 -1 0 3"
+                        -20 -20 -20 0 56"
               />
             </filter>
           </defs>
