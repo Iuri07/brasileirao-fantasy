@@ -504,7 +504,7 @@ body {
 .bf-field__row--ata { top: 78%; }
 
 /* Player pins */
-.bf-pin { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; max-width: 64px; }
+.bf-pin { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; max-width: 88px; }
 .bf-pin__shirt {
   width: 38px; height: 38px;
   border-radius: 999px;
@@ -553,19 +553,19 @@ body {
   font-family: var(--bf-font-cond);
   font-weight: 700;
   font-size: 10px;
+  line-height: 1.15;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #fff;
   text-shadow: 0 1px 3px rgba(0,0,0,0.9);
-  max-width: 72px;
   background: rgba(0,0,0,0.55);
-  padding: 2px 5px;
+  padding: 2px 6px;
   border-radius: 999px;
+  text-align: center;
 }
 .bf-pin__name > span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Sem truncate — nomes longos podem expandir a pill ou quebrar de boa */
+  word-break: break-word;
 }
 .bf-pin__name-escudo {
   width: 12px;
@@ -573,6 +573,19 @@ body {
   flex-shrink: 0;
   object-fit: contain;
   filter: drop-shadow(0 0 2px rgba(0,0,0,0.7));
+}
+.bf-pin__pos {
+  font-family: var(--bf-font-cond);
+  font-weight: 900;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--pos-color, var(--bf-fg-2));
+  color: #0a0a0c;
+  box-shadow: 0 0 6px var(--pos-color, transparent);
+  line-height: 1.1;
 }
 .bf-pin__pts {
   font-family: var(--bf-font-display);

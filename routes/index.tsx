@@ -52,6 +52,15 @@ interface HomeData {
   escalacao: Escalacao | null;
 }
 
+const POS_ABREV: Record<string, string> = {
+  "Goleiro": "GOL",
+  "Lateral": "LAT",
+  "Zagueiro": "ZAG",
+  "Meia": "MEI",
+  "Atacante": "ATK",
+  "Técnico": "TEC",
+};
+
 function montarEscalacao(
   jogadoresEscalados: Array<
     {
@@ -67,6 +76,7 @@ function montarEscalacao(
     pts: j.pontos,
     escudo: escudoUrl(j.clube),
     foto: fotoUrl(j.apelido_api),
+    pos: POS_ABREV[j.posicao],
   });
   const gk = jogadoresEscalados.find((j) => j.posicao === "Goleiro");
   const def = jogadoresEscalados.filter((j) =>

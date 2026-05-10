@@ -7,6 +7,7 @@ export interface Pino {
   pts?: number | null;
   escudo?: string | null;
   foto?: string | null;
+  pos?: string;
 }
 
 export interface Escalacao {
@@ -60,6 +61,14 @@ function PlayerPin(
             <img class="bf-pin__name-escudo" src={p.escudo} alt="" />
           )}
           <span>{p.nome}</span>
+        </div>
+      )}
+      {p.pos && (
+        <div
+          class="bf-pin__pos"
+          style={{ "--pos-color": COLOR_VAR[accent] } as Record<string, string>}
+        >
+          {p.pos}
         </div>
       )}
       {pts != null && (
