@@ -12,6 +12,7 @@ import BottomNav from "../components/BottomNav.tsx";
 import Crest, { type CrestColor } from "../components/Crest.tsx";
 import SectionHeader from "../components/SectionHeader.tsx";
 import Pill from "../components/Pill.tsx";
+import Field, { type Escalacao, type Pino } from "../components/Field.tsx";
 
 // Time do usuário "logado". Sem auth ainda — hardcoded por enquanto.
 // Trocar pra cookie/sessão quando login entrar.
@@ -46,6 +47,30 @@ interface HomeData {
   meu: TimeRanking | null;
   posicao: number | null;
   totalTimes: number;
+  escalacao: Escalacao | null;
+}
+
+function montarEscalacao(
+  jogadoresEscalados: Array<
+    { apelido_api: string; posicao: string; pontos: number | null }
+  >,
+): Escalacao {
+  const pino = (j: typeof jogadoresEscalados[number]): Pino => ({
+    nome: j.apelido_api,
+    pts: j.pontos,
+  });
+  const gk = jogadoresEscalados.find((j) => j.posicao === "Goleiro");
+  const def = jogadoresEscalados.filter((j) =>
+    j.posicao === "Zagueiro" || j.posicao === "Lateral"
+  );
+  const mid = jogadoresEscalados.filter((j) => j.posicao === "Meia");
+  const ata = jogadoresEscalados.filter((j) => j.posicao === "Atacante");
+  return {
+    gk: gk ? pino(gk) : {},
+    def: def.map(pino),
+    mid: mid.map(pino),
+    ata: ata.map(pino),
+  };
 }
 
 export const handler: Handlers<HomeData> = {
@@ -56,12 +81,18 @@ export const handler: Handlers<HomeData> = {
       getRodadaStatus(kv),
     ]);
 
+    const escaladosPorChave: Record<
+      string,
+      Array<{ apelido_api: string; posicao: string; pontos: number | null }>
+    > = {};
+
     const ranking: TimeRanking[] = Object.entries(elencos)
       .map(([chave, elenco]) => {
         const todos = Object.values(elenco.jogadores);
         const escalados = calcularMelhorTime(todos).filter((j) =>
           j.escalacao === "Sim"
         );
+        escaladosPorChave[chave] = escalados;
         const pontuacao = Math.round(
           escalados.reduce((s, j) => s + (j.pontos ?? 0), 0) * 100,
         ) / 100;
@@ -75,12 +106,14 @@ export const handler: Handlers<HomeData> = {
       .sort((a, b) => b.pontuacao - a.pontuacao);
 
     const meuIdx = ranking.findIndex((t) => t.chave === CHAVE_USUARIO);
+    const meuEscalados = escaladosPorChave[CHAVE_USUARIO] ?? [];
     const data: HomeData = {
       rodada: rodada?.rodada ?? 0,
       status: rodada?.status ?? "aguardando",
       meu: meuIdx >= 0 ? ranking[meuIdx] : null,
       posicao: meuIdx >= 0 ? meuIdx + 1 : null,
       totalTimes: ranking.length || TODAS_CHAVES.length,
+      escalacao: meuEscalados.length ? montarEscalacao(meuEscalados) : null,
     };
 
     return ctx.render(data);
@@ -145,13 +178,18 @@ export default function Home({ data }: PageProps<HomeData>) {
         </article>
 
         <SectionHeader>Sua escala</SectionHeader>
-        <div class="bf-empty-state">
-          Componente de campo em construção. Veja a{" "}
-          <a href="/ranking" style="color:var(--bf-lime);text-decoration:none">
-            view antiga
-          </a>{" "}
-          enquanto isso.
-        </div>
+        {data.escalacao
+          ? (
+            <Field
+              jogadores={data.escalacao}
+              showPoints={data.status === "ao_vivo"}
+            />
+          )
+          : (
+            <div class="bf-empty-state">
+              Sem escalação ainda. Monte seu time no Mercado.
+            </div>
+          )}
 
         <SectionHeader>Próximos</SectionHeader>
         <div class="bf-empty-state">

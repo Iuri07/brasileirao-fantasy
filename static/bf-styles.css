@@ -454,6 +454,128 @@ body {
   text-transform: uppercase;
 }
 
+/* ============================================================
+   FIELD — vertical pitch with absolutely-positioned rows
+   ============================================================ */
+.bf-field {
+  position: relative;
+  width: calc(100% - calc(var(--bf-gutter) * 2));
+  margin: 8px var(--bf-gutter);
+  aspect-ratio: 5 / 7;
+  background:
+    radial-gradient(ellipse at center, rgba(110,255,61,0.06), transparent 70%),
+    linear-gradient(180deg, #0a160a 0%, #0a1a0a 45%, #050b05 100%);
+  border-radius: var(--bf-radius-lg);
+  border: 1px solid var(--bf-line);
+  overflow: hidden;
+  isolation: isolate;
+}
+.bf-field::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(110,255,61,0.04) 0,
+    rgba(110,255,61,0.04) 9%,
+    transparent 9%,
+    transparent 18%
+  );
+  pointer-events: none;
+}
+.bf-field__lines { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.bf-field__lines * {
+  stroke: rgba(255,255,255,0.18);
+  fill: none;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.bf-field__row {
+  position: absolute;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 2;
+}
+.bf-field__row--gk  { top: 6%; }
+.bf-field__row--def { top: 26%; }
+.bf-field__row--mid { top: 52%; }
+.bf-field__row--ata { top: 78%; }
+
+/* Player pins */
+.bf-pin { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; max-width: 64px; }
+.bf-pin__shirt {
+  width: 36px; height: 36px;
+  border-radius: 999px;
+  background: var(--bf-chassis);
+  border: 1.5px solid var(--shirt-color, #fff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--bf-font-cond);
+  font-weight: 900;
+  font-size: 13px;
+  color: #fff;
+  position: relative;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+.bf-pin__shirt--gk {
+  background: var(--bf-yellow);
+  color: #000;
+  border-color: var(--bf-yellow);
+}
+.bf-pin__shirt--captain::after {
+  content: 'C';
+  position: absolute;
+  top: -6px; right: -6px;
+  width: 16px; height: 16px;
+  background: var(--bf-lime);
+  color: #000;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px var(--bf-lime-glow);
+}
+.bf-pin__name {
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
+  text-align: center;
+}
+.bf-pin__pts {
+  font-family: var(--bf-font-display);
+  font-weight: 900;
+  font-size: 10px;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid var(--bf-lime);
+  color: var(--bf-lime);
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+.bf-pin__pts--neg {
+  border-color: var(--bf-red);
+  color: var(--bf-red);
+}
+.bf-pin--empty .bf-pin__shirt {
+  border-style: dashed;
+  background: transparent;
+  border-color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.4);
+}
+
 /* Animations shared */
 @keyframes bf-pulse {
   0%, 100% { opacity: 0.6; transform: scale(1); }
