@@ -107,48 +107,34 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
 export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
   const now = new Date().toISOString();
 
-  // Sempre busca apenas o status do mercado (leve)
+  // Sempre busca status do mercado e tenta pontuados
   const mercado = await fetchMercadoStatus();
   const statusAtual = await getRodadaStatus(kv);
   const jaAoVivo = statusAtual?.status === "ao_vivo";
-  const rodadaEncerrada = (mercado as any).mercado_pos_rodada === true;
 
-  // Só volta para "aguardando" se: bola parada E rodada encerrada (ou nunca foi ao_vivo)
-  if (mercado.status_mercado === 2 && !mercado.bola_rolando && (rodadaEncerrada || !jaAoVivo)) {
+  let pontuados;
+  try {
+    pontuados = await fetchAtletasPontuados();
+  } catch {
+    // Pontuados indisponível: entre jogos ou pré-rodada
+    if (jaAoVivo) return; // mantém ao_vivo entre jogos da mesma rodada
     await setRodadaStatus(kv, {
-      status: "aguardando",
+      status: mercado.bola_rolando ? "aguardando_inicio" : "aguardando",
       rodada: mercado.rodada_atual,
-      fechamento: mercado.fechamento,
+      fechamento: mercado.bola_rolando ? undefined : mercado.fechamento,
       atualizadoEm: now,
     });
     return;
   }
 
-  // Se bola parada mas já estávamos ao_vivo (intervalo entre jogos), tenta pontuados
-  // Mercado fechado ou bola rolando: busca pontuados
-  let pontuados;
-  try {
-    pontuados = await fetchAtletasPontuados();
-  } catch {
-    // Entre jogos: mantém ao_vivo se já estava, senão aguardando_inicio
-    if (!jaAoVivo) {
-      await setRodadaStatus(kv, {
-        status: "aguardando_inicio",
-        rodada: mercado.rodada_atual,
-        atualizadoEm: now,
-      });
-    }
-    return;
-  }
-
   if (!pontuados?.atletas || Object.keys(pontuados.atletas).length === 0) {
-    if (!jaAoVivo) {
-      await setRodadaStatus(kv, {
-        status: "aguardando_inicio",
-        rodada: mercado.rodada_atual,
-        atualizadoEm: now,
-      });
-    }
+    if (jaAoVivo) return; // mantém ao_vivo entre jogos
+    await setRodadaStatus(kv, {
+      status: mercado.bola_rolando ? "aguardando_inicio" : "aguardando",
+      rodada: mercado.rodada_atual,
+      fechamento: mercado.bola_rolando ? undefined : mercado.fechamento,
+      atualizadoEm: now,
+    });
     return;
   }
 
