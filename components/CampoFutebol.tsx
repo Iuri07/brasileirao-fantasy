@@ -138,14 +138,12 @@ function PlayerCard(
         </div>
         <div class="campo-player-box" style={neonStyle}>
           <span class="campo-player-nome">{abreviarNome(jogador.nome)}</span>
-          <span class="campo-player-pos">{POSICAO_ABREV[jogador.posicao] ?? jogador.posicao}</span>
+          {modoAoVivo
+            ? <span class={`campo-player-pos${temPts ? " campo-pts-verde" : " campo-pts-zero"}`}>{temPts ? `+${jogador.pontuacao.toFixed(1)}` : "—"}</span>
+            : <span class="campo-player-pos">{POSICAO_ABREV[jogador.posicao] ?? jogador.posicao}</span>
+          }
         </div>
       </div>
-      {modoAoVivo && (
-        <span class={`campo-jogador-pts${temPts ? " campo-pts-verde" : " campo-pts-zero"}`}>
-          {temPts ? `+${jogador.pontuacao.toFixed(1)}` : "—"}
-        </span>
-      )}
     </div>
   );
 }

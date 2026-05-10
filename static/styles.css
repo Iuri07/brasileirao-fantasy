@@ -759,8 +759,12 @@ img.campo-svg-bg {
 .campo-pts-verde {
   color: var(--neon);
   text-shadow: none;
+  font-size: 9px;
 }
-.campo-pts-zero { color: rgba(255, 255, 255, 0.22); }
+.campo-pts-zero {
+  color: rgba(255, 255, 255, 0.22);
+  font-size: 9px;
+}
 
 /* Banco de reservas */
 .campo-banco {
