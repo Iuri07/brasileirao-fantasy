@@ -43,6 +43,32 @@ export default function App({ Component }: AppProps) {
           </defs>
         </svg>
         <Component />
+
+        {
+          /* Fade out na navegação interna — funciona em qualquer browser.
+            Adiciona delay de 180ms antes de location.href, durante o qual
+            o CSS .bf-leaving anima o fade-out. A página de destino entra
+            com fade-in via animação CSS no .bf-viewport. */
+        }
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              document.addEventListener('click', function(e) {
+                var a = e.target.closest && e.target.closest('a[href]');
+                if (!a) return;
+                if (a.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                if (a.origin !== location.origin) return;
+                if (a.href === location.href) return;
+                e.preventDefault();
+                document.body.classList.add('bf-leaving');
+                setTimeout(function() { location.href = a.href; }, 180);
+              });
+              window.addEventListener('pageshow', function() {
+                document.body.classList.remove('bf-leaving');
+              });
+            `,
+          }}
+        />
       </body>
     </html>
   );
