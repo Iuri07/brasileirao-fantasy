@@ -86,21 +86,33 @@ export default function AoVivoLive(
 
   async function refetch() {
     try {
+      console.log("[ao-vivo] fetching cartola...");
       const [pResp, mResp, pdResp] = await Promise.all([
-        fetch("https://api.cartola.globo.com/atletas/pontuados").then((r) =>
-          r.json()
-        ),
-        fetch("https://api.cartola.globo.com/mercado/status").then((r) =>
-          r.json()
-        ),
-        fetch("https://api.cartola.globo.com/partidas").then((r) => r.json()),
+        fetch("https://api.cartola.globo.com/atletas/pontuados").then((r) => {
+          if (!r.ok) throw new Error(`pontuados ${r.status}`);
+          return r.json();
+        }),
+        fetch("https://api.cartola.globo.com/mercado/status").then((r) => {
+          if (!r.ok) throw new Error(`mercado/status ${r.status}`);
+          return r.json();
+        }),
+        fetch("https://api.cartola.globo.com/partidas").then((r) => {
+          if (!r.ok) throw new Error(`partidas ${r.status}`);
+          return r.json();
+        }),
       ]);
+      console.log(
+        "[ao-vivo] got",
+        Object.keys(pResp?.atletas ?? {}).length,
+        "atletas",
+      );
       setPontuados(pResp);
       setMercado(mResp);
       setPartidas(pdResp);
       setAtualizadoEm(new Date());
       setErro(null);
     } catch (e) {
+      console.error("[ao-vivo] fetch error:", e);
       setErro(String(e));
     }
   }
@@ -178,7 +190,9 @@ export default function AoVivoLive(
             {carregando ? "—" : ptsFmt}
           </span>
           <span class="bf-aovivo-hero__total-foot">
-            {atualizadoEm
+            {erro
+              ? `erro: ${erro}`
+              : atualizadoEm
               ? `atualizado às ${
                 atualizadoEm.toLocaleTimeString("pt-BR", {
                   hour: "2-digit",
