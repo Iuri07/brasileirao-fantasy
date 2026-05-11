@@ -9,6 +9,7 @@ import * as $api_admin_seed from "./routes/api/admin/seed.ts";
 import * as $api_admin_sync_atletas from "./routes/api/admin/sync-atletas.ts";
 import * as $api_admin_sync_fotos_apifootball from "./routes/api/admin/sync-fotos-apifootball.ts";
 import * as $api_admin_sync_fotos from "./routes/api/admin/sync-fotos.ts";
+import * as $api_admin_sync_historico from "./routes/api/admin/sync-historico.ts";
 import * as $api_atletas_buscar from "./routes/api/atletas/buscar.ts";
 import * as $api_classificacao from "./routes/api/classificacao.ts";
 import * as $api_elenco_dono_escalacao from "./routes/api/elenco/[dono]/escalacao.ts";
@@ -36,6 +37,7 @@ const manifest = {
     "./routes/api/admin/sync-fotos-apifootball.ts":
       $api_admin_sync_fotos_apifootball,
     "./routes/api/admin/sync-fotos.ts": $api_admin_sync_fotos,
+    "./routes/api/admin/sync-historico.ts": $api_admin_sync_historico,
     "./routes/api/atletas/buscar.ts": $api_atletas_buscar,
     "./routes/api/classificacao.ts": $api_classificacao,
     "./routes/api/elenco/[dono]/escalacao.ts": $api_elenco_dono_escalacao,
