@@ -7,6 +7,7 @@ import {
   TODAS_CHAVES,
 } from "../lib/kv.ts";
 import { calcularMelhorTime } from "../lib/substituicao.ts";
+import { fetchMercadoStatus } from "../lib/cartola.ts";
 import TopBar from "../components/TopBar.tsx";
 import BottomNav from "../components/BottomNav.tsx";
 import TeamCrest from "../components/TeamCrest.tsx";
@@ -36,6 +37,20 @@ interface HomeData {
   totalTimes: number;
   escalacao: Escalacao | null;
   esquema: string | null;
+  /** "Mercado fecha em 2d 3h 12min" — null se mercado fechado ou erro */
+  fechamentoTexto: string | null;
+}
+
+function formatCountdown(unixSeconds: number): string | null {
+  const diff = unixSeconds * 1000 - Date.now();
+  if (diff <= 0) return null;
+  const totalMin = Math.floor(diff / 60000);
+  const days = Math.floor(totalMin / (60 * 24));
+  const hours = Math.floor((totalMin % (60 * 24)) / 60);
+  const mins = totalMin % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${mins}min`;
+  return `${mins}min`;
 }
 
 const POS_ABREV: Record<string, string> = {
@@ -54,6 +69,7 @@ function montarEscalacao(
       posicao: string;
       pontos: number | null;
       clube: string;
+      status_id: number | null;
     }
   >,
 ): Escalacao {
@@ -63,6 +79,7 @@ function montarEscalacao(
     escudo: escudoUrl(j.clube),
     cores: coresClube(j.clube),
     pos: POS_ABREV[j.posicao],
+    statusId: j.status_id,
   });
   const gk = jogadoresEscalados.find((j) => j.posicao === "Goleiro");
   const def = jogadoresEscalados.filter((j) =>
@@ -81,9 +98,11 @@ function montarEscalacao(
 export const handler: Handlers<HomeData> = {
   async GET(_req, ctx) {
     const kv = await Deno.openKv();
-    const [elencos, rodada] = await Promise.all([
+    const [elencos, rodada, mercado] = await Promise.all([
       getAllElencos(kv),
       getRodadaStatus(kv),
+      // Cartola direto — caso de timeout/erro, fica null e oculta countdown
+      fetchMercadoStatus().catch(() => null),
     ]);
 
     const escaladosPorChave: Record<
@@ -94,6 +113,7 @@ export const handler: Handlers<HomeData> = {
           posicao: string;
           pontos: number | null;
           clube: string;
+          status_id: number | null;
         }
       >
     > = {};
@@ -125,14 +145,20 @@ export const handler: Handlers<HomeData> = {
     const esquema = escalacao
       ? `${escalacao.def.length}-${escalacao.mid.length}-${escalacao.ata.length}`
       : null;
+    const fechamentoTexto =
+      mercado && mercado.status_mercado === 2 && mercado.fechamento?.timestamp
+        ? formatCountdown(mercado.fechamento.timestamp)
+        : null;
+
     const data: HomeData = {
-      rodada: rodada?.rodada ?? 0,
+      rodada: rodada?.rodada ?? mercado?.rodada_atual ?? 0,
       status: rodada?.status ?? "aguardando",
       meu: meuIdx >= 0 ? ranking[meuIdx] : null,
       posicao: meuIdx >= 0 ? meuIdx + 1 : null,
       totalTimes: ranking.length || TODAS_CHAVES.length,
       escalacao,
       esquema,
+      fechamentoTexto,
     };
 
     return ctx.render(data);
@@ -171,6 +197,13 @@ export default function Home({ data }: PageProps<HomeData>) {
             </span>
             <span class="bf-status-card__round">Rodada {data.rodada}</span>
           </div>
+          {data.fechamentoTexto && (
+            <div class="bf-status-card__market">
+              <span class="bf-status-card__market-dot" aria-hidden="true">
+              </span>
+              Mercado fecha em <strong>{data.fechamentoTexto}</strong>
+            </div>
+          )}
 
           <div class="bf-status-card__top">
             <TeamCrest chave={CHAVE_USUARIO} size={56} />

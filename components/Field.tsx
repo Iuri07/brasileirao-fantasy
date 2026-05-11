@@ -10,6 +10,31 @@ export interface Pino {
   escudo?: string | null;
   pos?: string;
   cores?: { primary: string; secondary: string; pattern: CoresPattern };
+  /** status_id Cartola: 7=provável, 2=dúvida, 3=suspenso, 5=contundido, 6=nulo */
+  statusId?: number | null;
+}
+
+interface StatusBadge {
+  sym: string;
+  cor: string;
+  title: string;
+}
+
+function statusInfo(id: number | null | undefined): StatusBadge | null {
+  switch (id) {
+    case 7:
+      return { sym: "✓", cor: "var(--bf-lime)", title: "Provável" };
+    case 2:
+      return { sym: "?", cor: "var(--bf-yellow)", title: "Dúvida" };
+    case 3:
+      return { sym: "✕", cor: "var(--bf-red)", title: "Suspenso" };
+    case 5:
+      return { sym: "+", cor: "var(--bf-red)", title: "Contundido" };
+    case 6:
+      return { sym: "–", cor: "var(--bf-fg-3)", title: "Nulo" };
+    default:
+      return null;
+  }
 }
 
 const JERSEY_BODY_PATH =
@@ -154,6 +179,21 @@ function PlayerPin(
           )}
         {p.escudo && <img class="bf-pin__shirt-escudo" src={p.escudo} alt="" />}
         {p.capt && <span class="bf-pin__capt-badge">C</span>}
+        {(() => {
+          const s = statusInfo(p.statusId);
+          return s
+            ? (
+              <span
+                class="bf-pin__status-badge"
+                style={{ "--st-color": s.cor } as Record<string, string>}
+                title={s.title}
+                aria-label={s.title}
+              >
+                {s.sym}
+              </span>
+            )
+            : null;
+        })()}
       </div>
       {p.nome && <div class="bf-pin__name">{p.nome}</div>}
       {p.pos && (

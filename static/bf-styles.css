@@ -453,6 +453,34 @@ body {
   font-weight: 900;
   text-shadow: 0 0 10px var(--bf-magenta-glow);
 }
+.bf-status-card__market {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(182, 245, 0, 0.35);
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bf-fg-2);
+}
+.bf-status-card__market strong {
+  color: var(--bf-lime);
+  font-weight: 900;
+}
+.bf-status-card__market-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bf-lime);
+  box-shadow: 0 0 6px var(--bf-lime-glow);
+  animation: bf-pulse 1.4s var(--bf-ease-in-out) infinite;
+}
 
 .bf-status-card__metrics {
   display: grid;
@@ -757,6 +785,26 @@ body {
   object-fit: contain;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
   z-index: 1;
+}
+.bf-pin__status-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  background: var(--bf-ink);
+  border: 1.5px solid var(--st-color, #fff);
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--bf-font-cond);
+  font-weight: 900;
+  font-size: 9px;
+  color: var(--st-color, #fff);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+  z-index: 1;
+  line-height: 1;
 }
 .bf-pin__pos {
   font-family: var(--bf-font-cond);

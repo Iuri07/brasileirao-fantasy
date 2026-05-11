@@ -1,7 +1,10 @@
-// Mapping clube → arquivo de escudo em /static/escudos/.
-// Cobre todos os arquivos atuais; clubes faltantes retornam null
-// (PlayerPin cai num placeholder textual).
-const CLUBE_FILE: Record<string, string> = {
+// Resolve URL do escudo do clube. Prefere o CDN oficial do Cartola
+// (sempre atualizado, cobre Athletico-PR que faltava no fallback local),
+// e cai pros JPGs em /static/escudos/ se a abreviação for desconhecida.
+
+import { escudoCdnUrl } from "./clubes-cdn.ts";
+
+const FALLBACK_LOCAL: Record<string, string> = {
   "Athletico-PR": "athletico-pr.jpg",
   "Atlético-MG": "atletico-mg.jpg",
   "Bahia": "bahia.jpg",
@@ -27,6 +30,8 @@ const CLUBE_FILE: Record<string, string> = {
 
 export function escudoUrl(clube: string | null | undefined): string | null {
   if (!clube) return null;
-  const file = CLUBE_FILE[clube];
-  return file ? `/escudos/${file}` : null;
+  const cdn = escudoCdnUrl(clube);
+  if (cdn) return cdn;
+  const local = FALLBACK_LOCAL[clube];
+  return local ? `/escudos/${local}` : null;
 }
