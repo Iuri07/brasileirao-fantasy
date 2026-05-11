@@ -489,6 +489,55 @@ body {
 }
 
 /* ============================================================
+   LEAGUE CHART — evolução de pontos por rodada
+   ============================================================ */
+.bf-league-chart {
+  margin: 16px var(--bf-gutter) 0;
+  background: var(--bf-chassis);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-lg);
+  box-shadow: var(--bf-shadow-card);
+  padding: 14px 4px 12px;
+}
+.bf-league-chart__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.bf-league-chart__y-label,
+.bf-league-chart__x-label {
+  fill: var(--bf-fg-3);
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+.bf-league-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 10px 12px 0;
+}
+.bf-league-chart__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bf-fg-2);
+}
+.bf-league-chart__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--c);
+  box-shadow: 0 0 6px var(--c);
+}
+
+/* ============================================================
    STATUS CARD — variante usada em /time/[chave]
    ============================================================ */
 .bf-status-card__rank {
