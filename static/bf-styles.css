@@ -883,6 +883,24 @@ body {
   background: var(--bf-lime);
   box-shadow: 0 0 8px var(--bf-lime-glow);
 }
+
+/* Dot pulsante no item "Ao Vivo" quando bola está rolando.
+   Toggle vem do island LiveStatusPoller (body.bf-live-active). */
+body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: calc(50% - 16px);
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--bf-lime);
+  box-shadow: 0 0 8px var(--bf-lime-glow);
+  animation: bf-pulse 1.4s var(--bf-ease-in-out) infinite;
+}
+body.bf-live-active .bf-bottom-nav__item[data-nav="live"] {
+  color: var(--bf-lime);
+}
 .bf-bottom-nav__icon {
   width: 18px;
   height: 18px;

@@ -28,6 +28,7 @@ import * as $time_chave_ from "./routes/time/[chave].tsx";
 import * as $AoVivoLive from "./islands/AoVivoLive.tsx";
 import * as $CollapsibleTeamRow from "./islands/CollapsibleTeamRow.tsx";
 import * as $LeagueChart from "./islands/LeagueChart.tsx";
+import * as $LiveStatusPoller from "./islands/LiveStatusPoller.tsx";
 import * as $Ranking from "./islands/Ranking.tsx";
 import { type Manifest } from "$fresh/server.ts";
 
@@ -63,6 +64,7 @@ const manifest = {
     "./islands/AoVivoLive.tsx": $AoVivoLive,
     "./islands/CollapsibleTeamRow.tsx": $CollapsibleTeamRow,
     "./islands/LeagueChart.tsx": $LeagueChart,
+    "./islands/LiveStatusPoller.tsx": $LiveStatusPoller,
     "./islands/Ranking.tsx": $Ranking,
   },
   baseUrl: import.meta.url,

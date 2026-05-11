@@ -1,4 +1,5 @@
 import { AppProps } from "$fresh/server.ts";
+import LiveStatusPoller from "../islands/LiveStatusPoller.tsx";
 
 export default function App({ Component }: AppProps) {
   return (
@@ -43,6 +44,7 @@ export default function App({ Component }: AppProps) {
           </defs>
         </svg>
         <Component />
+        <LiveStatusPoller />
 
         {
           /* Fade out na navegação interna — funciona em qualquer browser.

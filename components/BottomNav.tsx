@@ -39,6 +39,7 @@ export default function BottomNav({ active = "home" }: Props) {
         <a
           key={it.id}
           href={it.href}
+          data-nav={it.id}
           class={`bf-bottom-nav__item ${
             it.id === active ? "bf-bottom-nav__item--active" : ""
           }`}
