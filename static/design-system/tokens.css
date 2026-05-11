@@ -11,117 +11,126 @@
   /* ----------------------------------------------------------
      COLOR — Surfaces (the chassis)
      ---------------------------------------------------------- */
-  --bf-ink:            #050507;   /* page background — true black */
-  --bf-ink-2:          #0E1014;   /* secondary surface — sits clearly on ink */
-  --bf-chassis:        #1B1D26;   /* card / row chassis — clear lift off page */
-  --bf-chassis-hover:  #262833;   /* hover state on chassis */
-  --bf-line:           rgba(255,255,255,0.06);  /* hairline border */
-  --bf-line-strong:    rgba(255,255,255,0.12);  /* hairline border, focused */
+  --bf-ink: #050507; /* page background — true black */
+  --bf-ink-2: #0e1014; /* secondary surface — sits clearly on ink */
+  --bf-chassis: #11131a; /* card / row chassis — escurecido */
+  --bf-chassis-hover: #1a1d26; /* hover state on chassis */
+  --bf-line: rgba(255, 255, 255, 0.06); /* hairline border */
+  --bf-line-strong: rgba(255, 255, 255, 0.12); /* hairline border, focused */
 
   /* ----------------------------------------------------------
      COLOR — Text on chassis
      ---------------------------------------------------------- */
-  --bf-fg-1:           #FFFFFF;             /* primary text */
-  --bf-fg-2:           rgba(255,255,255,0.62); /* secondary text — player name under team */
-  --bf-fg-3:           rgba(255,255,255,0.42); /* tertiary text — timestamps */
-  --bf-fg-disabled:    rgba(255,255,255,0.22);
+  --bf-fg-1: #ffffff; /* primary text */
+  --bf-fg-2: rgba(
+    255,
+    255,
+    255,
+    0.62
+  ); /* secondary text — player name under team */
+  --bf-fg-3: rgba(255, 255, 255, 0.42); /* tertiary text — timestamps */
+  --bf-fg-disabled: rgba(255, 255, 255, 0.22);
 
   /* ----------------------------------------------------------
      COLOR — Brand neons (the spray cans)
      Each is paired with a soft glow value at 40% alpha
      for use in box-shadow / drop-shadow halos.
      ---------------------------------------------------------- */
-  --bf-lime:           #B6F500;  /* PRIMARY brand — interactive surfaces */
-  --bf-lime-glow:      rgba(182, 245, 0, 0.40);
-  --bf-lime-ink:       #0A0A0C;  /* text on lime */
+  --bf-lime: #b6f500; /* PRIMARY brand — interactive surfaces */
+  --bf-lime-glow: rgba(182, 245, 0, 0.40);
+  --bf-lime-ink: #0a0a0c; /* text on lime */
 
-  --bf-magenta:        #FF1B8D;  /* team accent + section underline */
-  --bf-magenta-glow:   rgba(255, 27, 141, 0.40);
+  --bf-magenta: #ff1b8d; /* team accent + section underline */
+  --bf-magenta-glow: rgba(255, 27, 141, 0.40);
 
-  --bf-orange:         #FF7A1A;  /* team accent */
-  --bf-orange-glow:    rgba(255, 122, 26, 0.40);
+  --bf-orange: #ff7a1a; /* team accent */
+  --bf-orange-glow: rgba(255, 122, 26, 0.40);
 
-  --bf-yellow:         #FFE600;  /* team accent + warning */
-  --bf-yellow-glow:    rgba(255, 230, 0, 0.40);
+  --bf-yellow: #ffe600; /* team accent + warning */
+  --bf-yellow-glow: rgba(255, 230, 0, 0.40);
 
-  --bf-green:          #6EFF3D;  /* team accent + success */
-  --bf-green-glow:     rgba(110, 255, 61, 0.40);
+  --bf-green: #6eff3d; /* team accent + success */
+  --bf-green-glow: rgba(110, 255, 61, 0.40);
 
-  --bf-blue:           #1FA8FF;  /* team accent + info */
-  --bf-blue-glow:      rgba(31, 168, 255, 0.40);
+  --bf-blue: #1fa8ff; /* team accent + info */
+  --bf-blue-glow: rgba(31, 168, 255, 0.40);
 
-  --bf-red:            #FF3B3B;  /* destructive only — not a team color */
-  --bf-red-glow:       rgba(255, 59, 59, 0.40);
+  --bf-red: #ff3b3b; /* destructive only — not a team color */
+  --bf-red-glow: rgba(255, 59, 59, 0.40);
 
   /* ----------------------------------------------------------
      COLOR — Semantic
      ---------------------------------------------------------- */
-  --bf-success:        var(--bf-lime);
-  --bf-warning:        var(--bf-yellow);
-  --bf-danger:         var(--bf-red);
-  --bf-info:           var(--bf-blue);
-  --bf-live:           var(--bf-lime);   /* "AO VIVO" indicator */
+  --bf-success: var(--bf-lime);
+  --bf-warning: var(--bf-yellow);
+  --bf-danger: var(--bf-red);
+  --bf-info: var(--bf-blue);
+  --bf-live: var(--bf-lime); /* "AO VIVO" indicator */
 
   /* ----------------------------------------------------------
      TYPE — Families
      ---------------------------------------------------------- */
-  --bf-font-graffiti:    "Rubik Wet Paint", "Rubik Spray Paint", "Permanent Marker", cursive;
-  --bf-font-graffiti-2:  "Bungee", "Archivo Black", system-ui, sans-serif;
-  --bf-font-marker:      "Permanent Marker", "Brush Script MT", cursive;
-  --bf-font-display:   "Archivo Black", "Barlow Condensed", system-ui, sans-serif;
-  --bf-font-cond:      "Barlow Condensed", "Archivo Narrow", system-ui, sans-serif;
-  --bf-font-body:      "Barlow", "Helvetica Neue", system-ui, sans-serif;
-  --bf-font-mono:      ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  --bf-font-graffiti:
+    "Rubik Wet Paint",
+    "Rubik Spray Paint",
+    "Permanent Marker",
+    cursive;
+  --bf-font-graffiti-2: "Bungee", "Archivo Black", system-ui, sans-serif;
+  --bf-font-marker: "Permanent Marker", "Brush Script MT", cursive;
+  --bf-font-display: "Archivo Black", "Barlow Condensed", system-ui, sans-serif;
+  --bf-font-cond: "Barlow Condensed", "Archivo Narrow", system-ui, sans-serif;
+  --bf-font-body: "Barlow", "Helvetica Neue", system-ui, sans-serif;
+  --bf-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
 
   /* ----------------------------------------------------------
      TYPE — Sizes (mobile-first; px-based for tight control)
      ---------------------------------------------------------- */
-  --bf-fs-12:  12px;
-  --bf-fs-13:  13px;
-  --bf-fs-14:  14px;
-  --bf-fs-15:  15px;
-  --bf-fs-16:  16px;
-  --bf-fs-18:  18px;
-  --bf-fs-20:  20px;
-  --bf-fs-24:  24px;
-  --bf-fs-28:  28px;
-  --bf-fs-32:  32px;
-  --bf-fs-40:  40px;
-  --bf-fs-56:  56px;
-  --bf-fs-72:  72px;
+  --bf-fs-12: 12px;
+  --bf-fs-13: 13px;
+  --bf-fs-14: 14px;
+  --bf-fs-15: 15px;
+  --bf-fs-16: 16px;
+  --bf-fs-18: 18px;
+  --bf-fs-20: 20px;
+  --bf-fs-24: 24px;
+  --bf-fs-28: 28px;
+  --bf-fs-32: 32px;
+  --bf-fs-40: 40px;
+  --bf-fs-56: 56px;
+  --bf-fs-72: 72px;
 
   /* ----------------------------------------------------------
      TYPE — Weights
      ---------------------------------------------------------- */
   --bf-fw-regular: 400;
-  --bf-fw-medium:  500;
-  --bf-fw-semi:    600;
-  --bf-fw-bold:    700;
-  --bf-fw-heavy:   800;
-  --bf-fw-black:   900;
+  --bf-fw-medium: 500;
+  --bf-fw-semi: 600;
+  --bf-fw-bold: 700;
+  --bf-fw-heavy: 800;
+  --bf-fw-black: 900;
 
   /* ----------------------------------------------------------
      SPACING (4px grid)
      ---------------------------------------------------------- */
-  --bf-space-1:   4px;
-  --bf-space-2:   8px;
-  --bf-space-3:  12px;
-  --bf-space-4:  16px;
-  --bf-space-5:  20px;
-  --bf-space-6:  24px;
-  --bf-space-8:  32px;
+  --bf-space-1: 4px;
+  --bf-space-2: 8px;
+  --bf-space-3: 12px;
+  --bf-space-4: 16px;
+  --bf-space-5: 20px;
+  --bf-space-6: 24px;
+  --bf-space-8: 32px;
   --bf-space-10: 40px;
   --bf-space-12: 48px;
   --bf-space-16: 64px;
 
-  --bf-gutter:   20px;  /* mobile edge gutter */
+  --bf-gutter: 20px; /* mobile edge gutter */
 
   /* ----------------------------------------------------------
      RADII
      ---------------------------------------------------------- */
   --bf-radius-sm: 8px;
-  --bf-radius-md: 10px;   /* buttons, inputs, pills */
-  --bf-radius-lg: 14px;   /* cards, team rows */
+  --bf-radius-md: 10px; /* buttons, inputs, pills */
+  --bf-radius-lg: 14px; /* cards, team rows */
   --bf-radius-xl: 20px;
   --bf-radius-full: 999px;
 
@@ -129,43 +138,42 @@
      SHADOWS
      ---------------------------------------------------------- */
   --bf-shadow-card:
-    0 8px 24px rgba(0,0,0,0.5),
-    inset 0 1px 0 rgba(255,255,255,0.04);
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
   --bf-shadow-elevated:
-    0 16px 40px rgba(0,0,0,0.6),
-    inset 0 1px 0 rgba(255,255,255,0.05);
+    0 16px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
-  --bf-shadow-pressed:
-    inset 0 2px 6px rgba(0,0,0,0.5);
+  --bf-shadow-pressed: inset 0 2px 6px rgba(0, 0, 0, 0.5);
 
-  --bf-glow-lime:    0 0 16px var(--bf-lime-glow);
+  --bf-glow-lime: 0 0 16px var(--bf-lime-glow);
   --bf-glow-magenta: 0 0 16px var(--bf-magenta-glow);
-  --bf-glow-orange:  0 0 16px var(--bf-orange-glow);
-  --bf-glow-yellow:  0 0 16px var(--bf-yellow-glow);
-  --bf-glow-green:   0 0 16px var(--bf-green-glow);
-  --bf-glow-blue:    0 0 16px var(--bf-blue-glow);
+  --bf-glow-orange: 0 0 16px var(--bf-orange-glow);
+  --bf-glow-yellow: 0 0 16px var(--bf-yellow-glow);
+  --bf-glow-green: 0 0 16px var(--bf-green-glow);
+  --bf-glow-blue: 0 0 16px var(--bf-blue-glow);
 
   /* ----------------------------------------------------------
      MOTION
      ---------------------------------------------------------- */
-  --bf-ease-out:    cubic-bezier(0.2, 0.8, 0.2, 1);
-  --bf-ease-in:     cubic-bezier(0.4, 0, 1, 1);
+  --bf-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --bf-ease-in: cubic-bezier(0.4, 0, 1, 1);
   --bf-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
-  --bf-dur-fast:    120ms;
-  --bf-dur-normal:  180ms;
-  --bf-dur-slow:    320ms;
+  --bf-dur-fast: 120ms;
+  --bf-dur-normal: 180ms;
+  --bf-dur-slow: 320ms;
   --bf-dur-celebrate: 600ms;
 
   /* ----------------------------------------------------------
      LAYOUT
      ---------------------------------------------------------- */
-  --bf-mobile-w:    390px;
-  --bf-header-h:     64px;
-  --bf-footer-h:     56px;
-  --bf-z-header:    100;
-  --bf-z-modal:    1000;
+  --bf-mobile-w: 390px;
+  --bf-header-h: 64px;
+  --bf-footer-h: 56px;
+  --bf-z-header: 100;
+  --bf-z-modal: 1000;
 }
 
 /* ============================================================
@@ -262,7 +270,7 @@ html, body {
 .bf-mono, code {
   font-family: var(--bf-font-mono);
   font-size: var(--bf-fs-13);
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   padding: 1px 6px;
   border-radius: 4px;
 }
@@ -296,7 +304,8 @@ html, body {
 }
 
 .bf-pill__dot {
-  width: 8px; height: 8px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   background: var(--bf-live);
   box-shadow: 0 0 8px var(--bf-lime-glow);
@@ -304,8 +313,14 @@ html, body {
 }
 
 @keyframes bf-pulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50%      { opacity: 1;   transform: scale(1.15); }
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 
 .bf-btn {
@@ -326,11 +341,16 @@ html, body {
   text-transform: uppercase;
   cursor: pointer;
   box-shadow: var(--bf-glow-lime);
-  transition: transform var(--bf-dur-fast) var(--bf-ease-out),
-              filter   var(--bf-dur-normal) var(--bf-ease-out);
+  transition:
+    transform var(--bf-dur-fast) var(--bf-ease-out),
+    filter var(--bf-dur-normal) var(--bf-ease-out);
 }
-.bf-btn:hover  { filter: brightness(1.08); }
-.bf-btn:active { transform: scale(0.98); }
+.bf-btn:hover {
+  filter: brightness(1.08);
+}
+.bf-btn:active {
+  transform: scale(0.98);
+}
 
 .bf-btn--ghost {
   background: transparent;
@@ -338,4 +358,6 @@ html, body {
   border: 1px solid var(--bf-line-strong);
   box-shadow: none;
 }
-.bf-btn--ghost:hover { background: var(--bf-chassis-hover); }
+.bf-btn--ghost:hover {
+  background: var(--bf-chassis-hover);
+}

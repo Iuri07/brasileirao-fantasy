@@ -167,12 +167,16 @@ export default function Liga({ data }: PageProps<Data>) {
 
         <SectionHeader>Evolução</SectionHeader>
         <LeagueChart
-          times={data.times.map((t): LinhaTime => ({
-            chave: t.chave,
-            nome: timeLigaInfo(t.chave)?.displayName ?? t.nome,
-            accent: timeLigaInfo(t.chave)?.accent ?? "#888",
-            pontosPorRodada: t.historico,
-          }))}
+          times={data.times.map((t): LinhaTime => {
+            const info = timeLigaInfo(t.chave);
+            return {
+              chave: t.chave,
+              nome: info?.displayName ?? t.nome,
+              accent: info?.accent ?? "#888",
+              logo: info?.logo,
+              pontosPorRodada: t.historico,
+            };
+          })}
           destaque={data.meuChave}
         />
 

@@ -7,6 +7,8 @@ export interface LinhaTime {
   nome: string;
   accent: string;
   pontosPorRodada: Record<string, number>;
+  /** Path do logo do time (PNG transparente) */
+  logo?: string | null;
 }
 
 interface Props {
@@ -18,7 +20,7 @@ interface Props {
 const W = 360;
 const H = 220;
 const PAD_L = 14;
-const PAD_R = 14;
+const PAD_R = 28; // espaço pros crests no fim das linhas
 const PAD_T = 14;
 const PAD_B = 22;
 
@@ -122,11 +124,13 @@ export default function LeagueChart({ times, destaque }: Props) {
             x: xFor(i),
             y: yFor(rankByTeamRound[t.chave][r] ?? N),
             rank: rankByTeamRound[t.chave][r] ?? N,
+            rodada: r,
           }));
+          const lastPt = pts[pts.length - 1];
           return (
             <g
               key={t.chave}
-              opacity={destaque && !isDestaque ? "0.45" : "1"}
+              opacity={destaque && !isDestaque ? "0.5" : "1"}
             >
               <polyline
                 points={pts.map((p) => `${p.x},${p.y}`).join(" ")}
@@ -136,21 +140,62 @@ export default function LeagueChart({ times, destaque }: Props) {
                 stroke-linejoin="round"
                 stroke-linecap="round"
               />
-              {pts.map((p, i) => (
+              {pts.map((p) => (
                 <circle
-                  key={i}
+                  key={p.rodada}
                   cx={p.x}
                   cy={p.y}
                   r={isDestaque ? 3 : 2}
                   fill={t.accent}
                   stroke="var(--bf-chassis)"
                   stroke-width={isDestaque ? 1.5 : 1}
-                />
+                >
+                  <title>
+                    {`${t.nome} — Rodada ${p.rodada}, ${p.rank}º lugar`}
+                  </title>
+                </circle>
               ))}
+              {/* Crest no fim da linha */}
+              {t.logo && (
+                <image
+                  href={t.logo}
+                  x={lastPt.x + 4}
+                  y={lastPt.y - 9}
+                  width="18"
+                  height="18"
+                  preserveAspectRatio="xMidYMid meet"
+                >
+                  <title>{t.nome}</title>
+                </image>
+              )}
             </g>
           );
         })}
       </svg>
+
+      {/* Legenda com crests + nomes */}
+      <div class="bf-league-chart__legend">
+        {times.map((t) => (
+          <span
+            key={t.chave}
+            class={`bf-league-chart__legend-item ${
+              destaque === t.chave ? "bf-league-chart__legend-item--active" : ""
+            }`}
+            style={{ "--c": t.accent } as Record<string, string>}
+          >
+            {t.logo
+              ? (
+                <img
+                  class="bf-league-chart__legend-crest"
+                  src={t.logo}
+                  alt=""
+                />
+              )
+              : <span class="bf-league-chart__legend-dot" />}
+            <span class="bf-league-chart__legend-name">{t.nome}</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
