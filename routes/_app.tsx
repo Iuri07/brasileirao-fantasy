@@ -61,7 +61,7 @@ export default function App({ Component }: AppProps) {
                 if (a.href === location.href) return;
                 e.preventDefault();
                 document.body.classList.add('bf-leaving');
-                setTimeout(function() { location.href = a.href; }, 180);
+                setTimeout(function() { location.href = a.href; }, 90);
               });
               window.addEventListener('pageshow', function() {
                 document.body.classList.remove('bf-leaving');

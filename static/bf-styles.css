@@ -6,21 +6,21 @@
    .bf-leaving no body e atrasa o location.href por 180ms.
    ============================================================ */
 .bf-viewport {
-  animation: bf-page-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation: bf-page-in 140ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 body.bf-leaving .bf-viewport {
-  animation: bf-page-leave 180ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation: bf-page-leave 90ms cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 @keyframes bf-page-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(4px);
   }
 }
 @keyframes bf-page-leave {
   to {
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateY(-4px);
   }
 }
 
