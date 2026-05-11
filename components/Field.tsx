@@ -133,7 +133,9 @@ function PlayerPin(
   },
 ) {
   const isEmpty = empty && !p.num && !p.cores && !p.foto;
-  const hasFotoReal = !!(p.foto && !p.foto.includes("silh"));
+  // Só usa foto se for cutout PNG transparente do TheSportsDB.
+  // Local JPGs e API-Football trazem fundo inconsistente → usa camisa.
+  const hasFotoReal = !!(p.foto && p.foto.includes("thesportsdb"));
   const cls = ["bf-pin"];
   if (isEmpty) cls.push("bf-pin--empty");
   const pts = showPoints && p.pts != null ? p.pts : null;
