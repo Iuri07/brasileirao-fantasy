@@ -3,6 +3,7 @@ import { Head } from "$fresh/runtime.ts";
 import {
   CHAVES_TIMES,
   getAllElencos,
+  getFotos,
   getRodadaStatus,
   TODAS_CHAVES,
 } from "../lib/kv.ts";
@@ -73,6 +74,7 @@ const POS_ABREV: Record<string, string> = {
 function montarEscalacao(
   jogadoresEscalados: Array<
     {
+      atleta_id: number;
       apelido_api: string;
       posicao: string;
       pontos: number | null;
@@ -80,6 +82,7 @@ function montarEscalacao(
       status_id: number | null;
     }
   >,
+  fotos: Record<string, string>,
 ): Escalacao {
   const pino = (j: typeof jogadoresEscalados[number]): Pino => ({
     nome: j.apelido_api,
@@ -88,6 +91,7 @@ function montarEscalacao(
     cores: coresClube(j.clube),
     pos: POS_ABREV[j.posicao],
     statusId: j.status_id,
+    foto: fotos[String(j.atleta_id)] ?? null,
   });
   const gk = jogadoresEscalados.find((j) => j.posicao === "Goleiro");
   const def = jogadoresEscalados.filter((j) =>
@@ -106,18 +110,20 @@ function montarEscalacao(
 export const handler: Handlers<HomeData> = {
   async GET(_req, ctx) {
     const kv = await Deno.openKv();
-    const [elencos, rodada, mercado, partidasResp] = await Promise.all([
+    const [elencos, rodada, mercado, partidasResp, fotos] = await Promise.all([
       getAllElencos(kv),
       getRodadaStatus(kv),
       // Cartola direto — caso de timeout/erro, fica null e oculta countdown
       fetchMercadoStatus().catch(() => null),
       fetchPartidas().catch(() => null),
+      getFotos(kv),
     ]);
 
     const escaladosPorChave: Record<
       string,
       Array<
         {
+          atleta_id: number;
           apelido_api: string;
           posicao: string;
           pontos: number | null;
@@ -149,7 +155,7 @@ export const handler: Handlers<HomeData> = {
     const meuIdx = ranking.findIndex((t) => t.chave === CHAVE_USUARIO);
     const meuEscalados = escaladosPorChave[CHAVE_USUARIO] ?? [];
     const escalacao = meuEscalados.length
-      ? montarEscalacao(meuEscalados)
+      ? montarEscalacao(meuEscalados, fotos)
       : null;
     const esquema = escalacao
       ? `${escalacao.def.length}-${escalacao.mid.length}-${escalacao.ata.length}`

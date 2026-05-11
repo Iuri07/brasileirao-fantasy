@@ -12,6 +12,8 @@ export interface Pino {
   cores?: { primary: string; secondary: string; pattern: CoresPattern };
   /** status_id Cartola: 7=provável, 2=dúvida, 3=suspenso, 5=contundido, 6=nulo */
   statusId?: number | null;
+  /** URL da foto do atleta (CDN Cartola) */
+  foto?: string | null;
 }
 
 interface StatusBadge {
@@ -177,6 +179,9 @@ function PlayerPin(
               {isEmpty ? "+" : (p.num ?? "")}
             </span>
           )}
+        {p.foto && (
+          <img class="bf-pin__head" src={p.foto} alt="" loading="lazy" />
+        )}
         {p.escudo && <img class="bf-pin__shirt-escudo" src={p.escudo} alt="" />}
         {p.capt && <span class="bf-pin__capt-badge">C</span>}
         {(() => {

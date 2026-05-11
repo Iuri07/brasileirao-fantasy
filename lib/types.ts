@@ -34,6 +34,7 @@ export interface AtletaCacheEntry {
   posicao: string;
   posicao_id: number;
   status_id: number | null;
+  foto?: string | null;
 }
 
 export interface AtletaCacheKV {
@@ -71,6 +72,8 @@ export interface CartolaAtleta {
   status_id: number | null;
   pontos_num: number;
   entrou_em_campo: boolean;
+  foto?: string;
+  slug?: string;
 }
 
 export interface CartolaPontuadoAtleta {

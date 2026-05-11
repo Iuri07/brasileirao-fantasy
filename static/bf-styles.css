@@ -846,6 +846,21 @@ body {
   text-align: center;
   word-break: break-word;
 }
+.bf-pin__head {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--bf-ink);
+  border: 1.5px solid rgba(0, 0, 0, 0.7);
+  object-fit: cover;
+  object-position: center top;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+  z-index: 3;
+}
 .bf-pin__shirt-escudo {
   position: absolute;
   bottom: -2px;
