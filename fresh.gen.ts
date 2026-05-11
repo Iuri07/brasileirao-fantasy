@@ -24,6 +24,7 @@ import * as $index from "./routes/index.tsx";
 import * as $liga from "./routes/liga.tsx";
 import * as $ranking from "./routes/ranking.tsx";
 import * as $time_chave_ from "./routes/time/[chave].tsx";
+import * as $AoVivoLive from "./islands/AoVivoLive.tsx";
 import * as $CollapsibleTeamRow from "./islands/CollapsibleTeamRow.tsx";
 import * as $LeagueChart from "./islands/LeagueChart.tsx";
 import * as $Ranking from "./islands/Ranking.tsx";
@@ -57,6 +58,7 @@ const manifest = {
     "./routes/time/[chave].tsx": $time_chave_,
   },
   islands: {
+    "./islands/AoVivoLive.tsx": $AoVivoLive,
     "./islands/CollapsibleTeamRow.tsx": $CollapsibleTeamRow,
     "./islands/LeagueChart.tsx": $LeagueChart,
     "./islands/Ranking.tsx": $Ranking,
