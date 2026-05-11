@@ -288,6 +288,132 @@ body {
 }
 
 /* ============================================================
+   LIGA HERO — header das telas de liga
+   ============================================================ */
+.bf-liga-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px var(--bf-gutter);
+  text-align: center;
+}
+.bf-liga-hero__title {
+  font-family: var(--bf-font-graffiti);
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 0 14px rgba(255, 27, 141, 0.45);
+}
+
+/* ============================================================
+   LIGA — lista de team rows
+   ============================================================ */
+.bf-liga-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 var(--bf-gutter);
+}
+.bf-team-row {
+  display: grid;
+  grid-template-columns: 36px 36px 1fr auto 14px;
+  align-items: center;
+  gap: 12px;
+  background: var(--bf-chassis);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-lg);
+  padding: 10px 14px;
+  text-decoration: none;
+  color: var(--bf-fg-1);
+  box-shadow: var(--bf-shadow-card);
+  transition: background var(--bf-dur-normal) var(--bf-ease-out);
+}
+.bf-team-row:hover {
+  background: var(--bf-chassis-hover);
+}
+.bf-team-row--mine {
+  border-color: rgba(255, 27, 141, 0.55);
+  box-shadow: 0 0 16px var(--bf-magenta-glow), var(--bf-shadow-card);
+}
+.bf-team-row__pos {
+  font-family: var(--bf-font-display);
+  font-weight: 900;
+  font-size: 18px;
+  text-align: center;
+  color: var(--bf-fg-2);
+  font-variant-numeric: tabular-nums;
+}
+.bf-team-row__pos--top {
+  color: var(--bf-lime);
+  text-shadow: 0 0 10px var(--bf-lime-glow);
+}
+.bf-team-row__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.bf-team-row__name {
+  font-family: var(--bf-font-cond);
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bf-team-row__owner {
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bf-fg-3);
+}
+.bf-team-row__pts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.bf-team-row__pts-value {
+  font-family: var(--bf-font-display);
+  font-weight: 900;
+  font-size: 16px;
+  color: #fff;
+}
+.bf-team-row__pts-foot {
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bf-fg-3);
+}
+.bf-team-row__chev {
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   STATUS CARD — variante usada em /time/[chave]
+   ============================================================ */
+.bf-status-card__rank {
+  font-family: var(--bf-font-display);
+  font-weight: 900;
+  font-size: 28px;
+  color: var(--bf-fg-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
    TEAM CREST — logo oficial da liga (PNG com transparência)
    ============================================================ */
 .bf-team-crest {
