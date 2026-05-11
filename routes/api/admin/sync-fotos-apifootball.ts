@@ -22,6 +22,15 @@ function norm(s: string): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
+// Cartola usa nomes curtos; API-Football usa nomes completos.
+// Mapping de aliases pra fechar o gap.
+const CLUBE_ALIAS: Record<string, string> = {
+  [norm("Athlético-PR")]: norm("Atletico Paranaense"),
+  [norm("Athletico-PR")]: norm("Atletico Paranaense"),
+  [norm("Bragantino")]: norm("RB Bragantino"),
+  [norm("Vasco")]: norm("Vasco DA Gama"),
+};
+
 export const handler: Handlers = {
   /**
    * Sync de fotos via API-Football pra TODOS os atletas dos clubes
@@ -71,7 +80,8 @@ export const handler: Handlers = {
       const THROTTLE_MS = 6500;
       let first = true;
       for (const [normClube, displayClube] of clubesUnicos) {
-        const af = afByNorm.get(normClube);
+        const lookupKey = CLUBE_ALIAS[normClube] ?? normClube;
+        const af = afByNorm.get(lookupKey);
         if (!af) {
           teamsNaoEncontrados.push(displayClube);
           continue;
