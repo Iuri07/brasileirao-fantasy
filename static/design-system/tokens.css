@@ -13,8 +13,8 @@
      ---------------------------------------------------------- */
   --bf-ink: #050507; /* page background — true black */
   --bf-ink-2: #0e1014; /* secondary surface — sits clearly on ink */
-  --bf-chassis: #11131a; /* card / row chassis — escurecido */
-  --bf-chassis-hover: #1a1d26; /* hover state on chassis */
+  --bf-chassis: #0a0c12; /* card / row chassis — mais escuro ainda */
+  --bf-chassis-hover: #12141c; /* hover state on chassis */
   --bf-line: rgba(255, 255, 255, 0.06); /* hairline border */
   --bf-line-strong: rgba(255, 255, 255, 0.12); /* hairline border, focused */
 
