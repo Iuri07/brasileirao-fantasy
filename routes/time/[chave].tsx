@@ -15,6 +15,7 @@ import SectionHeader from "../../components/SectionHeader.tsx";
 import Field, { type Escalacao, type Pino } from "../../components/Field.tsx";
 import { escudoUrl } from "../../lib/escudos.ts";
 import { coresClube } from "../../lib/cores.ts";
+import { fotoUrl } from "../../lib/fotos.ts";
 import { timeLigaInfo } from "../../lib/times-liga.ts";
 
 const POS_ABREV: Record<string, string> = {
@@ -83,7 +84,7 @@ export const handler: Handlers<Data> = {
       cores: coresClube(j.clube),
       pos: POS_ABREV[j.posicao],
       statusId: j.status_id,
-      foto: fotos[String(j.atleta_id)] ?? null,
+      foto: fotoUrl(j.apelido_api) ?? fotos[String(j.atleta_id)] ?? null,
     });
     const gk = escalados.find((j) => j.posicao === "Goleiro");
     const def = escalados.filter((j) =>

@@ -23,6 +23,7 @@ import Field, { type Escalacao, type Pino } from "../components/Field.tsx";
 import Partidas from "../components/Partidas.tsx";
 import { escudoUrl } from "../lib/escudos.ts";
 import { coresClube } from "../lib/cores.ts";
+import { fotoUrl } from "../lib/fotos.ts";
 import { timeLigaInfo } from "../lib/times-liga.ts";
 import { getHistorico, rodadasJogadas, totalPontos } from "../lib/historico.ts";
 
@@ -94,7 +95,8 @@ function montarEscalacao(
     cores: coresClube(j.clube),
     pos: POS_ABREV[j.posicao],
     statusId: j.status_id,
-    foto: fotos[String(j.atleta_id)] ?? null,
+    // Prefere busto local (/static/players); cai pro cache (TheSportsDB) se faltar
+    foto: fotoUrl(j.apelido_api) ?? fotos[String(j.atleta_id)] ?? null,
   });
   const gk = jogadoresEscalados.find((j) => j.posicao === "Goleiro");
   const def = jogadoresEscalados.filter((j) =>
