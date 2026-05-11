@@ -19,59 +19,59 @@ export interface TimeLigaInfo {
 const TIMES: Record<string, TimeLigaInfo> = {
   aguiar: {
     color: "magenta",
-    accent: "#FF1B8D", // pink — FK gold/azul → magenta forte
+    accent: "#FF1032", // vermelho vivo
     sigla: "FK",
     logo: "/times_escudos/filhos-de-kieza.png",
   },
   ian: {
     color: "orange",
-    accent: "#FF7A1A",
+    accent: "#FF6A00", // laranja
     sigla: "BF",
     logo: "/times_escudos/botafofo.png",
   },
   costa: {
     color: "yellow",
-    accent: "#FFD400",
+    accent: "#FF8C00", // laranja-âmbar (Malvadinhos FC)
     sigla: "IP",
     displayName: "Ilha de Paquetá",
     logo: "/times_escudos/ilha-de-paqueta.png",
   },
   brito: {
     color: "green",
-    accent: "#6EFF3D",
+    accent: "#FFD400", // amarelo ouro (Chutoca FC)
     sigla: "CG",
     displayName: "Crefilho da Gama",
     logo: "/times_escudos/crefilho-da-gama.png",
   },
   domingos: {
     color: "blue",
-    accent: "#1FA8FF",
+    accent: "#7CFF00", // verde lima (Bendermem 23)
     sigla: "B23",
     logo: "/times_escudos/bendermem.png",
   },
   jose: {
     color: "lime",
-    accent: "#B6F500",
+    accent: "#00A2FF", // azul elétrico (888 Partners)
     sigla: "888",
     logo: "/times_escudos/888-partners.png",
   },
   leo: {
     color: "blue",
-    accent: "#00E0FF", // cyan pra desempatar do domingos (azul)
+    accent: "#0066FF", // azul royal (Todos com Bolsonaro / Moleicester)
     sigla: "MOL",
     displayName: "Moleicester City",
     logo: "/times_escudos/moleicester-city.png",
   },
   armando: {
     color: "magenta",
-    accent: "#B266FF", // roxo pra desempatar do aguiar
+    accent: "#C000FF", // roxo/violeta (Piratas do Carille / Papai Chegou)
     sigla: "PCH",
     displayName: "Papai Chegou FC",
     logo: "/times_escudos/papai-chegou.png",
   },
   jp: {
     color: "orange",
-    accent: "#E5161B", // vermelho pra desempatar do ian
+    accent: "#FF007A", // rosa choque (Dorival Juniors / Pedro Álvares Pardal)
     sigla: "PAP",
     displayName: "Pedro Álvares Pardal",
     logo: "/times_escudos/pedro-alvares-pardal.png",
