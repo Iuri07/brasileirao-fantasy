@@ -1,6 +1,56 @@
 @import url("/design-system/tokens.css");
 
 /* ============================================================
+   PAGE TRANSITIONS — View Transitions API cross-document
+   (Chrome 126+, Safari 18.2+). Browsers antigos: snap normal.
+   ============================================================ */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+::view-transition-old(root) {
+  animation-name: bf-page-out;
+}
+::view-transition-new(root) {
+  animation-name: bf-page-in;
+}
+
+@keyframes bf-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@keyframes bf-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Elementos persistentes entre páginas — TopBar e BottomNav não
+   piscam, fazem morph contínuo */
+.bf-topbar {
+  view-transition-name: bf-topbar;
+}
+.bf-bottom-nav {
+  view-transition-name: bf-bottom-nav;
+}
+
+::view-transition-old(bf-topbar),
+::view-transition-new(bf-topbar),
+::view-transition-old(bf-bottom-nav),
+::view-transition-new(bf-bottom-nav) {
+  animation-duration: 180ms;
+}
+
+/* ============================================================
    GLOBAL — black-light arcade base
    ============================================================ */
 html, body {
