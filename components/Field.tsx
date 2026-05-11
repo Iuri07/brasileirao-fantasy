@@ -179,9 +179,6 @@ function PlayerPin(
               {isEmpty ? "+" : (p.num ?? "")}
             </span>
           )}
-        {p.foto && (
-          <img class="bf-pin__head" src={p.foto} alt="" loading="lazy" />
-        )}
         {p.escudo && <img class="bf-pin__shirt-escudo" src={p.escudo} alt="" />}
         {p.capt && <span class="bf-pin__capt-badge">C</span>}
         {(() => {
