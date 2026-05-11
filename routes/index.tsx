@@ -95,8 +95,9 @@ function montarEscalacao(
     cores: coresClube(j.clube),
     pos: POS_ABREV[j.posicao],
     statusId: j.status_id,
-    // Prefere busto local (/static/players); cai pro cache (TheSportsDB) se faltar
-    foto: fotoUrl(j.apelido_api) ?? fotos[String(j.atleta_id)] ?? null,
+    // Prefere PNG transparente do TheSportsDB (cutout sem fundo);
+    // cai pro busto local quando não tem cutout
+    foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
   });
   const gk = jogadoresEscalados.find((j) => j.posicao === "Goleiro");
   const def = jogadoresEscalados.filter((j) =>

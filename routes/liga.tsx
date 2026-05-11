@@ -68,7 +68,7 @@ export const handler: Handlers<Data> = {
         cores: coresClube(j.clube),
         pos: POS_ABREV[j.posicao],
         statusId: j.status_id,
-        foto: fotoUrl(j.apelido_api) ?? fotos[String(j.atleta_id)] ?? null,
+        foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
       });
       const gk = escalados.find((j) => j.posicao === "Goleiro");
       const def = escalados.filter((j) =>
