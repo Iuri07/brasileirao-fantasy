@@ -18,6 +18,7 @@ import * as $api_elenco_dono_index from "./routes/api/elenco/[dono]/index.ts";
 import * as $api_elenco_dono_jogador_add from "./routes/api/elenco/[dono]/jogador/add.ts";
 import * as $api_elenco_dono_jogador_remove from "./routes/api/elenco/[dono]/jogador/remove.ts";
 import * as $api_elenco_dono_jogador_swap from "./routes/api/elenco/[dono]/jogador/swap.ts";
+import * as $api_live_path_ from "./routes/api/live/[...path].ts";
 import * as $api_ranking from "./routes/api/ranking.ts";
 import * as $api_status from "./routes/api/status.ts";
 import * as $index from "./routes/index.tsx";
@@ -50,6 +51,7 @@ const manifest = {
     "./routes/api/elenco/[dono]/jogador/remove.ts":
       $api_elenco_dono_jogador_remove,
     "./routes/api/elenco/[dono]/jogador/swap.ts": $api_elenco_dono_jogador_swap,
+    "./routes/api/live/[...path].ts": $api_live_path_,
     "./routes/api/ranking.ts": $api_ranking,
     "./routes/api/status.ts": $api_status,
     "./routes/index.tsx": $index,

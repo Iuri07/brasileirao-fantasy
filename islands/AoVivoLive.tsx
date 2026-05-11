@@ -87,16 +87,18 @@ export default function AoVivoLive(
   async function refetch() {
     try {
       console.log("[ao-vivo] fetching cartola...");
+      // Proxy via /api/live/* (Deno cacheia 30s, evita problema de
+      // mixed-content/CORS no browser do celular)
       const [pResp, mResp, pdResp] = await Promise.all([
-        fetch("https://api.cartola.globo.com/atletas/pontuados").then((r) => {
+        fetch("/api/live/atletas/pontuados").then((r) => {
           if (!r.ok) throw new Error(`pontuados ${r.status}`);
           return r.json();
         }),
-        fetch("https://api.cartola.globo.com/mercado/status").then((r) => {
+        fetch("/api/live/mercado/status").then((r) => {
           if (!r.ok) throw new Error(`mercado/status ${r.status}`);
           return r.json();
         }),
-        fetch("https://api.cartola.globo.com/partidas").then((r) => {
+        fetch("/api/live/partidas").then((r) => {
           if (!r.ok) throw new Error(`partidas ${r.status}`);
           return r.json();
         }),
