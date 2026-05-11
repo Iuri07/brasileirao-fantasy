@@ -106,27 +106,49 @@ export default function LeagueChart({ times, destaque }: Props) {
           </text>
         ))}
 
-        {/* Linhas dos demais times — finas e bem translúcidas */}
-        {times.filter((t) => t.chave !== destaque).map((t) => {
-          const points = rodadas
-            .map((r, i) => {
-              const p = t.pontosPorRodada[String(r)] ?? 0;
-              return `${xFor(i)},${yFor(p)}`;
-            })
-            .join(" ");
+        {/* Banda min-max da liga (área shaded sem o usuário) */}
+        {(() => {
+          const outros = times.filter((t) => t.chave !== destaque);
+          if (!outros.length) return null;
+          const bandData = rodadas.map((r, i) => {
+            const valores = outros
+              .map((t) => t.pontosPorRodada[String(r)] ?? 0)
+              .filter((v) => v > 0);
+            const min = valores.length ? Math.min(...valores) : 0;
+            const max = valores.length ? Math.max(...valores) : 0;
+            const median = valores.length
+              ? [...valores].sort((a, b) => a - b)[
+                Math.floor(valores.length / 2)
+              ]
+              : 0;
+            return { x: xFor(i), yMin: yFor(min), yMax: yFor(max), median };
+          });
+          // polygon path: top edge + bottom edge reverso
+          const topPoints = bandData.map((d) => `${d.x},${d.yMax}`).join(" ");
+          const botPoints = [...bandData].reverse().map((d) =>
+            `${d.x},${d.yMin}`
+          ).join(" ");
+          const medianPath = bandData.map((d, i) =>
+            `${i === 0 ? "M" : "L"}${d.x},${yFor(d.median)}`
+          ).join(" ");
           return (
-            <polyline
-              key={t.chave}
-              points={points}
-              fill="none"
-              stroke={t.accent}
-              stroke-width="1"
-              stroke-linejoin="round"
-              stroke-linecap="round"
-              opacity="0.22"
-            />
+            <g>
+              <polygon
+                points={`${topPoints} ${botPoints}`}
+                fill="rgba(255,255,255,0.05)"
+                stroke="none"
+              />
+              <path
+                d={medianPath}
+                fill="none"
+                stroke="rgba(255,255,255,0.28)"
+                stroke-width="1"
+                stroke-dasharray="3 3"
+                stroke-linejoin="round"
+              />
+            </g>
           );
-        })}
+        })()}
 
         {/* Linha destacada (usuário) por cima — grossa, com pontos */}
         {(() => {
@@ -156,6 +178,29 @@ export default function LeagueChart({ times, destaque }: Props) {
           );
         })()}
       </svg>
+
+      {/* Legenda mini com 2 linhas: a do user e a banda da liga */}
+      {destaque && (
+        <div class="bf-league-chart__caption">
+          <span
+            class="bf-league-chart__caption-item"
+            style={{
+              "--c": times.find((t) => t.chave === destaque)?.accent ?? "#fff",
+            } as Record<string, string>}
+          >
+            <span class="bf-league-chart__caption-line bf-league-chart__caption-line--solid" />
+            Você
+          </span>
+          <span class="bf-league-chart__caption-item bf-league-chart__caption-item--muted">
+            <span class="bf-league-chart__caption-line bf-league-chart__caption-line--dashed" />
+            Mediana da liga
+          </span>
+          <span class="bf-league-chart__caption-item bf-league-chart__caption-item--muted">
+            <span class="bf-league-chart__caption-band" />
+            Min–max
+          </span>
+        </div>
+      )}
     </div>
   );
 }

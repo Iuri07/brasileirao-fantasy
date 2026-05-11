@@ -512,6 +512,50 @@ body {
   font-size: 8px;
   letter-spacing: 0.08em;
 }
+.bf-league-chart__caption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 12px 0;
+}
+.bf-league-chart__caption-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bf-fg-1);
+}
+.bf-league-chart__caption-item--muted {
+  color: var(--bf-fg-3);
+}
+.bf-league-chart__caption-line {
+  display: inline-block;
+  width: 18px;
+  height: 2.5px;
+  border-radius: 2px;
+}
+.bf-league-chart__caption-line--solid {
+  background: var(--c);
+}
+.bf-league-chart__caption-line--dashed {
+  background: repeating-linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.32) 0 3px,
+    transparent 3px 6px
+  );
+  height: 1.5px;
+}
+.bf-league-chart__caption-band {
+  display: inline-block;
+  width: 18px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
 
 /* ============================================================
    STATUS CARD — variante usada em /time/[chave]
