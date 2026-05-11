@@ -381,13 +381,11 @@ body {
   font-weight: 900;
   font-size: 16px;
   text-align: center;
-  color: var(--accent, var(--bf-fg-2));
+  color: var(--bf-fg-2);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 50%, transparent);
 }
 .bf-team-row--lider .bf-team-row__pos {
   font-size: 22px;
-  text-shadow: none;
 }
 .bf-team-row__meta {
   display: flex;
