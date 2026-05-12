@@ -36,6 +36,19 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
     for (const [id, e] of Object.entries(c.atletas)) cacheAtual.set(id, e);
   }
 
+  // Indexa cutouts locais bundled (static/atletas/{id}.png) — geração é
+  // local + commit (rembg não roda em Deno Deploy). Estes têm prioridade.
+  const cutoutsLocais = new Set<string>();
+  try {
+    for await (const entry of Deno.readDir("./static/atletas")) {
+      if (entry.isFile && entry.name.endsWith(".png")) {
+        cutoutsLocais.add(entry.name.replace(".png", ""));
+      }
+    }
+  } catch {
+    // pasta pode não existir em alguns ambientes
+  }
+
   // Cache de atletas por posição (para busca/troca)
   const grupos: Record<string, Record<string, AtletaCacheEntry>> = {};
   for (const c of POSICAO_CHAVES_CACHE) grupos[c] = {};
@@ -52,10 +65,14 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
     const clubeNome = clube?.nome_fantasia ?? clube?.nome ?? "";
     const idStr = String(a.atleta_id);
     const fotoExistente = cacheAtual.get(idStr)?.foto;
-    // Mantém foto real (TheSportsDB) se já tem; senão usa o que vier
-    // da Cartola (silhueta). "FORMATO" é placeholder de tamanho.
+    // Prioridade:
+    // 1. Cutout local (gerado via ogol+rembg e commitado em static/atletas/)
+    // 2. Foto real preservada do cache (TheSportsDB ou /atletas/)
+    // 3. Foto da Cartola (silhueta — "FORMATO" é placeholder de tamanho)
     const cartolaFoto = a.foto ? a.foto.replace("FORMATO", "220x220") : null;
-    const foto = fotoExistente && !fotoExistente.includes("silh")
+    const foto = cutoutsLocais.has(idStr)
+      ? `/atletas/${idStr}.png`
+      : fotoExistente && !fotoExistente.includes("silh")
       ? fotoExistente
       : cartolaFoto;
     grupos[posChave][idStr] = {
