@@ -17,6 +17,10 @@ export interface Pino {
   /** ID do atleta — usado pra callbacks de seleção (opcional pra pins
       decorativos sem identidade) */
   atletaId?: number;
+  /** Entrou em campo como sub automática (bench → escala) */
+  subEntrou?: boolean;
+  /** Era titular, foi rebaixado pelo auto-sub (escala → bench) */
+  subSaiu?: boolean;
 }
 
 export interface StatusBadge {
@@ -245,6 +249,24 @@ function PlayerPin(
           aria-label={status.title}
         >
           {status.sym}
+        </span>
+      )}
+      {p.subEntrou && (
+        <span
+          class="bf-pin__badge bf-pin__badge--sub-in"
+          title="Entrou na auto-substituição"
+          aria-label="Entrou"
+        >
+          ↑
+        </span>
+      )}
+      {p.subSaiu && (
+        <span
+          class="bf-pin__badge bf-pin__badge--sub-out"
+          title="Saiu na auto-substituição"
+          aria-label="Saiu"
+        >
+          ↓
         </span>
       )}
 

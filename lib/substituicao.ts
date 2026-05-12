@@ -1,7 +1,10 @@
 import type { JogadorKV } from "./types.ts";
 
 export interface JogadorComSub extends JogadorKV {
+  /** true se entrou em campo no lugar de um titular (bench → escala) */
   substituido: boolean;
+  /** true se era titular mas foi rebaixado pelo auto-sub (escala → bench) */
+  descido?: boolean;
 }
 
 function soma(arr: JogadorKV[]): number {
@@ -23,21 +26,23 @@ function topNTitulares(play: JogadorKV[], pos: string, n: number): JogadorKV[] {
 }
 
 export function calcularMelhorTime(todos: JogadorKV[]): JogadorComSub[] {
-  const play = todos.filter((j) => j.escalacao === "Sim" || j.escalacao === "Banco");
+  const play = todos.filter((j) =>
+    j.escalacao === "Sim" || j.escalacao === "Banco"
+  );
 
   // Técnico: soma de todos os jogadores / 23
   const tecnicoScore = Math.round((soma(todos) / 23) * 100) / 100;
 
   const slots: Array<{ pos: string; n: number }> = [
-    { pos: "Goleiro",  n: 1 },
+    { pos: "Goleiro", n: 1 },
     { pos: "Zagueiro", n: 2 },
-    { pos: "Lateral",  n: 2 },
-    { pos: "Meia",     n: 3 },
+    { pos: "Lateral", n: 2 },
+    { pos: "Meia", n: 3 },
     { pos: "Atacante", n: 3 },
   ];
 
   const avaliacoes = slots.map(({ pos, n }) => {
-    const subst   = topN(play, pos, n);
+    const subst = topN(play, pos, n);
     const titular = topNTitulares(play, pos, n);
     return { pos, n, diff: soma(subst) - soma(titular), subst, titular };
   });
@@ -65,7 +70,11 @@ export function calcularMelhorTime(todos: JogadorKV[]): JogadorComSub[] {
 
     for (const j of vencedores) {
       const substituido = j.escalacao === "Banco" && top3.includes(pos);
-      resultado.push({ ...j, escalacao: substituido ? "Sim" : j.escalacao, substituido });
+      resultado.push({
+        ...j,
+        escalacao: substituido ? "Sim" : j.escalacao,
+        substituido,
+      });
       usados.add(j.atleta_id);
     }
 
@@ -90,9 +99,16 @@ export function calcularMelhorTime(todos: JogadorKV[]): JogadorComSub[] {
   // Restantes (banco / não escalados que não entraram)
   for (const j of todos) {
     if (!usados.has(j.atleta_id)) {
-      // Deslocados por substituição: mudam de Sim para Banco na exibição
-      const escalacao = deslocados.has(j.atleta_id) ? "Banco" : j.escalacao;
-      resultado.push({ ...j, escalacao, substituido: false });
+      // Deslocados por substituição: mudam de Sim para Banco na exibição,
+      // marcados com descido=true pra UI mostrar seta vermelha.
+      const foiDeslocado = deslocados.has(j.atleta_id);
+      const escalacao = foiDeslocado ? "Banco" : j.escalacao;
+      resultado.push({
+        ...j,
+        escalacao,
+        substituido: false,
+        descido: foiDeslocado,
+      });
       usados.add(j.atleta_id);
     }
   }

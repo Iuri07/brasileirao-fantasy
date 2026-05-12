@@ -123,6 +123,7 @@ function montarEscalacao(
       pontos: number | null;
       clube: string;
       status_id: number | null;
+      substituido?: boolean;
     }
   >,
   fotos: Record<string, string>,
@@ -137,6 +138,7 @@ function montarEscalacao(
     // Prefere PNG transparente do TheSportsDB (cutout sem fundo);
     // cai pro busto local quando não tem cutout
     foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
+    subEntrou: j.substituido === true,
   });
   const gk = jogadoresEscalados.find((j) => j.posicao === "Goleiro");
   const def = jogadoresEscalados.filter((j) =>
@@ -192,6 +194,7 @@ export const handler: Handlers<HomeData, State> = {
           pontos: number | null;
           clube: string;
           status_id: number | null;
+          substituido?: boolean;
         }
       >
     > = {};
@@ -269,6 +272,7 @@ export const handler: Handlers<HomeData, State> = {
           statusId: j.status_id,
           foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
           entrouEmCampo: !!livePts[String(j.atleta_id)]?.entrou_em_campo,
+          subSaiu: j.descido === true,
         }))
       : [];
     // Sobrescreve URLs dos escudos das partidas pra preferir locais
@@ -387,7 +391,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=71" />
+        <link rel="stylesheet" href="/bf-styles.css?v=72" />
       </Head>
       <div class="bf-viewport">
         <TopBar

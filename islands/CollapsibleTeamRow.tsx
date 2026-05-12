@@ -22,6 +22,8 @@ interface Props {
   isMine?: boolean;
   /** Histórico de pontos por rodada — vira sparkline no cabeçalho */
   historico?: Record<string, number>;
+  /** Quantas auto-substituições foram aplicadas (só pra ao vivo). */
+  subsBadge?: { aplicadas: number; max: number } | null;
   /** Conteúdo que aparece colapsado/expandido (Field SSR) */
   children: ComponentChildren;
 }
@@ -40,6 +42,7 @@ export default function CollapsibleTeamRow(
     accent,
     isMine,
     historico,
+    subsBadge = null,
     children,
   }: Props,
 ) {
@@ -101,6 +104,21 @@ export default function CollapsibleTeamRow(
           )}
         </div>
         <TeamCrest chave={chave} size={36} />
+        {subsBadge && (
+          <span
+            class={`bf-team-row__subs ${
+              subsBadge.aplicadas >= subsBadge.max
+                ? "bf-team-row__subs--full"
+                : ""
+            }`}
+            title={`${subsBadge.aplicadas} de ${subsBadge.max} substituições aplicadas`}
+          >
+            <span class="bf-team-row__subs-val">
+              {subsBadge.aplicadas}/{subsBadge.max}
+            </span>
+            <span class="bf-team-row__subs-lbl">subs</span>
+          </span>
+        )}
         <div class="bf-team-row__pts">
           <span class="bf-team-row__pts-value">{totalFmt}</span>
           <span class="bf-team-row__pts-foot">PTS</span>

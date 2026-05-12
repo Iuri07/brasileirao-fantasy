@@ -96,6 +96,7 @@ export const handler: Handlers<Data, State> = {
       pos: POS_ABREV[j.posicao],
       statusId: j.status_id,
       foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
+      subEntrou: j.substituido,
     });
     const gk = escalados.find((j) => j.posicao === "Goleiro");
     const def = escalados.filter((j) =>
@@ -141,7 +142,7 @@ export default function TimeDetalhe({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>{displayName} · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=71" />
+        <link rel="stylesheet" href="/bf-styles.css?v=72" />
       </Head>
       <div class="bf-viewport">
         <TopBar

@@ -1,6 +1,11 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
-import { getAllElencos, getFotos, getRodadaStatus } from "../lib/kv.ts";
+import {
+  getAllElencos,
+  getFotos,
+  getRodadaStatus,
+  MAX_SUBS_AO_VIVO,
+} from "../lib/kv.ts";
 import { calcularMelhorTime } from "../lib/substituicao.ts";
 import { getHistorico, totalPontos } from "../lib/historico.ts";
 import TopBar from "../components/TopBar.tsx";
@@ -40,10 +45,13 @@ interface TimeLinha {
   escalacao: Escalacao | null;
   banco: BancoPino[];
   historico: Record<string, number>;
+  subsAplicadas: number;
 }
 
 interface Data {
   rodada: number;
+  aoVivo: boolean;
+  subsMax: number;
   times: TimeLinha[];
   meuChave: string;
   userEmail: string | null;
@@ -68,6 +76,7 @@ export const handler: Handlers<Data, State> = {
       const calculados = calcularMelhorTime(Object.values(elenco.jogadores));
       const escalados = calculados.filter((j) => j.escalacao === "Sim");
       const reservas = calculados.filter((j) => j.escalacao === "Banco");
+      const subsAplicadas = escalados.filter((j) => j.substituido).length;
       const banco: BancoPino[] = reservas.map((j) => ({
         nome: j.apelido_api,
         pts: j.pontos,
@@ -77,6 +86,7 @@ export const handler: Handlers<Data, State> = {
         posicao: j.posicao,
         statusId: j.status_id,
         foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
+        subSaiu: j.descido === true,
       }));
       const ptsRodada = Math.round(
         escalados.reduce((s, j) => s + (j.pontos ?? 0), 0) * 100,
@@ -91,6 +101,7 @@ export const handler: Handlers<Data, State> = {
         pos: POS_ABREV[j.posicao],
         statusId: j.status_id,
         foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
+        subEntrou: j.substituido,
       });
       const gk = escalados.find((j) => j.posicao === "Goleiro");
       const def = escalados.filter((j) =>
@@ -117,6 +128,7 @@ export const handler: Handlers<Data, State> = {
         escalacao,
         banco,
         historico,
+        subsAplicadas,
       });
     }
 
@@ -126,6 +138,8 @@ export const handler: Handlers<Data, State> = {
 
     return ctx.render({
       rodada: rodada?.rodada ?? 0,
+      aoVivo: rodada?.status === "ao_vivo",
+      subsMax: MAX_SUBS_AO_VIVO,
       times,
       meuChave: ctx.state.session?.chave ?? CHAVE_USUARIO,
       userEmail: ctx.state.session?.email ?? null,
@@ -141,7 +155,7 @@ export default function Liga({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=71" />
+        <link rel="stylesheet" href="/bf-styles.css?v=72" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -181,6 +195,9 @@ export default function Liga({ data }: PageProps<Data>) {
                 accent={accent}
                 isMine={isMe}
                 historico={t.historico}
+                subsBadge={data.aoVivo
+                  ? { aplicadas: t.subsAplicadas, max: data.subsMax }
+                  : null}
               >
                 <div class="bf-team-row__expanded">
                   {t.escalacao
