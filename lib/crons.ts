@@ -1,20 +1,24 @@
 import {
-  fetchMercadoStatus,
   fetchAtletasMercado,
   fetchAtletasPontuados,
+  fetchMercadoStatus,
   fetchPartidas,
   POSICAO_ID_NOME,
   POSICAO_NOME_CHAVE,
 } from "./cartola.ts";
 import {
   getAllElencos,
-  setElenco,
+  getAtletasCache,
   getRodadaStatus,
-  setRodadaStatus,
-  setPartidasCache,
   POSICAO_CHAVES_CACHE,
+  setElenco,
+  setPartidasCache,
+  setRodadaStatus,
 } from "./kv.ts";
-import type { AtletaCacheKV } from "./types.ts";
+import { fetchPlayerPhoto, sleep } from "./sportsdb.ts";
+import { setHistoricoRodada } from "./historico.ts";
+import { calcularMelhorTime } from "./substituicao.ts";
+import type { AtletaCacheEntry, AtletaCacheKV } from "./types.ts";
 
 async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
   const [data, partidasData] = await Promise.all([
@@ -23,8 +27,17 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
   ]);
   const now = new Date().toISOString();
 
+  // Carrega cache atual pra preservar fotos REAIS já encontradas
+  // (TheSportsDB) e não sobrescrever com silhueta da Cartola
+  const cacheAtual = new Map<string, AtletaCacheEntry>();
+  for (const pos of POSICAO_CHAVES_CACHE) {
+    const c = await getAtletasCache(kv, pos);
+    if (!c) continue;
+    for (const [id, e] of Object.entries(c.atletas)) cacheAtual.set(id, e);
+  }
+
   // Cache de atletas por posição (para busca/troca)
-  const grupos: Record<string, Record<string, { apelido: string; clube: string; clube_id: number; posicao: string; posicao_id: number }>> = {};
+  const grupos: Record<string, Record<string, AtletaCacheEntry>> = {};
   for (const c of POSICAO_CHAVES_CACHE) grupos[c] = {};
 
   const statusMap = new Map<number, number | null>();
@@ -37,13 +50,22 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
     if (!posChave || !grupos[posChave]) continue;
     const clube = data.clubes[String(a.clube_id)];
     const clubeNome = clube?.nome_fantasia ?? clube?.nome ?? "";
-    grupos[posChave][String(a.atleta_id)] = {
-      apelido:    a.apelido,
-      clube:      clubeNome,
-      clube_id:   a.clube_id,
-      posicao:    posNome,
+    const idStr = String(a.atleta_id);
+    const fotoExistente = cacheAtual.get(idStr)?.foto;
+    // Mantém foto real (TheSportsDB) se já tem; senão usa o que vier
+    // da Cartola (silhueta). "FORMATO" é placeholder de tamanho.
+    const cartolaFoto = a.foto ? a.foto.replace("FORMATO", "220x220") : null;
+    const foto = fotoExistente && !fotoExistente.includes("silh")
+      ? fotoExistente
+      : cartolaFoto;
+    grupos[posChave][idStr] = {
+      apelido: a.apelido,
+      clube: clubeNome,
+      clube_id: a.clube_id,
+      posicao: posNome,
       posicao_id: a.posicao_id,
-      status_id:  a.status_id ?? null,
+      status_id: a.status_id ?? null,
+      foto,
     };
     statusMap.set(a.atleta_id, a.status_id ?? null);
     clubeNomeMap.set(a.atleta_id, clubeNome);
@@ -58,8 +80,12 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
   const matchMap = new Map<number, { casa: string; fora: string }>();
   if (partidasData) {
     for (const p of partidasData.partidas) {
-      const casaAbrev = partidasData.clubes[String(p.clube_casa_id)]?.abreviacao ?? String(p.clube_casa_id);
-      const foraAbrev = partidasData.clubes[String(p.clube_visitante_id)]?.abreviacao ?? String(p.clube_visitante_id);
+      const casaAbrev =
+        partidasData.clubes[String(p.clube_casa_id)]?.abreviacao ??
+          String(p.clube_casa_id);
+      const foraAbrev =
+        partidasData.clubes[String(p.clube_visitante_id)]?.abreviacao ??
+          String(p.clube_visitante_id);
       matchMap.set(p.clube_casa_id, { casa: casaAbrev, fora: foraAbrev });
       matchMap.set(p.clube_visitante_id, { casa: casaAbrev, fora: foraAbrev });
     }
@@ -74,7 +100,9 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
   for (const [chave, elenco] of Object.entries(elencos)) {
     let alterado = false;
     for (const [id, jogador] of Object.entries(elenco.jogadores)) {
-      const sid = statusMap.has(jogador.atleta_id) ? statusMap.get(jogador.atleta_id)! : jogador.status_id;
+      const sid = statusMap.has(jogador.atleta_id)
+        ? statusMap.get(jogador.atleta_id)!
+        : jogador.status_id;
       const novoClube = clubeNomeMap.get(jogador.atleta_id) ?? jogador.clube;
       const match = matchMap.get(jogador.clube_id);
       const novoCasa = match ? match.casa : jogador.clube_casa;
@@ -88,11 +116,11 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
       elenco.jogadores[id] = {
         ...jogador,
         status_id: sid,
-        provavel:  sid === 7,
+        provavel: sid === 7,
         lesionado: sid === 5,
-        suspenso:  sid === 3,
-        nulo:      sid === 6,
-        clube:     novoClube,
+        suspenso: sid === 3,
+        nulo: sid === 6,
+        clube: novoClube,
         clube_casa: novoCasa,
         clube_fora: novaFora,
       };
@@ -147,16 +175,38 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
       if (!p) continue;
       const novoPontos = p.pontuacao ?? 0;
       const novoEntrou = p.entrou_em_campo ?? null;
-      if (jogador.pontos === novoPontos && jogador.entrou_em_campo === novoEntrou) continue;
-      elenco.jogadores[id] = { ...jogador, pontos: novoPontos, entrou_em_campo: novoEntrou };
+      if (
+        jogador.pontos === novoPontos && jogador.entrou_em_campo === novoEntrou
+      ) continue;
+      elenco.jogadores[id] = {
+        ...jogador,
+        pontos: novoPontos,
+        entrou_em_campo: novoEntrou,
+      };
       alterado = true;
     }
     if (alterado) await setElenco(kv, chave, elenco);
   }
 
+  // Salva snapshot da pontuação por elenco no histórico (idempotente —
+  // sobrescreve mesma rodada). Só registra quando há pontos > 0 e a
+  // bola não tá rolando (ou seja, rodada já encerrou) pra evitar
+  // gravar parciais que mudam ao longo do dia.
+  const rodadaId = pontuados.rodada_id ?? mercado.rodada_atual;
+  if (rodadaId > 0 && !mercado.bola_rolando) {
+    for (const [chave, elenco] of Object.entries(elencos)) {
+      const escalados = calcularMelhorTime(Object.values(elenco.jogadores))
+        .filter((j) => j.escalacao === "Sim");
+      const pts = Math.round(
+        escalados.reduce((s, j) => s + (j.pontos ?? 0), 0) * 100,
+      ) / 100;
+      if (pts > 0) await setHistoricoRodada(kv, chave, rodadaId, pts);
+    }
+  }
+
   await setRodadaStatus(kv, {
     status: "ao_vivo",
-    rodada: pontuados.rodada_id ?? mercado.rodada_atual,
+    rodada: rodadaId,
     atualizadoEm: now,
   });
 

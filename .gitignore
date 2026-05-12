@@ -1,0 +1,13 @@
+# Fresh build output
+_fresh/
+
+# Dev / OS
+.DS_Store
+
+# Local secrets — NUNCA commitar
+.env
+.env.local
+
+# Logs/runtime
+nohup.out
+*.log

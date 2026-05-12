@@ -1,0 +1,363 @@
+/* ============================================================
+   Brasileirão Fantasy — Design Tokens
+   ------------------------------------------------------------
+   Black-light arcade. Graffiti street football.
+   Pure black chassis, neon spray accents, splatter motifs.
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow+Condensed:wght@500;700;800;900&family=Barlow:wght@400;500;600;700&family=Permanent+Marker&family=Rubik+Spray+Paint&family=Rubik+Wet+Paint&family=Bungee&display=swap");
+
+:root {
+  /* ----------------------------------------------------------
+     COLOR — Surfaces (the chassis)
+     ---------------------------------------------------------- */
+  --bf-ink: #050507; /* page background — true black */
+  --bf-ink-2: #0e1014; /* secondary surface — sits clearly on ink */
+  --bf-chassis: #0a0c12; /* card / row chassis — mais escuro ainda */
+  --bf-chassis-hover: #12141c; /* hover state on chassis */
+  --bf-line: rgba(255, 255, 255, 0.06); /* hairline border */
+  --bf-line-strong: rgba(255, 255, 255, 0.12); /* hairline border, focused */
+
+  /* ----------------------------------------------------------
+     COLOR — Text on chassis
+     ---------------------------------------------------------- */
+  --bf-fg-1: #ffffff; /* primary text */
+  --bf-fg-2: rgba(
+    255,
+    255,
+    255,
+    0.62
+  ); /* secondary text — player name under team */
+  --bf-fg-3: rgba(255, 255, 255, 0.42); /* tertiary text — timestamps */
+  --bf-fg-disabled: rgba(255, 255, 255, 0.22);
+
+  /* ----------------------------------------------------------
+     COLOR — Brand neons (the spray cans)
+     Each is paired with a soft glow value at 40% alpha
+     for use in box-shadow / drop-shadow halos.
+     ---------------------------------------------------------- */
+  --bf-lime: #b6f500; /* PRIMARY brand — interactive surfaces */
+  --bf-lime-glow: rgba(182, 245, 0, 0.40);
+  --bf-lime-ink: #0a0a0c; /* text on lime */
+
+  --bf-magenta: #ff1b8d; /* team accent + section underline */
+  --bf-magenta-glow: rgba(255, 27, 141, 0.40);
+
+  --bf-orange: #ff7a1a; /* team accent */
+  --bf-orange-glow: rgba(255, 122, 26, 0.40);
+
+  --bf-yellow: #ffe600; /* team accent + warning */
+  --bf-yellow-glow: rgba(255, 230, 0, 0.40);
+
+  --bf-green: #6eff3d; /* team accent + success */
+  --bf-green-glow: rgba(110, 255, 61, 0.40);
+
+  --bf-blue: #1fa8ff; /* team accent + info */
+  --bf-blue-glow: rgba(31, 168, 255, 0.40);
+
+  --bf-red: #ff3b3b; /* destructive only — not a team color */
+  --bf-red-glow: rgba(255, 59, 59, 0.40);
+
+  /* ----------------------------------------------------------
+     COLOR — Semantic
+     ---------------------------------------------------------- */
+  --bf-success: var(--bf-lime);
+  --bf-warning: var(--bf-yellow);
+  --bf-danger: var(--bf-red);
+  --bf-info: var(--bf-blue);
+  --bf-live: var(--bf-lime); /* "AO VIVO" indicator */
+
+  /* ----------------------------------------------------------
+     TYPE — Families
+     ---------------------------------------------------------- */
+  --bf-font-graffiti:
+    "Rubik Wet Paint",
+    "Rubik Spray Paint",
+    "Permanent Marker",
+    cursive;
+  --bf-font-graffiti-2: "Bungee", "Archivo Black", system-ui, sans-serif;
+  --bf-font-marker: "Permanent Marker", "Brush Script MT", cursive;
+  --bf-font-display: "Archivo Black", "Barlow Condensed", system-ui, sans-serif;
+  --bf-font-cond: "Barlow Condensed", "Archivo Narrow", system-ui, sans-serif;
+  --bf-font-body: "Barlow", "Helvetica Neue", system-ui, sans-serif;
+  --bf-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+
+  /* ----------------------------------------------------------
+     TYPE — Sizes (mobile-first; px-based for tight control)
+     ---------------------------------------------------------- */
+  --bf-fs-12: 12px;
+  --bf-fs-13: 13px;
+  --bf-fs-14: 14px;
+  --bf-fs-15: 15px;
+  --bf-fs-16: 16px;
+  --bf-fs-18: 18px;
+  --bf-fs-20: 20px;
+  --bf-fs-24: 24px;
+  --bf-fs-28: 28px;
+  --bf-fs-32: 32px;
+  --bf-fs-40: 40px;
+  --bf-fs-56: 56px;
+  --bf-fs-72: 72px;
+
+  /* ----------------------------------------------------------
+     TYPE — Weights
+     ---------------------------------------------------------- */
+  --bf-fw-regular: 400;
+  --bf-fw-medium: 500;
+  --bf-fw-semi: 600;
+  --bf-fw-bold: 700;
+  --bf-fw-heavy: 800;
+  --bf-fw-black: 900;
+
+  /* ----------------------------------------------------------
+     SPACING (4px grid)
+     ---------------------------------------------------------- */
+  --bf-space-1: 4px;
+  --bf-space-2: 8px;
+  --bf-space-3: 12px;
+  --bf-space-4: 16px;
+  --bf-space-5: 20px;
+  --bf-space-6: 24px;
+  --bf-space-8: 32px;
+  --bf-space-10: 40px;
+  --bf-space-12: 48px;
+  --bf-space-16: 64px;
+
+  --bf-gutter: 20px; /* mobile edge gutter */
+
+  /* ----------------------------------------------------------
+     RADII
+     ---------------------------------------------------------- */
+  --bf-radius-sm: 8px;
+  --bf-radius-md: 10px; /* buttons, inputs, pills */
+  --bf-radius-lg: 14px; /* cards, team rows */
+  --bf-radius-xl: 20px;
+  --bf-radius-full: 999px;
+
+  /* ----------------------------------------------------------
+     SHADOWS
+     ---------------------------------------------------------- */
+  --bf-shadow-card:
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  --bf-shadow-elevated:
+    0 16px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  --bf-shadow-pressed: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+
+  --bf-glow-lime: 0 0 16px var(--bf-lime-glow);
+  --bf-glow-magenta: 0 0 16px var(--bf-magenta-glow);
+  --bf-glow-orange: 0 0 16px var(--bf-orange-glow);
+  --bf-glow-yellow: 0 0 16px var(--bf-yellow-glow);
+  --bf-glow-green: 0 0 16px var(--bf-green-glow);
+  --bf-glow-blue: 0 0 16px var(--bf-blue-glow);
+
+  /* ----------------------------------------------------------
+     MOTION
+     ---------------------------------------------------------- */
+  --bf-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --bf-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --bf-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --bf-dur-fast: 120ms;
+  --bf-dur-normal: 180ms;
+  --bf-dur-slow: 320ms;
+  --bf-dur-celebrate: 600ms;
+
+  /* ----------------------------------------------------------
+     LAYOUT
+     ---------------------------------------------------------- */
+  --bf-mobile-w: 390px;
+  --bf-header-h: 64px;
+  --bf-footer-h: 56px;
+  --bf-z-header: 100;
+  --bf-z-modal: 1000;
+}
+
+/* ============================================================
+   SEMANTIC ELEMENT STYLES
+   Use as defaults; override with utility classes when needed.
+   ============================================================ */
+
+html, body {
+  background: var(--bf-ink);
+  color: var(--bf-fg-1);
+  font-family: var(--bf-font-body);
+  font-size: var(--bf-fs-15);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* H1 — hero / page title.  ALWAYS UPPERCASE. */
+.bf-h1, h1 {
+  font-family: var(--bf-font-display);
+  font-weight: var(--bf-fw-black);
+  font-size: var(--bf-fs-40);
+  line-height: 0.96;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  color: var(--bf-fg-1);
+  margin: 0;
+}
+
+/* H2 — section title (used WITH the graffiti slash underneath) */
+.bf-h2, h2 {
+  font-family: var(--bf-font-graffiti);
+  font-weight: 400;
+  font-size: var(--bf-fs-28);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bf-fg-1);
+  margin: 0;
+}
+
+/* H3 — card / row title.  Heavy condensed UPPERCASE. */
+.bf-h3, h3 {
+  font-family: var(--bf-font-cond);
+  font-weight: var(--bf-fw-heavy);
+  font-size: var(--bf-fs-20);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--bf-fg-1);
+  margin: 0;
+}
+
+/* H4 — sub-section / micro-label */
+.bf-h4, h4 {
+  font-family: var(--bf-font-cond);
+  font-weight: var(--bf-fw-bold);
+  font-size: var(--bf-fs-14);
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bf-fg-2);
+  margin: 0;
+}
+
+/* Body */
+.bf-p, p {
+  font-family: var(--bf-font-body);
+  font-size: var(--bf-fs-15);
+  font-weight: var(--bf-fw-regular);
+  line-height: 1.5;
+  color: var(--bf-fg-1);
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* Caption / supporting */
+.bf-caption {
+  font-family: var(--bf-font-body);
+  font-size: var(--bf-fs-13);
+  color: var(--bf-fg-2);
+  line-height: 1.4;
+}
+
+/* Numeric (scores, points) — tabular */
+.bf-num {
+  font-family: var(--bf-font-display);
+  font-weight: var(--bf-fw-black);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* Code / mono */
+.bf-mono, code {
+  font-family: var(--bf-font-mono);
+  font-size: var(--bf-fs-13);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   COMMON UTILITY CLASSES
+   ============================================================ */
+
+.bf-card {
+  background: var(--bf-chassis);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-lg);
+  box-shadow: var(--bf-shadow-card);
+  padding: var(--bf-space-4) var(--bf-space-5);
+}
+
+.bf-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bf-space-2);
+  background: var(--bf-chassis);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-md);
+  padding: 6px 12px;
+  font-family: var(--bf-font-cond);
+  font-weight: var(--bf-fw-bold);
+  font-size: var(--bf-fs-13);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bf-fg-1);
+}
+
+.bf-pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bf-live);
+  box-shadow: 0 0 8px var(--bf-lime-glow);
+  animation: bf-pulse 1.4s var(--bf-ease-in-out) infinite;
+}
+
+@keyframes bf-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.bf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bf-space-2);
+  height: 44px;
+  padding: 0 var(--bf-space-5);
+  border: 0;
+  border-radius: var(--bf-radius-md);
+  background: var(--bf-lime);
+  color: var(--bf-lime-ink);
+  font-family: var(--bf-font-cond);
+  font-weight: var(--bf-fw-black);
+  font-size: var(--bf-fs-16);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--bf-glow-lime);
+  transition:
+    transform var(--bf-dur-fast) var(--bf-ease-out),
+    filter var(--bf-dur-normal) var(--bf-ease-out);
+}
+.bf-btn:hover {
+  filter: brightness(1.08);
+}
+.bf-btn:active {
+  transform: scale(0.98);
+}
+
+.bf-btn--ghost {
+  background: transparent;
+  color: var(--bf-fg-1);
+  border: 1px solid var(--bf-line-strong);
+  box-shadow: none;
+}
+.bf-btn--ghost:hover {
+  background: var(--bf-chassis-hover);
+}

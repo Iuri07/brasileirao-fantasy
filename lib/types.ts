@@ -34,6 +34,7 @@ export interface AtletaCacheEntry {
   posicao: string;
   posicao_id: number;
   status_id: number | null;
+  foto?: string | null;
 }
 
 export interface AtletaCacheKV {
@@ -45,15 +46,25 @@ export interface RodadaStatus {
   status: "aguardando" | "aguardando_inicio" | "ao_vivo";
   rodada: number;
   atualizadoEm?: string;
-  fechamento?: { dia: string; hora: string };
+  fechamento?: CartolaMercadoStatus["fechamento"];
 }
 
 // Cartola API
 export interface CartolaMercadoStatus {
-  status_mercado: number; // 1 = fechado, 2 = aberto
+  // 1 = mercado aberto (escalação permitida)
+  // 2 = mercado fechado (rodada iniciada, sem trocas)
+  // 3 = atualização / 4 = encerrado
+  status_mercado: number;
   rodada_atual: number;
   bola_rolando: boolean;
-  fechamento: { dia: string; hora: string };
+  fechamento: {
+    dia: number;
+    mes: number;
+    ano: number;
+    hora: number;
+    minuto: number;
+    timestamp: number; // Unix seconds
+  };
 }
 
 export interface CartolaAtleta {
@@ -64,6 +75,8 @@ export interface CartolaAtleta {
   status_id: number | null;
   pontos_num: number;
   entrou_em_campo: boolean;
+  foto?: string;
+  slug?: string;
 }
 
 export interface CartolaPontuadoAtleta {

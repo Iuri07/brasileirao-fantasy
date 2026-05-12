@@ -3,7 +3,8 @@
   "tasks": {
     "check": "deno fmt --check && deno lint && deno check **/*.ts && deno check **/*.tsx",
     "build": "deno run -A dev.ts build",
-    "start": "deno run -A --unstable-kv --unstable-cron dev.ts",
+    "start": "PORT=8080 deno run -A --env-file=.env --unstable-kv --unstable-cron dev.ts",
+    "start:lan": "HOST=0.0.0.0 PORT=8080 deno run -A --env-file=.env --unstable-kv --unstable-cron dev.ts",
     "seed": "deno run -A --unstable-kv scripts/seed.ts",
     "preview": "deno run -A main.ts",
     "update": "deno run -A -r https://fresh.deno.dev/update ."
@@ -25,6 +26,12 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.ns", "deno.unstable"]
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "dom.asynciterable",
+      "deno.ns",
+      "deno.unstable"
+    ]
   }
 }
