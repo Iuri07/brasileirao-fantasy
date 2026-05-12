@@ -8,6 +8,8 @@ import * as $_middleware from "./routes/_middleware.ts";
 import * as $admin from "./routes/admin.tsx";
 import * as $ao_vivo from "./routes/ao-vivo.tsx";
 import * as $api_admin_atualizar from "./routes/api/admin/atualizar.ts";
+import * as $api_admin_draft_fechar from "./routes/api/admin/draft-fechar.ts";
+import * as $api_admin_draft_ordem from "./routes/api/admin/draft-ordem.ts";
 import * as $api_admin_email_map from "./routes/api/admin/email-map.ts";
 import * as $api_admin_seed from "./routes/api/admin/seed.ts";
 import * as $api_admin_sync_atletas from "./routes/api/admin/sync-atletas.ts";
@@ -30,6 +32,7 @@ import * as $api_elenco_dono_jogador_remove from "./routes/api/elenco/[dono]/jog
 import * as $api_elenco_dono_jogador_swap from "./routes/api/elenco/[dono]/jogador/swap.ts";
 import * as $api_elenco_dono_swap_escalacao from "./routes/api/elenco/[dono]/swap-escalacao.ts";
 import * as $api_live_path_ from "./routes/api/live/[...path].ts";
+import * as $api_me_prioridade from "./routes/api/me/prioridade.ts";
 import * as $api_notificacoes from "./routes/api/notificacoes.ts";
 import * as $api_ofertas_id_responder from "./routes/api/ofertas/[id]/responder.ts";
 import * as $api_ofertas_index from "./routes/api/ofertas/index.ts";
@@ -62,6 +65,8 @@ const manifest = {
     "./routes/admin.tsx": $admin,
     "./routes/ao-vivo.tsx": $ao_vivo,
     "./routes/api/admin/atualizar.ts": $api_admin_atualizar,
+    "./routes/api/admin/draft-fechar.ts": $api_admin_draft_fechar,
+    "./routes/api/admin/draft-ordem.ts": $api_admin_draft_ordem,
     "./routes/api/admin/email-map.ts": $api_admin_email_map,
     "./routes/api/admin/seed.ts": $api_admin_seed,
     "./routes/api/admin/sync-atletas.ts": $api_admin_sync_atletas,
@@ -87,6 +92,7 @@ const manifest = {
     "./routes/api/elenco/[dono]/swap-escalacao.ts":
       $api_elenco_dono_swap_escalacao,
     "./routes/api/live/[...path].ts": $api_live_path_,
+    "./routes/api/me/prioridade.ts": $api_me_prioridade,
     "./routes/api/notificacoes.ts": $api_notificacoes,
     "./routes/api/ofertas/[id]/responder.ts": $api_ofertas_id_responder,
     "./routes/api/ofertas/index.ts": $api_ofertas_index,

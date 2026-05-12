@@ -1,4 +1,6 @@
 import { useMemo, useState } from "preact/hooks";
+import JerseySvg from "../components/JerseySvg.tsx";
+import type { CoresClube } from "../lib/cores.ts";
 
 export interface AtletaMercado {
   atleta_id: number;
@@ -8,6 +10,8 @@ export interface AtletaMercado {
   clubeId: number;
   statusId: number | null;
   foto: string | null;
+  /** Cores do clube pra renderizar camisa SVG quando não houver cutout. */
+  cores: CoresClube;
   pontosUltima: number | null;
   mediaPontos: number | null;
   /** Se está marcado à venda, qual o time dono. Null se free agent. */
@@ -34,6 +38,7 @@ export interface MeuInteresse {
   posicao: "Goleiro" | "Lateral" | "Zagueiro" | "Meia" | "Atacante";
   clubeNome: string;
   foto: string | null;
+  cores: CoresClube;
   statusId: number | null;
   oferecidoId: number;
   oferecidoNome: string;
@@ -189,6 +194,7 @@ export default function MercadoBrowser(
               posicao: pedido.posicao,
               clubeNome: pedido.clubeNome,
               foto: pedido.foto,
+              cores: pedido.cores,
               statusId: pedido.statusId,
               oferecidoId: oferecido.atleta_id,
               oferecidoNome: oferecido.nome,
@@ -690,8 +696,6 @@ function CardJogador(
     ? meuElenco.find((m) => m.atleta_id === j.meuOferecido)?.nome
     : null;
   const hasFoto = !!j.foto;
-  const isCutout = hasFoto &&
-    (j.foto!.includes("thesportsdb") || j.foto!.startsWith("/atletas/"));
   const st = j.statusId != null ? STATUS_LABEL[j.statusId] : null;
   const interessado = !!minhaChave && j.interessados.includes(minhaChave);
   const podeInteressar = !!minhaChave && !j.donoChave;
@@ -707,16 +711,12 @@ function CardJogador(
     <article
       class={`bf-merc-card bf-merc-card--${
         POS_ABREV[j.posicao].toLowerCase()
-      } ${isCutout ? "bf-merc-card--cutout" : ""}`}
+      } ${hasFoto ? "bf-merc-card--cutout" : "bf-merc-card--jersey"}`}
     >
       <div class="bf-merc-card__foto">
         {hasFoto
           ? <img src={j.foto!} alt="" loading="lazy" />
-          : (
-            <div class="bf-merc-card__foto-placeholder">
-              {j.nome.charAt(0)}
-            </div>
-          )}
+          : <JerseySvg cores={j.cores} class="bf-merc-card__jersey" />}
       </div>
       <div class="bf-merc-card__top">
         <span class="bf-merc-card__pos">{POS_ABREV[j.posicao]}</span>
@@ -795,8 +795,6 @@ function CardMeu(
   },
 ) {
   const hasFoto = !!j.foto;
-  const isCutout = hasFoto &&
-    (j.foto!.includes("thesportsdb") || j.foto!.startsWith("/atletas/"));
   const st = j.statusId != null ? STATUS_LABEL[j.statusId] : null;
   const ultima = j.pontosUltima != null
     ? j.pontosUltima.toFixed(1).replace(".", ",")
@@ -808,16 +806,12 @@ function CardMeu(
     <article
       class={`bf-merc-card bf-merc-card--${
         POS_ABREV[j.posicao].toLowerCase()
-      } ${isCutout ? "bf-merc-card--cutout" : ""}`}
+      } ${hasFoto ? "bf-merc-card--cutout" : "bf-merc-card--jersey"}`}
     >
       <div class="bf-merc-card__foto">
         {hasFoto
           ? <img src={j.foto!} alt="" loading="lazy" />
-          : (
-            <div class="bf-merc-card__foto-placeholder">
-              {j.nome.charAt(0)}
-            </div>
-          )}
+          : <JerseySvg cores={j.cores} class="bf-merc-card__jersey" />}
       </div>
       <div class="bf-merc-card__top">
         <span class="bf-merc-card__pos">{POS_ABREV[j.posicao]}</span>
@@ -965,9 +959,10 @@ function ModalInteresses(
                     {m.foto
                       ? <img src={m.foto} alt="" loading="lazy" />
                       : (
-                        <div class="bf-int__foto-placeholder">
-                          {m.nome.charAt(0)}
-                        </div>
+                        <JerseySvg
+                          cores={m.cores}
+                          class="bf-int__foto-jersey"
+                        />
                       )}
                   </div>
                   <div class="bf-int__txt">

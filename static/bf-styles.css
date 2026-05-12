@@ -2540,6 +2540,10 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"] {
   height: 100%;
   object-fit: cover;
 }
+.bf-int__foto-jersey {
+  width: 95%;
+  height: 95%;
+}
 .bf-int__foto-placeholder {
   font-family: var(--bf-font-cond);
   font-weight: 700;
@@ -2746,6 +2750,12 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"] {
   border-radius: 0;
   background: transparent;
   border: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+/* Fallback: camisa SVG renderizada com cores do clube */
+.bf-merc-card__jersey {
+  width: 90%;
+  height: 90%;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 .bf-merc-card__foto-placeholder {

@@ -14,6 +14,7 @@ import {
 import { type DraftMeta, inicializarDraftSeNecessario } from "../lib/draft.ts";
 import { fetchAtletasMercado } from "../lib/cartola.ts";
 import { fotoUrl } from "../lib/fotos.ts";
+import { coresClube } from "../lib/cores.ts";
 import TopBar from "../components/TopBar.tsx";
 import BottomNav from "../components/BottomNav.tsx";
 import SectionHeader from "../components/SectionHeader.tsx";
@@ -87,12 +88,6 @@ export const handler: Handlers<Data, State> = {
       clubes[cid] = c.nome_fantasia ?? c.nome ?? cid;
     }
 
-    // Cartola serve fotos com "FORMATO" literal — substitui por tamanho válido
-    const fixCartolaFoto = (url: string | undefined): string | null => {
-      if (!url) return null;
-      return url.replace("FORMATO", "220x220");
-    };
-
     const idsDisponiveis: number[] = [];
     for (const a of mercadoResp?.atletas ?? []) {
       const owner = dono[a.atleta_id];
@@ -115,17 +110,23 @@ export const handler: Handlers<Data, State> = {
       const meuReg = chaveLogadaAux
         ? regs.find((r) => r.chave === chaveLogadaAux)
         : undefined;
+      const clubeNome = clubes[String(a.clube_id)] ?? "";
+      // Cutout real só de TheSportsDB ou /atletas/{id}.png. Cartola
+      // silhueta vira null aqui — o island renderiza a camisa SVG.
+      const fotoKV = fotos[String(a.atleta_id)];
+      const fotoCutout = fotoKV &&
+          (fotoKV.startsWith("/atletas/") || fotoKV.includes("thesportsdb"))
+        ? fotoKV
+        : fotoUrl(a.apelido);
       jogadores.push({
         atleta_id: a.atleta_id,
         nome: a.apelido,
         posicao: pos,
-        clubeNome: clubes[String(a.clube_id)] ?? "",
+        clubeNome,
         clubeId: a.clube_id,
         statusId: a.status_id,
-        // Prioridade: cutout salvo (KV) > local jpg (/players/) > Cartola CDN
-        // (silhuetas do clube, mas pelo menos algo) > null
-        foto: fotos[String(a.atleta_id)] ?? fotoUrl(a.apelido) ??
-          fixCartolaFoto(a.foto) ?? null,
+        foto: fotoCutout ?? null,
+        cores: coresClube(clubeNome),
         pontosUltima: a.pontos_num ?? null,
         // deno-lint-ignore no-explicit-any
         mediaPontos: (a as any).media_num ?? null,
@@ -150,6 +151,11 @@ export const handler: Handlers<Data, State> = {
         const cartola = mercadoIdx.get(j.atleta_id);
         const pos = POSICAO[cartola?.posicao_id ?? -1];
         if (!pos) continue;
+        const fotoKV = fotos[String(j.atleta_id)];
+        const fotoCutout = fotoKV &&
+            (fotoKV.startsWith("/atletas/") || fotoKV.includes("thesportsdb"))
+          ? fotoKV
+          : fotoUrl(j.apelido_api);
         meuElenco.push({
           atleta_id: j.atleta_id,
           nome: j.apelido_api,
@@ -157,8 +163,8 @@ export const handler: Handlers<Data, State> = {
           clubeNome: j.clube,
           clubeId: j.clube_id,
           statusId: j.status_id,
-          foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ??
-            fixCartolaFoto(cartola?.foto) ?? null,
+          foto: fotoCutout ?? null,
+          cores: coresClube(j.clube),
           pontosUltima: cartola?.pontos_num ?? null,
           // deno-lint-ignore no-explicit-any
           mediaPontos: (cartola as any)?.media_num ?? null,
@@ -202,13 +208,19 @@ export const handler: Handlers<Data, State> = {
         const meuReg = regs.find((r) => r.chave === chaveLogada);
         if (!meuReg) continue;
         const oferecidoJog = meuElencoIdx.get(meuReg.oferecido);
+        const clubeNomeAt = clubes[String(a.clube_id)] ?? "";
+        const fotoKV = fotos[String(atletaId)];
+        const fotoCutout = fotoKV &&
+            (fotoKV.startsWith("/atletas/") || fotoKV.includes("thesportsdb"))
+          ? fotoKV
+          : fotoUrl(a.apelido);
         meusInteresses.push({
           atleta_id: atletaId,
           nome: a.apelido,
           posicao: pos,
-          clubeNome: clubes[String(a.clube_id)] ?? "",
-          foto: fotos[String(atletaId)] ?? fotoUrl(a.apelido) ??
-            fixCartolaFoto(a.foto) ?? null,
+          clubeNome: clubeNomeAt,
+          foto: fotoCutout ?? null,
+          cores: coresClube(clubeNomeAt),
           statusId: a.status_id,
           oferecidoId: meuReg.oferecido,
           oferecidoNome: oferecidoJog?.apelido_api ?? "—",
@@ -240,7 +252,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=56" />
+        <link rel="stylesheet" href="/bf-styles.css?v=57" />
       </Head>
       <div class="bf-viewport">
         <TopBar
