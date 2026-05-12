@@ -154,17 +154,22 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
 
   // Sempre busca status do mercado e tenta pontuados
   const mercado = await fetchMercadoStatus();
-  const statusAtual = await getRodadaStatus(kv);
-  const jaAoVivo = statusAtual?.status === "ao_vivo";
+
+  // Status derivado SOMENTE do mercado real (não do KV anterior).
+  // status_mercado: 1=aberto, 2=fechado (rodada). bola_rolando=true→ao_vivo
+  const statusReal: "ao_vivo" | "aguardando_inicio" | "aguardando" =
+    mercado.bola_rolando
+      ? "ao_vivo"
+      : mercado.status_mercado === 1
+      ? "aguardando"
+      : "aguardando_inicio";
 
   let pontuados;
   try {
     pontuados = await fetchAtletasPontuados();
   } catch {
-    // Pontuados indisponível: entre jogos ou pré-rodada
-    if (jaAoVivo) return; // mantém ao_vivo entre jogos da mesma rodada
     await setRodadaStatus(kv, {
-      status: mercado.bola_rolando ? "aguardando_inicio" : "aguardando",
+      status: statusReal,
       rodada: mercado.rodada_atual,
       fechamento: mercado.bola_rolando ? undefined : mercado.fechamento,
       atualizadoEm: now,
@@ -173,9 +178,8 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
   }
 
   if (!pontuados?.atletas || Object.keys(pontuados.atletas).length === 0) {
-    if (jaAoVivo) return; // mantém ao_vivo entre jogos
     await setRodadaStatus(kv, {
-      status: mercado.bola_rolando ? "aguardando_inicio" : "aguardando",
+      status: statusReal,
       rodada: mercado.rodada_atual,
       fechamento: mercado.bola_rolando ? undefined : mercado.fechamento,
       atualizadoEm: now,
@@ -221,14 +225,8 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
     }
   }
 
-  // Status real: ao_vivo só quando bola_rolando. Senão, aguardando_inicio
-  // (mercado fechado mas sem jogo agora) ou aguardando (mercado aberto).
   await setRodadaStatus(kv, {
-    status: mercado.bola_rolando
-      ? "ao_vivo"
-      : mercado.status_mercado === 1
-      ? "aguardando"
-      : "aguardando_inicio",
+    status: statusReal,
     rodada: rodadaId,
     fechamento: mercado.bola_rolando ? undefined : mercado.fechamento,
     atualizadoEm: now,
