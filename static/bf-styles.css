@@ -1801,10 +1801,14 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"] {
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.92);
   border: 1px solid var(--st-color, #fff);
-  font-family: var(--bf-font-cond);
-  font-weight: 900;
-  font-size: 10px;
+  /* sans-serif do sistema: ✓ ✕ ✚ − todos centralizam consistente. */
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    sans-serif;
+  font-weight: 700;
+  font-size: 11px;
   line-height: 1;
+  text-align: center;
   color: var(--st-color, #fff);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
   pointer-events: auto;

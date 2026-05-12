@@ -6,38 +6,38 @@
 
 :root {
   /* ── Backgrounds ── */
-  --bg-base:        #0B0F14;
-  --bg-card:        #121821;
-  --bg-card-2:      #0F1520;
-  --bg-elevated:    #1A2235;
+  --bg-base: #0b0f14;
+  --bg-card: #121821;
+  --bg-card-2: #0f1520;
+  --bg-elevated: #1a2235;
 
   /* ── Primary neon ── */
-  --neon:           #00FF88;
-  --neon-dim:       rgba(0, 255, 136, 0.10);
-  --neon-mid:       rgba(0, 255, 136, 0.22);
-  --neon-glow:      none;
-  --neon-glow-sm:   none;
+  --neon: #00ff88;
+  --neon-dim: rgba(0, 255, 136, 0.10);
+  --neon-mid: rgba(0, 255, 136, 0.22);
+  --neon-glow: none;
+  --neon-glow-sm: none;
 
   /* ── Accent colors (splash / graffiti) ── */
-  --accent-blue:    #00E0FF;
-  --accent-pink:    #FF3D81;
-  --accent-orange:  #FF7A00;
-  --accent-yellow:  #FFE600;
+  --accent-blue: #00e0ff;
+  --accent-pink: #ff3d81;
+  --accent-orange: #ff7a00;
+  --accent-yellow: #ffe600;
 
   /* ── Text ── */
-  --text-1:         #FFFFFF;
-  --text-2:         #A8B3C2;
-  --text-3:         #3D4A5C;
+  --text-1: #ffffff;
+  --text-2: #a8b3c2;
+  --text-3: #3d4a5c;
 
   /* ── Borders ── */
-  --border:         rgba(255, 255, 255, 0.06);
-  --border-neon:    rgba(0, 255, 136, 0.25);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-neon: rgba(0, 255, 136, 0.25);
 
   /* ── Shadows ── */
-  --shadow-sm:      0 2px 10px rgba(0, 0, 0, 0.6);
-  --shadow-md:      0 4px 24px rgba(0, 0, 0, 0.75);
-  --shadow-lg:      0 8px 40px rgba(0, 0, 0, 0.85);
-  --shadow-glow:    none;
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.75);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.85);
+  --shadow-glow: none;
 }
 
 /* ── Reset ── */
@@ -48,12 +48,24 @@
 }
 
 body {
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   background-color: var(--bg-base);
   background-image:
-    radial-gradient(ellipse 110% 45% at 50% -5%,  rgba(0, 255, 136, 0.07) 0%, transparent 55%),
-    radial-gradient(ellipse 55%  30% at 90% 85%,  rgba(0, 224, 255, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse 40%  25% at 10% 70%,  rgba(255, 61, 129, 0.03) 0%, transparent 50%);
+    radial-gradient(
+      ellipse 110% 45% at 50% -5%,
+      rgba(0, 255, 136, 0.07) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+    ellipse 55% 30% at 90% 85%,
+    rgba(0, 224, 255, 0.04) 0%,
+    transparent 50%
+  ),
+    radial-gradient(
+    ellipse 40% 25% at 10% 70%,
+    rgba(255, 61, 129, 0.03) 0%,
+    transparent 50%
+  );
   color: var(--text-1);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -131,7 +143,7 @@ body {
 }
 
 .atualizacao-info::before {
-  content: '';
+  content: "";
   display: inline-block;
   width: 6px;
   height: 6px;
@@ -142,8 +154,12 @@ body {
 }
 
 @keyframes pulsar {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.15; }
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
 }
 
 /* ── Abas ── */
@@ -188,8 +204,13 @@ body {
   box-shadow: var(--neon-glow-sm) !important;
 }
 
-.tab-icone { opacity: 0.6; }
-.tab-ativa .tab-icone { opacity: 1; color: var(--neon); }
+.tab-icone {
+  opacity: 0.6;
+}
+.tab-ativa .tab-icone {
+  opacity: 1;
+  color: var(--neon);
+}
 
 /* Ponto "ao vivo" */
 .tab-dot-ao-vivo {
@@ -220,14 +241,17 @@ body {
   overflow: hidden;
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
   box-shadow: var(--shadow-sm);
   position: relative;
 }
 
 /* Barra de acento lateral — cor do time */
 .time-card::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 0;
@@ -241,19 +265,27 @@ body {
 
 .time-card:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--cor-time, var(--neon)) 55%, transparent);
-  box-shadow: var(--shadow-md),
-              0 0 28px color-mix(in srgb, var(--cor-time, var(--neon)) 38%, transparent);
+  border-color: color-mix(
+    in srgb,
+    var(--cor-time, var(--neon)) 55%,
+    transparent
+  );
+  box-shadow:
+    var(--shadow-md),
+    0 0 28px color-mix(in srgb, var(--cor-time, var(--neon)) 38%, transparent);
 }
 
-.time-card:active { transform: translateY(0); }
-
+.time-card:active {
+  transform: translateY(0);
+}
 
 /* 1º lugar */
 .time-card.primeiro-lugar {
   border-color: rgba(255, 230, 0, 0.22);
   background: linear-gradient(140deg, #161a10 0%, var(--bg-card) 55%);
-  box-shadow: var(--shadow-md), 0 0 32px rgba(255, 230, 0, 0.07);
+  box-shadow:
+    var(--shadow-md),
+    0 0 32px rgba(255, 230, 0, 0.07);
 }
 .time-card.primeiro-lugar::before {
   background: var(--accent-yellow);
@@ -284,7 +316,9 @@ body {
   letter-spacing: -0.5px;
 }
 
-.time-card.primeiro-lugar .posicao { font-size: 1.3rem; }
+.time-card.primeiro-lugar .posicao {
+  font-size: 1.3rem;
+}
 
 .posicao-escudo {
   width: 32px;
@@ -364,7 +398,9 @@ body {
   transition: color 0.2s;
 }
 
-.time-card:hover .expandir-icone { color: var(--neon); }
+.time-card:hover .expandir-icone {
+  color: var(--neon);
+}
 
 .bola-inline {
   display: inline-block;
@@ -397,7 +433,9 @@ body {
 
 .jogadores-header span:nth-child(2),
 .jogadores-header span:nth-child(3),
-.jogadores-header span:nth-child(4) { text-align: center; }
+.jogadores-header span:nth-child(4) {
+  text-align: center;
+}
 
 .jogador-linha {
   display: grid;
@@ -410,9 +448,15 @@ body {
   transition: opacity 0.1s;
 }
 
-.jogador-linha:last-child { border-bottom: none; }
-.jogador-linha.esc-banco  { opacity: 0.6; }
-.jogador-linha.esc-nao    { opacity: 0.25; }
+.jogador-linha:last-child {
+  border-bottom: none;
+}
+.jogador-linha.esc-banco {
+  opacity: 0.6;
+}
+.jogador-linha.esc-nao {
+  opacity: 0.25;
+}
 
 .pre-rodada-linha {
   grid-template-columns: 1fr 3rem 2.5rem !important;
@@ -440,12 +484,30 @@ body {
   text-align: center;
 }
 
-.posicao-gol { background: rgba(0, 224, 255, 0.12); color: var(--accent-blue); }
-.posicao-zag { background: rgba(0, 255, 136, 0.12); color: var(--neon); }
-.posicao-lat { background: rgba(255, 230, 0, 0.12);  color: var(--accent-yellow); }
-.posicao-mei { background: rgba(255, 122, 0, 0.12);  color: var(--accent-orange); }
-.posicao-atk { background: rgba(255, 61, 129, 0.12); color: var(--accent-pink); }
-.posicao-tec { background: rgba(180, 120, 255, 0.12);color: #B478FF; }
+.posicao-gol {
+  background: rgba(0, 224, 255, 0.12);
+  color: var(--accent-blue);
+}
+.posicao-zag {
+  background: rgba(0, 255, 136, 0.12);
+  color: var(--neon);
+}
+.posicao-lat {
+  background: rgba(255, 230, 0, 0.12);
+  color: var(--accent-yellow);
+}
+.posicao-mei {
+  background: rgba(255, 122, 0, 0.12);
+  color: var(--accent-orange);
+}
+.posicao-atk {
+  background: rgba(255, 61, 129, 0.12);
+  color: var(--accent-pink);
+}
+.posicao-tec {
+  background: rgba(180, 120, 255, 0.12);
+  color: #b478ff;
+}
 
 /* ── Badges escalação ── */
 .esc-badge {
@@ -459,9 +521,18 @@ body {
   font-weight: 900;
 }
 
-.esc-sim   { background: rgba(0, 255, 136, 0.12); color: var(--neon); }
-.esc-banco { background: rgba(255, 122, 0,  0.12); color: var(--accent-orange); }
-.esc-nao   { background: rgba(255, 255, 255, 0.04); color: var(--text-3); }
+.esc-sim {
+  background: rgba(0, 255, 136, 0.12);
+  color: var(--neon);
+}
+.esc-banco {
+  background: rgba(255, 122, 0, 0.12);
+  color: var(--accent-orange);
+}
+.esc-nao {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-3);
+}
 
 /* ── Pontuação jogador ── */
 .jogador-pontuacao {
@@ -471,8 +542,12 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.jogador-pontuacao.positivo { color: var(--neon); }
-.jogador-pontuacao.zero     { color: var(--text-3); }
+.jogador-pontuacao.positivo {
+  color: var(--neon);
+}
+.jogador-pontuacao.zero {
+  color: var(--text-3);
+}
 
 /* ── Legenda ── */
 .legenda-esc {
@@ -512,7 +587,11 @@ body {
   box-shadow: none;
 }
 
-@keyframes girar { to { transform: rotate(360deg); } }
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .loading p {
   color: var(--text-2);
@@ -571,10 +650,27 @@ body {
 }
 
 /* ── 404 ── */
-.error-404 { text-align: center; padding: 5rem 2rem; }
-.error-404 h1 { color: var(--text-1); margin-bottom: 0.5rem; font-size: 1.4rem; font-weight: 900; text-transform: uppercase; }
-.error-404 p  { color: var(--text-3); margin-bottom: 1rem; }
-.error-404 a  { color: var(--neon); text-decoration: none; border-bottom: 1px solid var(--neon); font-weight: 700; }
+.error-404 {
+  text-align: center;
+  padding: 5rem 2rem;
+}
+.error-404 h1 {
+  color: var(--text-1);
+  margin-bottom: 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.error-404 p {
+  color: var(--text-3);
+  margin-bottom: 1rem;
+}
+.error-404 a {
+  color: var(--neon);
+  text-decoration: none;
+  border-bottom: 1px solid var(--neon);
+  font-weight: 700;
+}
 
 /* ═══════════════════════════════════════════
    CAMPO DE FUTEBOL
@@ -591,7 +687,11 @@ body {
   grid-template-rows: 1fr 1fr 1fr 1fr;
   min-height: 460px;
   background-color: color-mix(in srgb, var(--cor-time, #10b981) 15%, #0d1520);
-  background-image: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(255, 255, 255, 0.04) 0%, transparent 65%);
+  background-image: radial-gradient(
+    ellipse 70% 50% at 50% 50%,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 65%
+  );
   padding: 32px 0 8px;
 }
 
@@ -661,7 +761,9 @@ img.campo-svg-bg {
   transition: opacity 0.2s;
 }
 
-.campo-jogador-fraco { opacity: 0.3; }
+.campo-jogador-fraco {
+  opacity: 0.3;
+}
 
 .campo-player-card {
   display: flex;
@@ -689,7 +791,7 @@ img.campo-svg-bg {
   border-radius: 6px;
   background: transparent;
   border: none;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   z-index: 1;
 }
 
@@ -724,7 +826,7 @@ img.campo-svg-bg {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 58px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -737,7 +839,7 @@ img.campo-svg-bg {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-top: 2px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
 .campo-avatar-escudo {
@@ -748,8 +850,8 @@ img.campo-svg-bg {
   height: 20px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid #0B0F14;
-  background: #0B0F14;
+  border: 1.5px solid #0b0f14;
+  background: #0b0f14;
   z-index: 4;
 }
 
@@ -757,18 +859,20 @@ img.campo-svg-bg {
   position: absolute;
   bottom: 1px;
   right: 2px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 8px;
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1;
   z-index: 5;
-  text-shadow: 0 0 3px #0B0F14, 0 0 2px #0B0F14;
+  text-shadow: 0 0 3px #0b0f14, 0 0 2px #0b0f14;
   pointer-events: none;
 }
 
 .campo-jogador-pts {
   font-size: 10px;
   font-weight: 900;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   letter-spacing: 0.03em;
 }
 
@@ -804,7 +908,7 @@ img.campo-svg-bg {
   color: rgba(255, 255, 255, 0.18);
   text-align: center;
   margin-bottom: 8px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
 .campo-banco-jogadores {
@@ -815,18 +919,61 @@ img.campo-svg-bg {
 }
 
 /* ── Gráfico de linhas (legado) ── */
-.grafico-wrapper { margin-top: 0.5rem; }
-.grafico-vazio { text-align: center; padding: 3rem 1rem; color: var(--text-3); font-size: 0.9rem; }
-.grafico-legenda {
-  display: flex; flex-direction: column; gap: 0.35rem;
-  margin-top: 1rem; padding: 0.875rem 1rem;
-  background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border);
+.grafico-wrapper {
+  margin-top: 0.5rem;
 }
-.legenda-item { display: grid; grid-template-columns: 1.8rem 0.75rem 1fr auto; align-items: center; gap: 0.6rem; font-size: 0.82rem; }
-.legenda-pos  { color: var(--text-3); font-size: 0.72rem; font-weight: 800; text-align: right; }
-.legenda-cor  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.legenda-nome { color: var(--text-1); font-weight: 800; font-size: 0.78rem; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.04em; }
-.legenda-total { color: var(--neon); font-weight: 900; font-size: 0.85rem; font-variant-numeric: tabular-nums; text-align: right; }
+.grafico-vazio {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-3);
+  font-size: 0.9rem;
+}
+.grafico-legenda {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
+  background: var(--bg-card);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.legenda-item {
+  display: grid;
+  grid-template-columns: 1.8rem 0.75rem 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+}
+.legenda-pos {
+  color: var(--text-3);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: right;
+}
+.legenda-cor {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.legenda-nome {
+  color: var(--text-1);
+  font-weight: 800;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.04em;
+}
+.legenda-total {
+  color: var(--neon);
+  font-weight: 900;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
 
 /* ── Painel de gerenciamento de elenco ── */
 .elenco-mgmt {
@@ -854,7 +1001,11 @@ img.campo-svg-bg {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   margin-top: 2px;
 }
-.mgmt-posicao-sep.primeiro { border-top: none; padding-top: 0; margin-top: 0; }
+.mgmt-posicao-sep.primeiro {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
 
 .mgmt-jogador {
   display: flex;
@@ -864,7 +1015,9 @@ img.campo-svg-bg {
   border-bottom: 1px solid rgba(255, 255, 255, 0.025);
 }
 
-.mgmt-jogador:last-child { border-bottom: none; }
+.mgmt-jogador:last-child {
+  border-bottom: none;
+}
 
 .mgmt-jogador-info {
   flex: 1;
@@ -886,8 +1039,10 @@ img.campo-svg-bg {
 }
 
 .mgmt-status-sym {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 0.7rem;
-  font-weight: 900;
+  font-weight: 700;
   flex-shrink: 0;
   line-height: 1;
 }
@@ -923,10 +1078,25 @@ img.campo-svg-bg {
   font-family: inherit;
 }
 
-.mgmt-esc-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-1); }
-.mgmt-esc-btn.ativo-sim   { background: rgba(0, 255, 136, 0.15); color: var(--neon); border-color: rgba(0, 255, 136, 0.35); }
-.mgmt-esc-btn.ativo-banco { background: rgba(255, 122, 0, 0.15); color: var(--accent-orange); border-color: rgba(255, 122, 0, 0.35); }
-.mgmt-esc-btn.ativo-nao   { background: rgba(255, 255, 255, 0.06); color: var(--text-2); border-color: rgba(255, 255, 255, 0.15); }
+.mgmt-esc-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-1);
+}
+.mgmt-esc-btn.ativo-sim {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--neon);
+  border-color: rgba(0, 255, 136, 0.35);
+}
+.mgmt-esc-btn.ativo-banco {
+  background: rgba(255, 122, 0, 0.15);
+  color: var(--accent-orange);
+  border-color: rgba(255, 122, 0, 0.35);
+}
+.mgmt-esc-btn.ativo-nao {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-2);
+  border-color: rgba(255, 255, 255, 0.15);
+}
 
 .mgmt-trocar-btn {
   font-size: 0.58rem;
@@ -943,7 +1113,10 @@ img.campo-svg-bg {
   flex-shrink: 0;
 }
 
-.mgmt-trocar-btn:hover { color: var(--accent-blue); border-color: rgba(0, 224, 255, 0.35); }
+.mgmt-trocar-btn:hover {
+  color: var(--accent-blue);
+  border-color: rgba(0, 224, 255, 0.35);
+}
 
 /* ── Painel de troca de jogador ── */
 .swap-panel {
@@ -967,7 +1140,9 @@ img.campo-svg-bg {
   margin-bottom: 0.35rem;
 }
 
-.swap-search:focus { border-color: var(--accent-blue); }
+.swap-search:focus {
+  border-color: var(--accent-blue);
+}
 
 .swap-buscando {
   font-size: 0.65rem;
@@ -987,7 +1162,10 @@ img.campo-svg-bg {
   transition: background 0.15s;
 }
 
-.swap-resultado:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-1); }
+.swap-resultado:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-1);
+}
 
 .swap-resultado-clube {
   font-size: 0.62rem;
@@ -1013,7 +1191,7 @@ img.campo-svg-bg {
   position: absolute;
   top: -4px;
   left: -4px;
-  background: #FF6B35;
+  background: #ff6b35;
   color: #fff;
   font-size: 5.5px;
   font-weight: 900;
@@ -1022,13 +1200,22 @@ img.campo-svg-bg {
   border-radius: 3px;
   z-index: 6;
   text-transform: uppercase;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
 /* ── Responsivo ── */
 @media (max-width: 480px) {
-  .time-header     { padding: 0.75rem 0.875rem; gap: 0.6rem; }
-  .pontuacao       { font-size: 1.2rem; }
-  .time-nome       { font-size: 0.82rem; }
-  .posicao-wrapper { min-width: 2rem; }
+  .time-header {
+    padding: 0.75rem 0.875rem;
+    gap: 0.6rem;
+  }
+  .pontuacao {
+    font-size: 1.2rem;
+  }
+  .time-nome {
+    font-size: 0.82rem;
+  }
+  .posicao-wrapper {
+    min-width: 2rem;
+  }
 }

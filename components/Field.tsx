@@ -36,9 +36,9 @@ export function statusInfo(
     case 3:
       return { sym: "✕", cor: "var(--bf-red)", title: "Suspenso" };
     case 5:
-      return { sym: "+", cor: "var(--bf-red)", title: "Contundido" };
+      return { sym: "✚", cor: "var(--bf-red)", title: "Contundido" };
     case 6:
-      return { sym: "–", cor: "var(--bf-fg-3)", title: "Nulo" };
+      return { sym: "−", cor: "var(--bf-fg-3)", title: "Nulo" };
     default:
       return null;
   }
@@ -177,9 +177,7 @@ function PlayerPin(
     cardStyle["--team-secondary"] = p.cores.secondary;
   }
 
-  const handleClick = interativo
-    ? () => onSelect!(p.atletaId!)
-    : undefined;
+  const handleClick = interativo ? () => onSelect!(p.atletaId!) : undefined;
   return (
     <div
       class={cls.join(" ")}
@@ -228,10 +226,16 @@ function PlayerPin(
         {p.capt && <span class="bf-pin__capt-badge">C</span>}
       </div>
 
-      {/* Badges sobrepostos à cabeça — fora do card pra escapar do seu
-          stacking context */}
+      {
+        /* Badges sobrepostos à cabeça — fora do card pra escapar do seu
+          stacking context */
+      }
       {p.escudo && (
-        <img class="bf-pin__badge bf-pin__badge--escudo" src={p.escudo} alt="" />
+        <img
+          class="bf-pin__badge bf-pin__badge--escudo"
+          src={p.escudo}
+          alt=""
+        />
       )}
       {status && (
         <span
@@ -301,7 +305,8 @@ export default function Field(
     : undefined;
   const pinProps = (p: Pino) => ({
     onSelect,
-    selecionado: !!(onSelect && p.atletaId != null && p.atletaId === selecionado),
+    selecionado:
+      !!(onSelect && p.atletaId != null && p.atletaId === selecionado),
     compativel: !!(compativelCom && compativelCom(p)),
   });
 
