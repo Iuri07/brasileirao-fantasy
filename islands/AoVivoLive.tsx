@@ -2,7 +2,11 @@ import { useEffect, useState } from "preact/hooks";
 import SectionHeader from "../components/SectionHeader.tsx";
 import Pill from "../components/Pill.tsx";
 import TeamCrest from "../components/TeamCrest.tsx";
-import Field, { type Escalacao, type Pino } from "../components/Field.tsx";
+import Field, {
+  type BancoPino,
+  type Escalacao,
+  type Pino,
+} from "../components/Field.tsx";
 import Partidas from "../components/Partidas.tsx";
 import { coresClube } from "../lib/cores.ts";
 import { escudoUrl } from "../lib/escudos.ts";
@@ -168,7 +172,22 @@ export default function AoVivoLive(
     ata: ata.map(pino),
   };
 
+  const bancoPinos: BancoPino[] = banco.map((j) => {
+    const live = pontuados?.atletas?.[String(j.atleta_id)];
+    return {
+      nome: j.apelido,
+      pts: live?.pontuacao ?? null,
+      escudo: j.escudo,
+      cores: coresClube(j.clube),
+      pos: POS_ABREV[j.posicao],
+      posicao: j.posicao,
+      foto: j.foto,
+      entrouEmCampo: !!live?.entrou_em_campo,
+    };
+  });
+
   const comEventos = jogadores
+    .map((j) => ({ ...j, events: j.events.filter((e) => e.info.chave) }))
     .filter((j) => j.events.length > 0)
     .sort((a, b) => b.pontos - a.pontos);
 
@@ -214,7 +233,7 @@ export default function AoVivoLive(
       </div>
 
       <SectionHeader>Campo</SectionHeader>
-      <Field jogadores={escalacao} showPoints accent={accent} />
+      <Field jogadores={escalacao} showPoints accent={accent} banco={bancoPinos} />
 
       <SectionHeader>Eventos da rodada</SectionHeader>
       {comEventos.length === 0
@@ -245,24 +264,20 @@ export default function AoVivoLive(
                     )}
                     {j.apelido}
                   </div>
-                  <ul class="bf-event-row__events">
-                    {j.events.slice(0, 8).map((e: EventoScout) => (
-                      <li
-                        class={`bf-event-row__line bf-event-row__line--${e.info.tipo}`}
+                  <div class="bf-event-row__chips">
+                    {j.events.slice(0, 6).map((e: EventoScout) => (
+                      <span
+                        class={`bf-event-chip bf-event-chip--${e.info.tipo}`}
                         key={e.codigo}
+                        title={e.info.label}
                       >
-                        <span class="bf-event-row__line-icon">
-                          {e.info.icon}
-                        </span>
-                        <span class="bf-event-row__line-label">
-                          {e.info.label}
-                        </span>
+                        <span class="bf-event-chip__icon">{e.info.icon}</span>
                         {e.qtd > 1 && (
-                          <span class="bf-event-row__line-qtd">×{e.qtd}</span>
+                          <span class="bf-event-chip__qtd">{e.qtd}</span>
                         )}
-                      </li>
+                      </span>
                     ))}
-                  </ul>
+                  </div>
                 </div>
                 <div class="bf-event-row__pts">
                   <span
@@ -276,48 +291,6 @@ export default function AoVivoLive(
                 </div>
               </article>
             ))}
-          </div>
-        )}
-
-      <SectionHeader>Banco de reservas</SectionHeader>
-      {banco.length === 0
-        ? <div class="bf-empty-state">Sem reservas</div>
-        : (
-          <div class="bf-bench">
-            {banco.map((j) => {
-              const live = pontuados?.atletas?.[String(j.atleta_id)];
-              const pts = live?.pontuacao ?? 0;
-              const entrou = !!live?.entrou_em_campo;
-              return (
-                <div class="bf-bench__item" key={j.atleta_id}>
-                  {j.foto
-                    ? (
-                      <img
-                        class="bf-bench__face"
-                        src={j.foto}
-                        alt=""
-                      />
-                    )
-                    : (
-                      <div class="bf-bench__face bf-bench__face--placeholder" />
-                    )}
-                  <span class="bf-bench__name">{j.apelido}</span>
-                  <span class="bf-bench__pos">{POS_ABREV[j.posicao]}</span>
-                  {entrou
-                    ? (
-                      <span
-                        class={`bf-bench__pts ${
-                          pts < 0 ? "bf-bench__pts--neg" : ""
-                        }`}
-                      >
-                        {pts > 0 ? "+" : ""}
-                        {pts.toFixed(1).replace(".", ",")}
-                      </span>
-                    )
-                    : <span class="bf-bench__bench">no banco</span>}
-                </div>
-              );
-            })}
           </div>
         )}
 

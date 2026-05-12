@@ -38,9 +38,15 @@ interface Data {
   posicao: number | null;
   totalTimes: number;
   escalacao: Escalacao | null;
+  userEmail: string | null;
+  userRole: "admin" | "user" | null;
+  userNome: string | null;
+  userPicture: string | null;
 }
 
-export const handler: Handlers<Data> = {
+import type { State } from "../_middleware.ts";
+
+export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
     const { chave } = ctx.params;
     const meta = CHAVES_TIMES[chave];
@@ -110,6 +116,10 @@ export const handler: Handlers<Data> = {
       posicao: posicao || null,
       totalTimes: ranking.length,
       escalacao: escalados.length ? escalacao : null,
+      userEmail: ctx.state.session?.email ?? null,
+      userRole: ctx.state.session?.role ?? null,
+      userNome: ctx.state.session?.name ?? null,
+      userPicture: ctx.state.session?.picture ?? null,
     });
   },
 };
@@ -123,10 +133,15 @@ export default function TimeDetalhe({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>{displayName} · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=1" />
+        <link rel="stylesheet" href="/bf-styles.css?v=53" />
       </Head>
       <div class="bf-viewport">
-        <TopBar />
+        <TopBar
+          userEmail={data.userEmail}
+          userRole={data.userRole}
+          userNome={data.userNome}
+          userPicture={data.userPicture}
+        />
 
         <article class="bf-card bf-status-card">
           <div class="bf-status-card__top">

@@ -4,68 +4,113 @@
 
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
+import * as $_middleware from "./routes/_middleware.ts";
+import * as $admin from "./routes/admin.tsx";
 import * as $ao_vivo from "./routes/ao-vivo.tsx";
 import * as $api_admin_atualizar from "./routes/api/admin/atualizar.ts";
+import * as $api_admin_email_map from "./routes/api/admin/email-map.ts";
 import * as $api_admin_seed from "./routes/api/admin/seed.ts";
 import * as $api_admin_sync_atletas from "./routes/api/admin/sync-atletas.ts";
 import * as $api_admin_sync_fotos_apifootball from "./routes/api/admin/sync-fotos-apifootball.ts";
+import * as $api_admin_sync_fotos_ogol from "./routes/api/admin/sync-fotos-ogol.ts";
 import * as $api_admin_sync_fotos from "./routes/api/admin/sync-fotos.ts";
 import * as $api_admin_sync_historico from "./routes/api/admin/sync-historico.ts";
+import * as $api_atleta_id_interesse from "./routes/api/atleta/[id]/interesse.ts";
 import * as $api_atletas_buscar from "./routes/api/atletas/buscar.ts";
+import * as $api_auth_google_callback from "./routes/api/auth/google/callback.ts";
+import * as $api_auth_google_start from "./routes/api/auth/google/start.ts";
+import * as $api_auth_login from "./routes/api/auth/login.ts";
+import * as $api_auth_logout from "./routes/api/auth/logout.ts";
 import * as $api_classificacao from "./routes/api/classificacao.ts";
+import * as $api_elenco_dono_a_venda from "./routes/api/elenco/[dono]/a-venda.ts";
 import * as $api_elenco_dono_escalacao from "./routes/api/elenco/[dono]/escalacao.ts";
 import * as $api_elenco_dono_index from "./routes/api/elenco/[dono]/index.ts";
 import * as $api_elenco_dono_jogador_add from "./routes/api/elenco/[dono]/jogador/add.ts";
 import * as $api_elenco_dono_jogador_remove from "./routes/api/elenco/[dono]/jogador/remove.ts";
 import * as $api_elenco_dono_jogador_swap from "./routes/api/elenco/[dono]/jogador/swap.ts";
+import * as $api_elenco_dono_swap_escalacao from "./routes/api/elenco/[dono]/swap-escalacao.ts";
 import * as $api_live_path_ from "./routes/api/live/[...path].ts";
+import * as $api_notificacoes from "./routes/api/notificacoes.ts";
+import * as $api_ofertas_id_responder from "./routes/api/ofertas/[id]/responder.ts";
+import * as $api_ofertas_index from "./routes/api/ofertas/index.ts";
 import * as $api_ranking from "./routes/api/ranking.ts";
 import * as $api_status from "./routes/api/status.ts";
 import * as $index from "./routes/index.tsx";
 import * as $liga from "./routes/liga.tsx";
+import * as $login from "./routes/login.tsx";
+import * as $mercado from "./routes/mercado.tsx";
 import * as $ranking from "./routes/ranking.tsx";
 import * as $time_chave_ from "./routes/time/[chave].tsx";
+import * as $AdminEmailMap from "./islands/AdminEmailMap.tsx";
 import * as $AoVivoLive from "./islands/AoVivoLive.tsx";
 import * as $CollapsibleTeamRow from "./islands/CollapsibleTeamRow.tsx";
 import * as $LeagueChart from "./islands/LeagueChart.tsx";
 import * as $LiveStatusPoller from "./islands/LiveStatusPoller.tsx";
+import * as $MercadoBrowser from "./islands/MercadoBrowser.tsx";
+import * as $MeuTimeEditor from "./islands/MeuTimeEditor.tsx";
+import * as $NotifBell from "./islands/NotifBell.tsx";
+import * as $PartidasExpandable from "./islands/PartidasExpandable.tsx";
 import * as $Ranking from "./islands/Ranking.tsx";
+import * as $UserMenu from "./islands/UserMenu.tsx";
 import { type Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
+    "./routes/_middleware.ts": $_middleware,
+    "./routes/admin.tsx": $admin,
     "./routes/ao-vivo.tsx": $ao_vivo,
     "./routes/api/admin/atualizar.ts": $api_admin_atualizar,
+    "./routes/api/admin/email-map.ts": $api_admin_email_map,
     "./routes/api/admin/seed.ts": $api_admin_seed,
     "./routes/api/admin/sync-atletas.ts": $api_admin_sync_atletas,
     "./routes/api/admin/sync-fotos-apifootball.ts":
       $api_admin_sync_fotos_apifootball,
+    "./routes/api/admin/sync-fotos-ogol.ts": $api_admin_sync_fotos_ogol,
     "./routes/api/admin/sync-fotos.ts": $api_admin_sync_fotos,
     "./routes/api/admin/sync-historico.ts": $api_admin_sync_historico,
+    "./routes/api/atleta/[id]/interesse.ts": $api_atleta_id_interesse,
     "./routes/api/atletas/buscar.ts": $api_atletas_buscar,
+    "./routes/api/auth/google/callback.ts": $api_auth_google_callback,
+    "./routes/api/auth/google/start.ts": $api_auth_google_start,
+    "./routes/api/auth/login.ts": $api_auth_login,
+    "./routes/api/auth/logout.ts": $api_auth_logout,
     "./routes/api/classificacao.ts": $api_classificacao,
+    "./routes/api/elenco/[dono]/a-venda.ts": $api_elenco_dono_a_venda,
     "./routes/api/elenco/[dono]/escalacao.ts": $api_elenco_dono_escalacao,
     "./routes/api/elenco/[dono]/index.ts": $api_elenco_dono_index,
     "./routes/api/elenco/[dono]/jogador/add.ts": $api_elenco_dono_jogador_add,
     "./routes/api/elenco/[dono]/jogador/remove.ts":
       $api_elenco_dono_jogador_remove,
     "./routes/api/elenco/[dono]/jogador/swap.ts": $api_elenco_dono_jogador_swap,
+    "./routes/api/elenco/[dono]/swap-escalacao.ts":
+      $api_elenco_dono_swap_escalacao,
     "./routes/api/live/[...path].ts": $api_live_path_,
+    "./routes/api/notificacoes.ts": $api_notificacoes,
+    "./routes/api/ofertas/[id]/responder.ts": $api_ofertas_id_responder,
+    "./routes/api/ofertas/index.ts": $api_ofertas_index,
     "./routes/api/ranking.ts": $api_ranking,
     "./routes/api/status.ts": $api_status,
     "./routes/index.tsx": $index,
     "./routes/liga.tsx": $liga,
+    "./routes/login.tsx": $login,
+    "./routes/mercado.tsx": $mercado,
     "./routes/ranking.tsx": $ranking,
     "./routes/time/[chave].tsx": $time_chave_,
   },
   islands: {
+    "./islands/AdminEmailMap.tsx": $AdminEmailMap,
     "./islands/AoVivoLive.tsx": $AoVivoLive,
     "./islands/CollapsibleTeamRow.tsx": $CollapsibleTeamRow,
     "./islands/LeagueChart.tsx": $LeagueChart,
     "./islands/LiveStatusPoller.tsx": $LiveStatusPoller,
+    "./islands/MercadoBrowser.tsx": $MercadoBrowser,
+    "./islands/MeuTimeEditor.tsx": $MeuTimeEditor,
+    "./islands/NotifBell.tsx": $NotifBell,
+    "./islands/PartidasExpandable.tsx": $PartidasExpandable,
     "./islands/Ranking.tsx": $Ranking,
+    "./islands/UserMenu.tsx": $UserMenu,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;

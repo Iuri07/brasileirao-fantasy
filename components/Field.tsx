@@ -14,15 +14,20 @@ export interface Pino {
   statusId?: number | null;
   /** URL da foto do atleta (CDN Cartola) */
   foto?: string | null;
+  /** ID do atleta — usado pra callbacks de seleção (opcional pra pins
+      decorativos sem identidade) */
+  atletaId?: number;
 }
 
-interface StatusBadge {
+export interface StatusBadge {
   sym: string;
   cor: string;
   title: string;
 }
 
-function statusInfo(id: number | null | undefined): StatusBadge | null {
+export function statusInfo(
+  id: number | null | undefined,
+): StatusBadge | null {
   switch (id) {
     case 7:
       return { sym: "✓", cor: "var(--bf-lime)", title: "Provável" };
@@ -115,6 +120,21 @@ interface Props {
   empty?: boolean;
   /** Cor accent (hex) do time — tinge o gramado pra refletir o dono */
   accent?: string;
+  /** Reservas — renderizados em row compacta abaixo do gramado */
+  banco?: BancoPino[];
+  /** Callback ao clicar num pino (precisa de Pino.atletaId) */
+  onSelect?: (atletaId: number) => void;
+  /** Atleta atualmente selecionado — destaca o pino */
+  selecionado?: number;
+  /** Predicado pra marcar pinos como alvos válidos da troca */
+  compativelCom?: (p: Pino) => boolean;
+}
+
+export interface BancoPino extends Pino {
+  /** Posição original do jogador (Goleiro/Lateral/etc) — define a cor do pin */
+  posicao?: string;
+  /** Live: explicitamente entrou em campo (sub feita) */
+  entrouEmCampo?: boolean;
 }
 
 const COLOR_VAR: Record<"yellow" | "blue" | "magenta" | "orange", string> = {
@@ -125,19 +145,28 @@ const COLOR_VAR: Record<"yellow" | "blue" | "magenta" | "orange", string> = {
 };
 
 function PlayerPin(
-  { p, accent, showPoints, empty }: {
+  { p, accent, showPoints, empty, onSelect, selecionado, compativel }: {
     p: Pino;
     accent: keyof typeof COLOR_VAR;
     showPoints: boolean;
     empty: boolean;
+    onSelect?: (atletaId: number) => void;
+    selecionado?: boolean;
+    compativel?: boolean;
   },
 ) {
   const isEmpty = empty && !p.num && !p.cores && !p.foto;
-  // Só usa foto se for cutout PNG transparente do TheSportsDB.
-  // Local JPGs e API-Football trazem fundo inconsistente → usa camisa.
-  const hasFotoReal = !!(p.foto && p.foto.includes("thesportsdb"));
+  // Só usa foto se for cutout PNG transparente: TheSportsDB ou ogol
+  // (salvo localmente em /static/atletas/{id}.png). Fotos com fundo
+  // inconsistente (Cartola silhuetas, API-Football, JPG local) → camisa.
+  const hasFotoReal = !!(p.foto &&
+    (p.foto.includes("thesportsdb") || p.foto.startsWith("/atletas/")));
   const cls = ["bf-pin"];
   if (isEmpty) cls.push("bf-pin--empty");
+  if (selecionado) cls.push("bf-pin--selecionado");
+  if (compativel) cls.push("bf-pin--compativel");
+  const interativo = !!onSelect && p.atletaId != null;
+  if (interativo) cls.push("bf-pin--interativo");
   const pts = showPoints && p.pts != null ? p.pts : null;
   const status = statusInfo(p.statusId);
   const cardStyle: Record<string, string> = {
@@ -148,8 +177,18 @@ function PlayerPin(
     cardStyle["--team-secondary"] = p.cores.secondary;
   }
 
+  const handleClick = interativo
+    ? () => onSelect!(p.atletaId!)
+    : undefined;
   return (
-    <div class={cls.join(" ")} style={cardStyle}>
+    <div
+      class={cls.join(" ")}
+      style={cardStyle}
+      onClick={handleClick}
+      role={interativo ? "button" : undefined}
+      tabIndex={interativo ? 0 : undefined}
+      data-atleta-id={p.atletaId ?? undefined}
+    >
       {/* Cabeça flutuante acima do card */}
       <div class="bf-pin__head-wrap">
         {hasFotoReal
@@ -189,28 +228,25 @@ function PlayerPin(
         {p.capt && <span class="bf-pin__capt-badge">C</span>}
       </div>
 
+      {/* Badges sobrepostos à cabeça — fora do card pra escapar do seu
+          stacking context */}
+      {p.escudo && (
+        <img class="bf-pin__badge bf-pin__badge--escudo" src={p.escudo} alt="" />
+      )}
+      {status && (
+        <span
+          class="bf-pin__badge bf-pin__badge--status"
+          style={{ "--st-color": status.cor } as Record<string, string>}
+          title={status.title}
+          aria-label={status.title}
+        >
+          {status.sym}
+        </span>
+      )}
+
       {/* Corpo da carta */}
       <div class="bf-pin__card">
-        <div class="bf-pin__row">
-          {p.escudo && (
-            <img
-              class="bf-pin__card-escudo"
-              src={p.escudo}
-              alt=""
-            />
-          )}
-          {p.nome && <span class="bf-pin__card-name">{p.nome}</span>}
-          {status && (
-            <span
-              class="bf-pin__status-inline"
-              style={{ "--st-color": status.cor } as Record<string, string>}
-              title={status.title}
-              aria-label={status.title}
-            >
-              {status.sym}
-            </span>
-          )}
-        </div>
+        {p.nome && <span class="bf-pin__card-name">{p.nome}</span>}
         {pts != null
           ? (
             <div
@@ -228,75 +264,134 @@ function PlayerPin(
   );
 }
 
+const POS_TO_ACCENT: Record<string, keyof typeof COLOR_VAR> = {
+  Goleiro: "yellow",
+  Lateral: "blue",
+  Zagueiro: "blue",
+  Meia: "magenta",
+  Atacante: "orange",
+};
+
 export default function Field(
-  { jogadores, showPoints = false, empty = false, accent }: Props,
+  {
+    jogadores,
+    showPoints = false,
+    empty = false,
+    accent,
+    banco,
+    onSelect,
+    selecionado,
+    compativelCom,
+  }: Props,
 ) {
   const gk = jogadores?.gk ?? {};
-  const def = jogadores?.def ?? [];
+  const defRaw = jogadores?.def ?? [];
   const mid = jogadores?.mid ?? [];
   const ata = jogadores?.ata ?? [];
+  // Defesa: laterais nas pontas, zagueiros no meio (LAT, ZAG, ZAG, ZAG, LAT)
+  const lats = defRaw.filter((p) => p.pos === "LAT");
+  const zags = defRaw.filter((p) => p.pos !== "LAT");
+  const def: Pino[] = [];
+  if (lats[0]) def.push(lats[0]);
+  def.push(...zags);
+  if (lats[1]) def.push(lats[1]);
+  for (let i = 2; i < lats.length; i++) def.push(lats[i]);
   const style = accent
     ? { "--field-tint": accent } as Record<string, string>
     : undefined;
+  const pinProps = (p: Pino) => ({
+    onSelect,
+    selecionado: !!(onSelect && p.atletaId != null && p.atletaId === selecionado),
+    compativel: !!(compativelCom && compativelCom(p)),
+  });
 
   return (
     <div class="bf-field" style={style}>
-      <svg
-        class="bf-field__lines"
-        viewBox="0 0 100 140"
-        preserveAspectRatio="none"
-      >
-        <rect x="2" y="2" width="96" height="136" rx="1" />
-        <line x1="2" y1="70" x2="98" y2="70" />
-        <circle cx="50" cy="70" r="10" />
-        <rect x="22" y="2" width="56" height="14" />
-        <rect x="34" y="2" width="32" height="6" />
-        <rect x="22" y="124" width="56" height="14" />
-        <rect x="34" y="132" width="32" height="6" />
-        <path d="M 42 16 A 8 8 0 0 0 58 16" />
-        <path d="M 42 124 A 8 8 0 0 1 58 124" />
-      </svg>
-      <div class="bf-field__row bf-field__row--gk">
-        <PlayerPin
-          p={gk}
-          accent="yellow"
-          showPoints={showPoints}
-          empty={empty}
-        />
-      </div>
-      <div class="bf-field__row bf-field__row--def">
-        {def.map((p, i) => (
+      <div class="bf-field__pitch">
+        <svg
+          class="bf-field__lines"
+          viewBox="0 0 100 140"
+          preserveAspectRatio="none"
+        >
+          <rect x="2" y="2" width="96" height="136" rx="1" />
+          <line x1="2" y1="70" x2="98" y2="70" />
+          <circle cx="50" cy="70" r="10" />
+          <rect x="22" y="2" width="56" height="14" />
+          <rect x="34" y="2" width="32" height="6" />
+          <rect x="22" y="124" width="56" height="14" />
+          <rect x="34" y="132" width="32" height="6" />
+          <path d="M 42 16 A 8 8 0 0 0 58 16" />
+          <path d="M 42 124 A 8 8 0 0 1 58 124" />
+        </svg>
+        <div class="bf-field__row bf-field__row--gk">
           <PlayerPin
-            key={i}
-            p={p}
-            accent="blue"
+            p={gk}
+            accent="yellow"
             showPoints={showPoints}
             empty={empty}
+            {...pinProps(gk)}
           />
-        ))}
+        </div>
+        <div class="bf-field__row bf-field__row--def">
+          {def.map((p, i) => (
+            <PlayerPin
+              key={p.atletaId ?? i}
+              p={p}
+              accent="blue"
+              showPoints={showPoints}
+              empty={empty}
+              {...pinProps(p)}
+            />
+          ))}
+        </div>
+        <div class="bf-field__row bf-field__row--mid">
+          {mid.map((p, i) => (
+            <PlayerPin
+              key={p.atletaId ?? i}
+              p={p}
+              accent="magenta"
+              showPoints={showPoints}
+              empty={empty}
+              {...pinProps(p)}
+            />
+          ))}
+        </div>
+        <div class="bf-field__row bf-field__row--ata">
+          {ata.map((p, i) => (
+            <PlayerPin
+              key={p.atletaId ?? i}
+              p={p}
+              accent="orange"
+              showPoints={showPoints}
+              empty={empty}
+              {...pinProps(p)}
+            />
+          ))}
+        </div>
       </div>
-      <div class="bf-field__row bf-field__row--mid">
-        {mid.map((p, i) => (
-          <PlayerPin
-            key={i}
-            p={p}
-            accent="magenta"
-            showPoints={showPoints}
-            empty={empty}
-          />
-        ))}
-      </div>
-      <div class="bf-field__row bf-field__row--ata">
-        {ata.map((p, i) => (
-          <PlayerPin
-            key={i}
-            p={p}
-            accent="orange"
-            showPoints={showPoints}
-            empty={empty}
-          />
-        ))}
-      </div>
+      {banco && banco.length > 0 && (
+        <div class="bf-field__bench">
+          <div class="bf-field__bench-label">Banco de reservas</div>
+          <div class="bf-field__bench-row">
+            {banco.map((p, i) => {
+              const posAccent = POS_TO_ACCENT[p.posicao ?? ""] ?? "magenta";
+              const hideP = !p.entrouEmCampo &&
+                !(p.pts !== null && p.pts !== undefined && p.pts !== 0);
+              const pAjustado = hideP ? { ...p, pts: null } : p;
+              return (
+                <PlayerPin
+                  key={p.atletaId ?? i}
+                  p={pAjustado}
+                  accent={posAccent}
+                  showPoints={showPoints}
+                  empty={empty}
+                  {...pinProps(pAjustado)}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

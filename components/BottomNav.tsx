@@ -1,4 +1,4 @@
-type NavId = "home" | "time" | "mercado" | "liga" | "live";
+type NavId = "home" | "mercado" | "liga" | "live";
 
 interface Props {
   active?: NavId;
@@ -6,12 +6,6 @@ interface Props {
 
 const ITEMS: Array<{ id: NavId; label: string; href: string; d: string }> = [
   { id: "home", label: "Início", href: "/", d: "M3 11l9-8 9 8M5 10v10h14V10" },
-  {
-    id: "time",
-    label: "Time",
-    href: "/meu-time",
-    d: "M12 2l3 6 6 1-4.5 4.5L18 20l-6-3-6 3 1.5-6.5L3 9l6-1z",
-  },
   {
     id: "mercado",
     label: "Mercado",

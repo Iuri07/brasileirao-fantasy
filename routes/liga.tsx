@@ -6,7 +6,11 @@ import { getHistorico, totalPontos } from "../lib/historico.ts";
 import TopBar from "../components/TopBar.tsx";
 import BottomNav from "../components/BottomNav.tsx";
 import TeamCrest from "../components/TeamCrest.tsx";
-import Field, { type Escalacao, type Pino } from "../components/Field.tsx";
+import Field, {
+  type BancoPino,
+  type Escalacao,
+  type Pino,
+} from "../components/Field.tsx";
 import CollapsibleTeamRow from "../islands/CollapsibleTeamRow.tsx";
 import LeagueChart, { type LinhaTime } from "../islands/LeagueChart.tsx";
 import SectionHeader from "../components/SectionHeader.tsx";
@@ -34,6 +38,7 @@ interface TimeLinha {
   total: number;
   rodadasJogadas: number;
   escalacao: Escalacao | null;
+  banco: BancoPino[];
   historico: Record<string, number>;
 }
 
@@ -41,9 +46,15 @@ interface Data {
   rodada: number;
   times: TimeLinha[];
   meuChave: string;
+  userEmail: string | null;
+  userRole: "admin" | "user" | null;
+  userNome: string | null;
+  userPicture: string | null;
 }
 
-export const handler: Handlers<Data> = {
+import type { State } from "./_middleware.ts";
+
+export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
     const kv = await Deno.openKv();
     const [elencos, rodada, fotos] = await Promise.all([
@@ -54,8 +65,19 @@ export const handler: Handlers<Data> = {
 
     const times: TimeLinha[] = [];
     for (const [chave, elenco] of Object.entries(elencos)) {
-      const escalados = calcularMelhorTime(Object.values(elenco.jogadores))
-        .filter((j) => j.escalacao === "Sim");
+      const calculados = calcularMelhorTime(Object.values(elenco.jogadores));
+      const escalados = calculados.filter((j) => j.escalacao === "Sim");
+      const reservas = calculados.filter((j) => j.escalacao === "Banco");
+      const banco: BancoPino[] = reservas.map((j) => ({
+        nome: j.apelido_api,
+        pts: j.pontos,
+        escudo: escudoUrl(j.clube),
+        cores: coresClube(j.clube),
+        pos: POS_ABREV[j.posicao],
+        posicao: j.posicao,
+        statusId: j.status_id,
+        foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
+      }));
       const ptsRodada = Math.round(
         escalados.reduce((s, j) => s + (j.pontos ?? 0), 0) * 100,
       ) / 100;
@@ -93,6 +115,7 @@ export const handler: Handlers<Data> = {
         total: totalPontos(historico),
         rodadasJogadas: Object.keys(historico).length,
         escalacao,
+        banco,
         historico,
       });
     }
@@ -104,7 +127,11 @@ export const handler: Handlers<Data> = {
     return ctx.render({
       rodada: rodada?.rodada ?? 0,
       times,
-      meuChave: CHAVE_USUARIO,
+      meuChave: ctx.state.session?.chave ?? CHAVE_USUARIO,
+      userEmail: ctx.state.session?.email ?? null,
+      userRole: ctx.state.session?.role ?? null,
+      userNome: ctx.state.session?.name ?? null,
+      userPicture: ctx.state.session?.picture ?? null,
     });
   },
 };
@@ -114,10 +141,15 @@ export default function Liga({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=1" />
+        <link rel="stylesheet" href="/bf-styles.css?v=53" />
       </Head>
       <div class="bf-viewport">
-        <TopBar />
+        <TopBar
+          userEmail={data.userEmail}
+          userRole={data.userRole}
+          userNome={data.userNome}
+          userPicture={data.userPicture}
+        />
 
         <header class="bf-liga-hero">
           <span class="bf-label-micro">Liga</span>
@@ -157,6 +189,7 @@ export default function Liga({ data }: PageProps<Data>) {
                         jogadores={t.escalacao}
                         showPoints
                         accent={accent}
+                        banco={t.banco}
                       />
                     )
                     : (

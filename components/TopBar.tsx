@@ -1,25 +1,35 @@
+import UserMenu from "../islands/UserMenu.tsx";
+import NotifBell from "../islands/NotifBell.tsx";
+
 interface Props {
   hasAlert?: boolean;
+  /** Email do usuário (Google) — null pra admin local */
+  userEmail?: string | null;
+  /** Nome do dono (passado pelo handler) — usado no menu */
+  userNome?: string | null;
+  /** URL da foto de perfil do Google */
+  userPicture?: string | null;
+  /** Role da sessão */
+  userRole?: "admin" | "user" | null;
 }
 
-export default function TopBar({ hasAlert = false }: Props) {
+export default function TopBar(
+  {
+    hasAlert: _hasAlert = false,
+    userEmail = null,
+    userNome = null,
+    userPicture = null,
+    userRole = null,
+  }: Props,
+) {
   return (
     <div class="bf-topbar">
-      <button type="button" class="bf-iconbtn" aria-label="menu">
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-        >
-          <line x1="4" y1="7" x2="20" y2="7" />
-          <line x1="4" y1="12" x2="20" y2="12" />
-          <line x1="4" y1="17" x2="20" y2="17" />
-        </svg>
-      </button>
+      <UserMenu
+        email={userEmail}
+        nome={userNome}
+        picture={userPicture}
+        role={userRole}
+      />
       <a href="/" class="bf-minlogo" aria-label="Brasileirão Fantasy">
         <img
           src="/logo_site.png"
@@ -29,25 +39,9 @@ export default function TopBar({ hasAlert = false }: Props) {
           height="38"
         />
       </a>
-      <button
-        type="button"
-        class={`bf-iconbtn ${hasAlert ? "bf-iconbtn--alert" : ""}`}
-        aria-label="alertas"
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-          <path d="M10 21a2 2 0 0 0 4 0" />
-        </svg>
-      </button>
+      {userRole === "user"
+        ? <NotifBell />
+        : <span class="bf-iconbtn" aria-hidden="true" />}
     </div>
   );
 }

@@ -7,3 +7,7 @@ _fresh/
 # Local secrets — NUNCA commitar
 .env
 .env.local
+
+# Logs/runtime
+nohup.out
+*.log

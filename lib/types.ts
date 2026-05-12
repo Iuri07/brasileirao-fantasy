@@ -51,7 +51,10 @@ export interface RodadaStatus {
 
 // Cartola API
 export interface CartolaMercadoStatus {
-  status_mercado: number; // 1 = fechado, 2 = aberto
+  // 1 = mercado aberto (escalação permitida)
+  // 2 = mercado fechado (rodada iniciada, sem trocas)
+  // 3 = atualização / 4 = encerrado
+  status_mercado: number;
   rodada_atual: number;
   bola_rolando: boolean;
   fechamento: {

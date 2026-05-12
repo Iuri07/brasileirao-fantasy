@@ -1,7 +1,9 @@
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { ComponentChildren } from "preact";
 import TeamCrest from "../components/TeamCrest.tsx";
 import Sparkline from "../components/Sparkline.tsx";
+
+const OPEN_EVENT = "bf:team-row-open";
 
 interface Props {
   /** Identificador interno (chave do dono) — usado pro TeamCrest */
@@ -42,21 +44,50 @@ export default function CollapsibleTeamRow(
   }: Props,
 ) {
   const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   const isLider = pos === 1;
   const cls = ["bf-team-row"];
   if (open) cls.push("bf-team-row--open");
   if (isLider) cls.push("bf-team-row--lider");
   if (isMine) cls.push("bf-team-row--mine");
 
+  // Accordion: fecha outras rows quando qualquer uma abre
+  useEffect(() => {
+    function onOpenElsewhere(e: Event) {
+      const detail = (e as CustomEvent<string>).detail;
+      if (detail !== chave) setOpen(false);
+    }
+    addEventListener(OPEN_EVENT, onOpenElsewhere);
+    return () => removeEventListener(OPEN_EVENT, onOpenElsewhere);
+  }, [chave]);
+
+  function toggle() {
+    const next = !open;
+    setOpen(next);
+    if (next) {
+      dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: chave }));
+      // Espera as outras rows fecharem (~280ms) antes de scrollar pro topo.
+      // Sem essa espera, o reflow das rows acima joga o card pra cima
+      // depois do scroll, tirando o cabeçalho de vista.
+      setTimeout(() => {
+        rootRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 320);
+    }
+  }
+
   return (
     <div
+      ref={rootRef}
       class={cls.join(" ")}
       style={{ "--accent": accent } as Record<string, string>}
     >
       <button
         type="button"
         class="bf-team-row__summary"
-        onClick={() => setOpen(!open)}
+        onClick={toggle}
         aria-expanded={open}
       >
         <span class="bf-team-row__pos">

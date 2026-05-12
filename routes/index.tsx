@@ -3,14 +3,18 @@ import { Head } from "$fresh/runtime.ts";
 import {
   CHAVES_TIMES,
   getAllElencos,
+  getAVenda,
   getFotos,
   getRodadaStatus,
+  getSubsUsadas,
+  MAX_SUBS_AO_VIVO,
   TODAS_CHAVES,
 } from "../lib/kv.ts";
 import { calcularMelhorTime } from "../lib/substituicao.ts";
 import {
   type CartolaClube,
   type CartolaPartida,
+  fetchAtletasPontuados,
   fetchMercadoStatus,
   fetchPartidas,
 } from "../lib/cartola.ts";
@@ -19,17 +23,25 @@ import BottomNav from "../components/BottomNav.tsx";
 import TeamCrest from "../components/TeamCrest.tsx";
 import SectionHeader from "../components/SectionHeader.tsx";
 import Pill from "../components/Pill.tsx";
-import Field, { type Escalacao, type Pino } from "../components/Field.tsx";
-import Partidas from "../components/Partidas.tsx";
+import {
+  type BancoPino,
+  type Escalacao,
+  type Pino,
+} from "../components/Field.tsx";
+import MeuTimeEditor, {
+  type AtletaElenco,
+} from "../islands/MeuTimeEditor.tsx";
+import PartidasExpandable from "../islands/PartidasExpandable.tsx";
 import { escudoUrl } from "../lib/escudos.ts";
 import { coresClube } from "../lib/cores.ts";
 import { fotoUrl } from "../lib/fotos.ts";
 import { timeLigaInfo } from "../lib/times-liga.ts";
 import { getHistorico, rodadasJogadas, totalPontos } from "../lib/historico.ts";
 
-// Time do usuário "logado". Sem auth ainda — hardcoded por enquanto.
-// Trocar pra cookie/sessão quando login entrar.
-const CHAVE_USUARIO = "aguiar";
+import type { State } from "./_middleware.ts";
+
+/** Fallback dev — só usado se a sessão não tem chave (não acontece em prod). */
+const CHAVE_FALLBACK_DEV = "aguiar";
 
 interface TimeRanking {
   chave: string;
@@ -39,12 +51,40 @@ interface TimeRanking {
 }
 
 interface HomeData {
+  chave: string;
+  userEmail: string | null;
+  userRole: "admin" | "user" | null;
+  userNome: string | null;
+  userPicture: string | null;
   rodada: number;
   status: "aguardando" | "aguardando_inicio" | "ao_vivo";
+  /** True quando bola_rolando do Cartola; mais preciso que `status` que
+      depende do cron rodar */
+  aoVivoReal: boolean;
+  /** Pontuação exibida no card "Esta rodada". Pode ser:
+      - parcial ao vivo da rodada corrente (quando aoVivoReal)
+      - parcial computada de pontuados (rodada não fechada no histórico)
+      - última rodada fechada do histórico (entre rodadas, sem live data) */
+  pontuacaoExibida: number | null;
+  /** Rodada da pontuacaoExibida — pode diferir de `rodada` se entre rodadas */
+  rodadaExibida: number;
+  /** True → label "parcial"; false → "final" */
+  exibidaParcial: boolean;
   meu: TimeRanking | null;
   posicao: number | null;
   totalTimes: number;
   escalacao: Escalacao | null;
+  banco: BancoPino[];
+  /** Lista plana de escalados+banco (formato do MeuTimeEditor) */
+  atletas: AtletaElenco[];
+  /** Substituições já usadas (somente quando ao vivo) */
+  subsUsadas: number;
+  /** Limite de substituições no ao vivo */
+  subsMax: number;
+  /** Edição da escalação bloqueada (mercado fechado / rodada rolando) */
+  edicaoBloqueada: boolean;
+  /** atleta_ids marcados como "à venda" pelo dono */
+  aVendaIds: number[];
   /** Soma de pontos de todas as rodadas anteriores (sem a corrente) */
   total: number;
   rodadasJogadas: number;
@@ -113,19 +153,35 @@ function montarEscalacao(
   };
 }
 
-export const handler: Handlers<HomeData> = {
+export const handler: Handlers<HomeData, State> = {
   async GET(_req, ctx) {
+    const CHAVE_USUARIO = ctx.state.session?.chave ?? CHAVE_FALLBACK_DEV;
     const kv = await Deno.openKv();
-    const [elencos, rodada, mercado, partidasResp, fotos, historico] =
-      await Promise.all([
-        getAllElencos(kv),
-        getRodadaStatus(kv),
-        // Cartola direto — caso de timeout/erro, fica null e oculta countdown
-        fetchMercadoStatus().catch(() => null),
-        fetchPartidas().catch(() => null),
-        getFotos(kv),
-        getHistorico(kv, CHAVE_USUARIO),
-      ]);
+    const [
+      elencos,
+      rodada,
+      mercado,
+      partidasResp,
+      pontuadosResp,
+      fotos,
+      historico,
+    ] = await Promise.all([
+      getAllElencos(kv),
+      getRodadaStatus(kv),
+      // Cartola direto — caso de timeout/erro, fica null e oculta countdown
+      fetchMercadoStatus().catch(() => null),
+      fetchPartidas().catch(() => null),
+      // Pontos parciais ao vivo — sobrescreve os pontos do KV (mais frescos
+      // que esperar o cron rodar)
+      fetchAtletasPontuados().catch(() => null),
+      getFotos(kv),
+      getHistorico(kv, CHAVE_USUARIO),
+    ]);
+    const livePts = pontuadosResp?.atletas ?? {};
+    const liveP = (id: number, kvPts: number | null): number | null => {
+      const live = livePts[String(id)]?.pontuacao;
+      return live != null ? live : kvPts;
+    };
 
     const escaladosPorChave: Record<
       string,
@@ -154,9 +210,9 @@ export const handler: Handlers<HomeData> = {
     const ranking: TimeRanking[] = Object.entries(elencos)
       .map(([chave, elenco]) => {
         const todos = Object.values(elenco.jogadores);
-        const escalados = calcularMelhorTime(todos).filter((j) =>
-          j.escalacao === "Sim"
-        );
+        const escalados = calcularMelhorTime(todos)
+          .filter((j) => j.escalacao === "Sim")
+          .map((j) => ({ ...j, pontos: liveP(j.atleta_id, j.pontos) }));
         escaladosPorChave[chave] = escalados;
         const pontuacao = Math.round(
           escalados.reduce((s, j) => s + (j.pontos ?? 0), 0) * 100,
@@ -180,10 +236,48 @@ export const handler: Handlers<HomeData> = {
     const escalacao = meuEscalados.length
       ? montarEscalacao(meuEscalados, fotos)
       : null;
+
+    const meuElenco = elencos[CHAVE_USUARIO];
+    const atletas: AtletaElenco[] = meuElenco
+      ? Object.values(meuElenco.jogadores)
+        // Inclui todos os 26 fixos: Sim (titular), Banco (reserva ativa),
+        // Não (reserva inativa que pode subir via swap-escalacao)
+        .filter((j) =>
+          j.escalacao === "Sim" || j.escalacao === "Banco" ||
+          j.escalacao === "Não"
+        )
+        .map((j) => ({
+          atleta_id: j.atleta_id,
+          apelido: j.apelido_api,
+          clube: j.clube,
+          posicao: j.posicao as AtletaElenco["posicao"],
+          escalacao: j.escalacao as "Sim" | "Banco" | "Não",
+          pontos: liveP(j.atleta_id, j.pontos),
+          foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
+          statusId: j.status_id,
+        }))
+      : [];
+    const banco: BancoPino[] = meuElenco
+      ? calcularMelhorTime(Object.values(meuElenco.jogadores))
+        .filter((j) => j.escalacao === "Banco")
+        .map((j) => ({
+          nome: j.apelido_api,
+          pts: liveP(j.atleta_id, j.pontos),
+          escudo: escudoUrl(j.clube),
+          cores: coresClube(j.clube),
+          pos: POS_ABREV[j.posicao],
+          posicao: j.posicao,
+          statusId: j.status_id,
+          foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
+          entrouEmCampo: !!livePts[String(j.atleta_id)]?.entrou_em_campo,
+        }))
+      : [];
+    // Countdown só faz sentido com mercado aberto (status_mercado===1)
     const fechamentoTexto =
-      mercado && mercado.status_mercado === 2 && mercado.fechamento?.timestamp
+      mercado && mercado.status_mercado === 1 && mercado.fechamento?.timestamp
         ? formatCountdown(mercado.fechamento.timestamp)
         : null;
+
 
     // Sobrescreve URLs dos escudos das partidas pra preferir locais
     // (Cartola serve placeholders coloridos por sigla, não escudos reais)
@@ -196,13 +290,64 @@ export const handler: Handlers<HomeData> = {
         : c;
     }
 
+    const rodadaAtual = rodada?.rodada ?? mercado?.rodada_atual ?? 0;
+    const aoVivoReal = !!mercado?.bola_rolando ||
+      (rodada?.status === "ao_vivo");
+    const subsUsadas = aoVivoReal
+      ? await getSubsUsadas(kv, rodadaAtual, CHAVE_USUARIO)
+      : 0;
+    const aVendaIds = await getAVenda(kv, CHAVE_USUARIO);
+    const parcialLive = meuIdx >= 0 ? ranking[meuIdx].pontuacao : 0;
+    const historicoAtual = historico[String(rodadaAtual)];
+    const rodadasHistorico = Object.keys(historico)
+      .map(Number)
+      .filter((n) => !isNaN(n))
+      .sort((a, b) => b - a);
+    const ultimaRodadaHist = rodadasHistorico[0];
+
+    // Decide qual rodada/valor exibir:
+    // 1. live > 0 → rodada atual em parcial
+    // 2. historico tem rodada atual → mostra ela como final
+    // 3. tem qualquer rodada no historico → mostra a última como final
+    // 4. nada → null
+    let pontuacaoExibida: number | null = null;
+    let rodadaExibida = rodadaAtual;
+    let exibidaParcial = false;
+    if (parcialLive > 0 || aoVivoReal) {
+      pontuacaoExibida = parcialLive;
+      exibidaParcial = true;
+    } else if (historicoAtual != null) {
+      pontuacaoExibida = historicoAtual;
+      exibidaParcial = false;
+    } else if (ultimaRodadaHist != null) {
+      pontuacaoExibida = historico[String(ultimaRodadaHist)];
+      rodadaExibida = ultimaRodadaHist;
+      exibidaParcial = false;
+    }
+
     const data: HomeData = {
-      rodada: rodada?.rodada ?? mercado?.rodada_atual ?? 0,
+      chave: CHAVE_USUARIO,
+      userEmail: ctx.state.session?.email ?? null,
+      userRole: ctx.state.session?.role ?? null,
+      userNome: ctx.state.session?.name ?? null,
+      userPicture: ctx.state.session?.picture ?? null,
+      rodada: rodadaAtual,
       status: rodada?.status ?? "aguardando",
+      aoVivoReal,
+      pontuacaoExibida,
+      rodadaExibida,
+      exibidaParcial,
       meu: meuIdx >= 0 ? ranking[meuIdx] : null,
       posicao: meuIdx >= 0 ? meuIdx + 1 : null,
       totalTimes: ranking.length || TODAS_CHAVES.length,
       escalacao,
+      banco,
+      atletas,
+      subsUsadas,
+      subsMax: MAX_SUBS_AO_VIVO,
+      // Edição só permitida com mercado aberto (status_mercado===1)
+      edicaoBloqueada: mercado?.status_mercado !== 1,
+      aVendaIds,
       total: totalPontos(historico),
       rodadasJogadas: rodadasJogadas(historico),
       fechamentoTexto,
@@ -215,10 +360,15 @@ export const handler: Handlers<HomeData> = {
 };
 
 export default function Home({ data }: PageProps<HomeData>) {
-  const visual = timeLigaInfo(CHAVE_USUARIO);
-  const meta = CHAVES_TIMES[CHAVE_USUARIO];
+  const visual = timeLigaInfo(data.chave);
+  const meta = CHAVES_TIMES[data.chave];
   const displayName = visual?.displayName ?? meta?.nome_time ?? "Time";
-  const pontosFmt = data.meu?.pontuacao.toFixed(1).replace(".", ",") ?? "—";
+  const pontosFmt = data.pontuacaoExibida != null
+    ? data.pontuacaoExibida.toFixed(1).replace(".", ",")
+    : "—";
+  const labelEstaRodada = data.rodadaExibida === data.rodada
+    ? "Esta rodada"
+    : `Rodada ${data.rodadaExibida}`;
   // Splatter accent na cor do crest do usuário (visual?.color = "magenta")
   const splatterUrl = visual ? `/assets/splatter-${visual.color}.png` : null;
   const top3 = data.posicao !== null && data.posicao <= 3;
@@ -227,10 +377,16 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=1" />
+        <link rel="stylesheet" href="/bf-styles.css?v=53" />
       </Head>
       <div class="bf-viewport">
-        <TopBar hasAlert />
+        <TopBar
+          hasAlert
+          userEmail={data.userEmail}
+          userRole={data.userRole}
+          userNome={data.userNome ?? meta?.dono}
+          userPicture={data.userPicture}
+        />
 
         <article
           class="bf-card bf-status-card"
@@ -251,33 +407,40 @@ export default function Home({ data }: PageProps<HomeData>) {
             </span>
             <span class="bf-status-card__round">Rodada {data.rodada}</span>
           </div>
-          {data.fechamentoTexto && (
-            <div class="bf-status-card__market">
-              <span class="bf-status-card__market-dot" aria-hidden="true">
-              </span>
-              Mercado fecha em <strong>{data.fechamentoTexto}</strong>
-            </div>
-          )}
 
           <div class="bf-status-card__top">
-            <TeamCrest chave={CHAVE_USUARIO} size={56} />
+            <TeamCrest chave={data.chave} size={56} />
             <div class="bf-status-card__name">
               <h3>{displayName}</h3>
               <span class="bf-status-card__sub">
                 Liga da Sexta · {data.totalTimes} times
               </span>
             </div>
-            {data.status === "ao_vivo" && (
-              <Pill variant="lime" live>Ao Vivo</Pill>
-            )}
+            {data.aoVivoReal && <Pill variant="lime" live>Ao Vivo</Pill>}
           </div>
 
           <div class="bf-status-card__metrics">
             <div class="bf-status-card__metric">
-              <span class="bf-label-micro">Esta rodada</span>
-              <span class="bf-status-card__metric-value">{pontosFmt}</span>
-              <span class="bf-status-card__metric-foot">
-                {data.status === "ao_vivo" ? "parcial" : "final"}
+              <span class="bf-label-micro">{labelEstaRodada}</span>
+              <span class="bf-status-card__metric-value">
+                {pontosFmt}
+                {data.aoVivoReal && (
+                  <span class="bf-status-card__live-dot" aria-hidden="true">
+                  </span>
+                )}
+              </span>
+              <span
+                class={`bf-status-card__metric-foot ${
+                  data.exibidaParcial
+                    ? "bf-status-card__metric-foot--lime"
+                    : ""
+                }`}
+              >
+                {data.aoVivoReal
+                  ? "parcial · ao vivo"
+                  : data.exibidaParcial
+                  ? "parcial"
+                  : "final"}
               </span>
             </div>
             <div class="bf-status-card__divider"></div>
@@ -311,13 +474,19 @@ export default function Home({ data }: PageProps<HomeData>) {
           </div>
         </article>
 
-        <SectionHeader>Sua escala</SectionHeader>
-        {data.escalacao
+        {data.atletas.length > 0
           ? (
-            <Field
-              jogadores={data.escalacao}
-              showPoints={data.status === "ao_vivo"}
-              accent={visual?.accent}
+            <MeuTimeEditor
+              chave={data.chave}
+              atletas={data.atletas}
+              accent={visual?.accent ?? "#888"}
+              aoVivo={data.aoVivoReal}
+              subsUsadasInicial={data.subsUsadas}
+              subsMax={data.subsMax}
+              showPoints={data.aoVivoReal}
+              edicaoBloqueada={data.edicaoBloqueada}
+              fechamentoTexto={data.fechamentoTexto}
+              aVendaIds={data.aVendaIds}
             />
           )
           : (
@@ -327,18 +496,11 @@ export default function Home({ data }: PageProps<HomeData>) {
           )}
 
         <SectionHeader>Próximos</SectionHeader>
-        <Partidas
+        <PartidasExpandable
           partidas={data.partidas}
           clubes={data.clubesPartidas}
           limit={5}
         />
-        {data.partidas.length > 5 && (
-          <div class="bf-section-footer">
-            <a href="/partidas" class="bf-section-footer__link">
-              Ver todos
-            </a>
-          </div>
-        )}
 
         <BottomNav active="home" />
       </div>
