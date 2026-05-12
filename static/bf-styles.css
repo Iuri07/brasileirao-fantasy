@@ -2360,6 +2360,75 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"] {
 .bf-mercado {
   padding: 0 var(--bf-gutter);
 }
+/* Admin: simulação de rodada */
+.bf-sim {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bf-sim__status {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.bf-sim__status-val {
+  font-family: var(--bf-font-cond);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bf-fg-2);
+}
+.bf-sim__status-val--on {
+  color: var(--bf-lime);
+}
+.bf-sim__btn {
+  padding: 10px 14px;
+  background: var(--bf-chassis);
+  border: 1px solid var(--bf-line-strong);
+  border-radius: var(--bf-radius-sm);
+  color: var(--bf-fg-0);
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.bf-sim__btn:hover:not(:disabled) {
+  background: var(--bf-line);
+}
+.bf-sim__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.bf-sim__btn--primary {
+  background: var(--bf-lime);
+  border-color: var(--bf-lime);
+  color: var(--bf-lime-ink);
+}
+.bf-sim__btn--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--bf-lime) 85%, #fff);
+}
+.bf-sim__btn--danger {
+  border-color: color-mix(in srgb, var(--bf-red) 60%, transparent);
+  color: var(--bf-red);
+}
+.bf-sim__btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--bf-red) 12%, transparent);
+}
+.bf-sim__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bf-sim__feedback {
+  font-family: var(--bf-font-body);
+  font-size: 12px;
+  color: var(--bf-fg-2);
+}
+
 /* Admin: dias da semana pra resolução do draft */
 .bf-draft-dias {
   display: flex;

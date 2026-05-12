@@ -143,6 +143,14 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
 }
 
 export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
+  // Flag de simulação: admin botou a app em modo "rodada simulada"
+  // (testar UI ao vivo sem mexer no Cartola). Pula o cron até desativar.
+  const simulando = await kv.get<boolean>(["simulando"]);
+  if (simulando.value) {
+    console.log("[cron] simulação ativa — skip atualizarTudo");
+    return;
+  }
+
   const now = new Date().toISOString();
 
   // Sempre busca status do mercado e tenta pontuados
