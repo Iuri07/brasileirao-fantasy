@@ -221,9 +221,16 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
     }
   }
 
+  // Status real: ao_vivo só quando bola_rolando. Senão, aguardando_inicio
+  // (mercado fechado mas sem jogo agora) ou aguardando (mercado aberto).
   await setRodadaStatus(kv, {
-    status: "ao_vivo",
+    status: mercado.bola_rolando
+      ? "ao_vivo"
+      : mercado.status_mercado === 1
+      ? "aguardando"
+      : "aguardando_inicio",
     rodada: rodadaId,
+    fechamento: mercado.bola_rolando ? undefined : mercado.fechamento,
     atualizadoEm: now,
   });
 
