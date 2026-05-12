@@ -5,6 +5,7 @@ import {
   getAllElencos,
   getAVenda,
   getAVendaGlobal,
+  getDraftOrdem,
   getFotos,
   getInteressadosBatch,
 } from "../lib/kv.ts";
@@ -34,6 +35,12 @@ interface Data {
   minhaChave: string | null;
   /** Os 26 do meu elenco — pra aba "Meu time" */
   meuElenco: AtletaMeuTime[];
+  /** Quantos jogadores do meu time estão à venda */
+  qtdAVenda: number;
+  /** Posição do meu time no draft (1-based) — null se não logado */
+  posicaoDraft: number | null;
+  /** Ordem completa do draft pra exibir contexto (tooltip/listagem) */
+  draftOrdem: { chave: string; nome: string }[];
   userEmail: string | null;
   userRole: "admin" | "user" | null;
   userNome: string | null;
@@ -43,12 +50,14 @@ interface Data {
 export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
     const kv = await Deno.openKv();
-    const [elencos, fotos, mercadoResp, aVenda] = await Promise.all([
-      getAllElencos(kv),
-      getFotos(kv),
-      fetchAtletasMercado().catch(() => null),
-      getAVendaGlobal(kv),
-    ]);
+    const [elencos, fotos, mercadoResp, aVenda, draftOrdemKeys] = await Promise
+      .all([
+        getAllElencos(kv),
+        getFotos(kv),
+        fetchAtletasMercado().catch(() => null),
+        getAVendaGlobal(kv),
+        getDraftOrdem(kv),
+      ]);
 
     // Dono de cada atleta (chave). Atletas sem dono → "free agent".
     const dono: Record<number, string> = {};
@@ -77,6 +86,8 @@ export const handler: Handlers<Data, State> = {
     }
     const interessadosMap = await getInteressadosBatch(kv, idsDisponiveis);
 
+    const chaveLogadaAux = ctx.state.session?.chave;
+
     const jogadores: AtletaMercado[] = [];
     for (const a of mercadoResp?.atletas ?? []) {
       const owner = dono[a.atleta_id];
@@ -85,6 +96,10 @@ export const handler: Handlers<Data, State> = {
       if (owner && !naVenda) continue;
       const pos = POSICAO[a.posicao_id];
       if (!pos) continue;
+      const regs = interessadosMap[a.atleta_id] ?? [];
+      const meuReg = chaveLogadaAux
+        ? regs.find((r) => r.chave === chaveLogadaAux)
+        : undefined;
       jogadores.push({
         atleta_id: a.atleta_id,
         nome: a.apelido,
@@ -101,15 +116,18 @@ export const handler: Handlers<Data, State> = {
         mediaPontos: (a as any).media_num ?? null,
         donoChave: owner ?? null,
         donoTime: owner ? CHAVES_TIMES[owner]?.nome_time ?? null : null,
-        interessados: interessadosMap[a.atleta_id] ?? [],
+        interessados: regs.map((r) => r.chave),
+        meuOferecido: meuReg?.oferecido ?? null,
       });
     }
 
     // Meu elenco (todos os 26 do dono logado) com flag aVenda
-    const chaveLogada = ctx.state.session?.chave;
+    const chaveLogada = chaveLogadaAux;
     const meuElenco: AtletaMeuTime[] = [];
+    let qtdAVenda = 0;
     if (chaveLogada && elencos[chaveLogada]) {
       const minhaAVenda = new Set(await getAVenda(kv, chaveLogada));
+      qtdAVenda = minhaAVenda.size;
       const mercadoIdx = new Map(
         (mercadoResp?.atletas ?? []).map((a) => [a.atleta_id, a]),
       );
@@ -137,11 +155,22 @@ export const handler: Handlers<Data, State> = {
       }
     }
 
+    const posicaoDraft = chaveLogada
+      ? draftOrdemKeys.indexOf(chaveLogada) + 1 || null
+      : null;
+    const draftOrdem = draftOrdemKeys.map((c) => ({
+      chave: c,
+      nome: CHAVES_TIMES[c]?.nome_time ?? c,
+    }));
+
     return ctx.render({
       jogadores,
       clubes,
       minhaChave: ctx.state.session?.chave ?? null,
       meuElenco,
+      qtdAVenda,
+      posicaoDraft,
+      draftOrdem,
       userEmail: ctx.state.session?.email ?? null,
       userRole: ctx.state.session?.role ?? null,
       userNome: ctx.state.session?.name ?? null,
@@ -155,7 +184,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=53" />
+        <link rel="stylesheet" href="/bf-styles.css?v=54" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -169,6 +198,9 @@ export default function MercadoPage({ data }: PageProps<Data>) {
           jogadores={data.jogadores}
           minhaChave={data.minhaChave}
           meuElenco={data.meuElenco}
+          qtdAVenda={data.qtdAVenda}
+          posicaoDraft={data.posicaoDraft}
+          draftOrdem={data.draftOrdem}
         />
         <BottomNav active="mercado" />
       </div>

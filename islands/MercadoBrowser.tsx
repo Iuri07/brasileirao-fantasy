@@ -15,10 +15,17 @@ export interface AtletaMercado {
   donoTime: string | null;
   /** Times que demonstraram interesse (chaves) — só pra free agents */
   interessados: string[];
+  /** atleta_id que EU empenhei (se já marquei interesse). null caso contrário. */
+  meuOferecido?: number | null;
 }
 
 export interface AtletaMeuTime extends AtletaMercado {
   aVenda: boolean;
+}
+
+export interface DraftEntry {
+  chave: string;
+  nome: string;
 }
 
 interface Props {
@@ -27,6 +34,12 @@ interface Props {
   minhaChave?: string | null;
   /** Todos os 26 fixos do meu elenco — pra aba "Meu time" */
   meuElenco?: AtletaMeuTime[];
+  /** Quantos jogadores meus estão à venda */
+  qtdAVenda?: number;
+  /** Posição do meu time no draft (1-based) */
+  posicaoDraft?: number | null;
+  /** Ordem do draft pra abrir num menu */
+  draftOrdem?: DraftEntry[];
 }
 
 const POS_ABREV: Record<string, string> = {
@@ -51,7 +64,14 @@ function norm(s: string): string {
 }
 
 export default function MercadoBrowser(
-  { jogadores: inicial, minhaChave = null, meuElenco = [] }: Props,
+  {
+    jogadores: inicial,
+    minhaChave = null,
+    meuElenco = [],
+    qtdAVenda = 0,
+    posicaoDraft = null,
+    draftOrdem = [],
+  }: Props,
 ) {
   const [jogadores, setJogadores] = useState<AtletaMercado[]>(inicial);
   const [meu, setMeu] = useState<AtletaMeuTime[]>(meuElenco);
@@ -63,8 +83,17 @@ export default function MercadoBrowser(
     "todos" | "free" | "venda" | "meu"
   >("todos");
   const [pendendo, setPendendo] = useState<number | null>(null);
+  const [draftAberto, setDraftAberto] = useState(false);
 
-  const [ofertaPara, setOfertaPara] = useState<AtletaMercado | null>(null);
+  // Modal único — distingue por modo:
+  // - "oferta": trade entre times (precisa enviar pra dono)
+  // - "interesse": empenhar jogador pelo free agent
+  const [modal, setModal] = useState<
+    | { modo: "oferta"; pedido: AtletaMercado }
+    | { modo: "interesse"; pedido: AtletaMercado }
+    | null
+  >(null);
+
   async function enviarOferta(
     pedido: AtletaMercado,
     oferecido: AtletaMeuTime,
@@ -85,14 +114,91 @@ export default function MercadoBrowser(
     }
   }
 
+  async function registrarInteresse(
+    pedido: AtletaMercado,
+    oferecido: AtletaMeuTime,
+  ): Promise<{ ok: boolean; erro?: string }> {
+    if (!minhaChave) return { ok: false, erro: "Sem time" };
+    try {
+      const r = await fetch(`/api/atleta/${pedido.atleta_id}/interesse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ atleta_oferecido: oferecido.atleta_id }),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        // Atualiza otimisticamente
+        setJogadores((arr) =>
+          arr.map((x) =>
+            x.atleta_id === pedido.atleta_id
+              ? {
+                ...x,
+                interessados: x.interessados.includes(minhaChave)
+                  ? x.interessados
+                  : [...x.interessados, minhaChave],
+                meuOferecido: oferecido.atleta_id,
+              }
+              : x
+          )
+        );
+      }
+      return d;
+    } catch (e) {
+      return { ok: false, erro: String(e) };
+    }
+  }
+
+  async function removerInteresse(j: AtletaMercado) {
+    if (!minhaChave) return;
+    setPendendo(j.atleta_id);
+    const prevInter = j.interessados;
+    const prevOf = j.meuOferecido;
+    setJogadores((arr) =>
+      arr.map((x) =>
+        x.atleta_id === j.atleta_id
+          ? {
+            ...x,
+            interessados: x.interessados.filter((c) => c !== minhaChave),
+            meuOferecido: null,
+          }
+          : x
+      )
+    );
+    try {
+      const r = await fetch(`/api/atleta/${j.atleta_id}/interesse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remover: true }),
+      });
+      const d = await r.json();
+      if (!d.ok) {
+        setJogadores((arr) =>
+          arr.map((x) =>
+            x.atleta_id === j.atleta_id
+              ? { ...x, interessados: prevInter, meuOferecido: prevOf }
+              : x
+          )
+        );
+      }
+    } catch {
+      setJogadores((arr) =>
+        arr.map((x) =>
+          x.atleta_id === j.atleta_id
+            ? { ...x, interessados: prevInter, meuOferecido: prevOf }
+            : x
+        )
+      );
+    } finally {
+      setPendendo(null);
+    }
+  }
+
   async function toggleAVenda(j: AtletaMeuTime) {
     if (!minhaChave) return;
     setPendendo(j.atleta_id);
     const prev = j.aVenda;
     setMeu((arr) =>
-      arr.map((x) =>
-        x.atleta_id === j.atleta_id ? { ...x, aVenda: !prev } : x
-      )
+      arr.map((x) => x.atleta_id === j.atleta_id ? { ...x, aVenda: !prev } : x)
     );
     try {
       const r = await fetch(`/api/elenco/${minhaChave}/a-venda`, {
@@ -110,53 +216,23 @@ export default function MercadoBrowser(
       }
     } catch {
       setMeu((arr) =>
-        arr.map((x) =>
-          x.atleta_id === j.atleta_id ? { ...x, aVenda: prev } : x
-        )
+        arr.map((x) => x.atleta_id === j.atleta_id ? { ...x, aVenda: prev } : x)
       );
     } finally {
       setPendendo(null);
     }
   }
 
-  async function toggleInteresse(j: AtletaMercado) {
-    if (!minhaChave) return;
-    if (j.donoChave) return; // só free agent
-    setPendendo(j.atleta_id);
-    // Otimista
-    const ja = j.interessados.includes(minhaChave);
-    const novosInter = ja
-      ? j.interessados.filter((c) => c !== minhaChave)
-      : [...j.interessados, minhaChave];
-    setJogadores((arr) =>
-      arr.map((x) =>
-        x.atleta_id === j.atleta_id ? { ...x, interessados: novosInter } : x
-      )
-    );
-    try {
-      const r = await fetch(`/api/atleta/${j.atleta_id}/interesse`, {
-        method: "POST",
-      });
-      const d = await r.json();
-      if (!d.ok) {
-        // Rollback
-        setJogadores((arr) =>
-          arr.map((x) =>
-            x.atleta_id === j.atleta_id ? { ...x, interessados: j.interessados }
-              : x
-          )
-        );
+  function abrirInteresse(j: AtletaMercado) {
+    if (!minhaChave || j.donoChave) return;
+    if (j.interessados.includes(minhaChave)) {
+      // já interessado → confirma remoção em vez de abrir modal de troca
+      if (confirm("Remover interesse e liberar o jogador empenhado?")) {
+        removerInteresse(j);
       }
-    } catch {
-      setJogadores((arr) =>
-        arr.map((x) =>
-          x.atleta_id === j.atleta_id ? { ...x, interessados: j.interessados }
-            : x
-        )
-      );
-    } finally {
-      setPendendo(null);
+      return;
     }
+    setModal({ modo: "interesse", pedido: j });
   }
 
   const clubesDisponiveis = useMemo(() => {
@@ -181,6 +257,51 @@ export default function MercadoBrowser(
 
   return (
     <div class="bf-mercado">
+      {minhaChave && (
+        <div class="bf-mercado__stats">
+          <div class="bf-mercado__stat">
+            <span class="bf-mercado__stat-val">{qtdAVenda}</span>
+            <span class="bf-mercado__stat-lbl">à venda</span>
+          </div>
+          <div class="bf-mercado__stat-div" />
+          <button
+            type="button"
+            class="bf-mercado__stat bf-mercado__stat--btn"
+            onClick={() => setDraftAberto((v) => !v)}
+            disabled={draftOrdem.length === 0}
+            title="Ver ordem do draft"
+          >
+            <span class="bf-mercado__stat-val">
+              {posicaoDraft ? `${posicaoDraft}º` : "—"}
+            </span>
+            <span class="bf-mercado__stat-lbl">no draft</span>
+          </button>
+        </div>
+      )}
+
+      {draftAberto && draftOrdem.length > 0 && (
+        <div class="bf-mercado__draft">
+          <div class="bf-mercado__draft-titulo">Ordem do draft</div>
+          <ol class="bf-mercado__draft-lista">
+            {draftOrdem.map((d, i) => (
+              <li
+                key={d.chave}
+                class={d.chave === minhaChave
+                  ? "bf-mercado__draft-item bf-mercado__draft-item--meu"
+                  : "bf-mercado__draft-item"}
+              >
+                <span class="bf-mercado__draft-pos">{i + 1}º</span>
+                <span class="bf-mercado__draft-nome">{d.nome}</span>
+              </li>
+            ))}
+          </ol>
+          <div class="bf-mercado__draft-foot">
+            Empate no interesse por free agent → quem está mais alto na lista
+            leva.
+          </div>
+        </div>
+      )}
+
       <div class="bf-mercado__filtros">
         <input
           type="search"
@@ -200,7 +321,10 @@ export default function MercadoBrowser(
             À venda
           </Chip>
           {minhaChave && meuElenco.length > 0 && (
-            <Chip ativo={tipo === "meu"} onClick={() => setTipo("meu")}>
+            <Chip
+              ativo={tipo === "meu"}
+              onClick={() => setTipo("meu")}
+            >
               Meu time
             </Chip>
           )}
@@ -236,9 +360,8 @@ export default function MercadoBrowser(
             onChange={(e) => setClube((e.target as HTMLSelectElement).value)}
           >
             <option value="">Todos times</option>
-            {clubesDisponiveis.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
+            {clubesDisponiveis.map((c) => <option key={c} value={c}>{c}
+            </option>)}
           </select>
         </div>
       </div>
@@ -263,8 +386,9 @@ export default function MercadoBrowser(
                 key={j.atleta_id}
                 j={j}
                 minhaChave={minhaChave}
-                onInteresse={toggleInteresse}
-                onOfertar={setOfertaPara}
+                meuElenco={meu}
+                onInteresse={abrirInteresse}
+                onOfertar={(jj) => setModal({ modo: "oferta", pedido: jj })}
                 pendendo={pendendo === j.atleta_id}
               />
             )
@@ -274,12 +398,15 @@ export default function MercadoBrowser(
         )}
       </div>
 
-      {ofertaPara && (
+      {modal && (
         <ModalOferta
-          pedido={ofertaPara}
+          modo={modal.modo}
+          pedido={modal.pedido}
           meuElenco={meu}
-          onClose={() => setOfertaPara(null)}
-          onEnviar={enviarOferta}
+          onClose={() => setModal(null)}
+          onEnviar={modal.modo === "interesse"
+            ? registrarInteresse
+            : enviarOferta}
         />
       )}
     </div>
@@ -287,7 +414,8 @@ export default function MercadoBrowser(
 }
 
 function ModalOferta(
-  { pedido, meuElenco, onClose, onEnviar }: {
+  { modo, pedido, meuElenco, onClose, onEnviar }: {
+    modo: "oferta" | "interesse";
     pedido: AtletaMercado;
     meuElenco: AtletaMeuTime[];
     onClose: () => void;
@@ -321,10 +449,26 @@ function ModalOferta(
     return (
       <div class="bf-modal" onClick={onClose}>
         <div class="bf-modal__card" onClick={(e) => e.stopPropagation()}>
-          <h3 class="bf-modal__titulo">Oferta enviada ✓</h3>
+          <h3 class="bf-modal__titulo">
+            {modo === "interesse"
+              ? "Interesse registrado ✓"
+              : "Oferta enviada ✓"}
+          </h3>
           <p class="bf-modal__txt">
-            O dono de <strong>{pedido.nome}</strong> vai receber uma notificação
-            e poderá aceitar ou negar.
+            {modo === "interesse"
+              ? (
+                <>
+                  Você empenhou um jogador por{" "}
+                  <strong>{pedido.nome}</strong>. Se mais alguém marcar
+                  interesse, vence quem está mais alto no draft.
+                </>
+              )
+              : (
+                <>
+                  O dono de <strong>{pedido.nome}</strong>{" "}
+                  vai receber uma notificação e poderá aceitar ou negar.
+                </>
+              )}
           </p>
           <button
             type="button"
@@ -345,10 +489,17 @@ function ModalOferta(
           ×
         </button>
         <h3 class="bf-modal__titulo">
-          Oferecer troca por <span style="color:var(--bf-lime)">{pedido.nome}</span>
+          {modo === "interesse" ? "Tenho interesse em " : "Oferecer troca por "}
+          <span style="color:var(--bf-lime)">{pedido.nome}</span>
         </h3>
         <p class="bf-modal__txt">
-          Escolha um jogador do seu time da mesma posição ({POS_ABREV[pedido.posicao]}).
+          {modo === "interesse"
+            ? `Empenhe um jogador da mesma posição (${
+              POS_ABREV[pedido.posicao]
+            }). Se você ganhar o draft, ele entra no seu time e o empenhado vira free agent.`
+            : `Escolha um jogador do seu time da mesma posição (${
+              POS_ABREV[pedido.posicao]
+            }).`}
         </p>
         <div class="bf-modal__lista">
           {lista.length === 0 && (
@@ -376,9 +527,7 @@ function ModalOferta(
             </button>
           ))}
         </div>
-        {feito && feito !== "ok" && (
-          <div class="bf-modal__erro">{feito}</div>
-        )}
+        {feito && feito !== "ok" && <div class="bf-modal__erro">{feito}</div>}
         <div class="bf-modal__acoes">
           <button
             type="button"
@@ -394,7 +543,11 @@ function ModalOferta(
             onClick={submit}
             disabled={!oferecido || enviando}
           >
-            {enviando ? "Enviando…" : "Enviar oferta"}
+            {enviando
+              ? "Enviando…"
+              : modo === "interesse"
+              ? "Confirmar interesse"
+              : "Enviar oferta"}
           </button>
         </div>
       </div>
@@ -421,21 +574,26 @@ function Chip(
 }
 
 function CardJogador(
-  { j, minhaChave, onInteresse, onOfertar, pendendo }: {
+  { j, minhaChave, meuElenco, onInteresse, onOfertar, pendendo }: {
     j: AtletaMercado;
     minhaChave: string | null;
+    meuElenco: AtletaMeuTime[];
     onInteresse: (j: AtletaMercado) => void;
     onOfertar?: (j: AtletaMercado) => void;
     pendendo: boolean;
   },
 ) {
+  const nomeOferecido = j.meuOferecido
+    ? meuElenco.find((m) => m.atleta_id === j.meuOferecido)?.nome
+    : null;
   const hasFoto = !!j.foto;
   const isCutout = hasFoto &&
     (j.foto!.includes("thesportsdb") || j.foto!.startsWith("/atletas/"));
   const st = j.statusId != null ? STATUS_LABEL[j.statusId] : null;
   const interessado = !!minhaChave && j.interessados.includes(minhaChave);
   const podeInteressar = !!minhaChave && !j.donoChave;
-  const podeOfertar = !!minhaChave && !!j.donoChave && j.donoChave !== minhaChave;
+  const podeOfertar = !!minhaChave && !!j.donoChave &&
+    j.donoChave !== minhaChave;
   const ultima = j.pontosUltima != null
     ? j.pontosUltima.toFixed(1).replace(".", ",")
     : "—";
@@ -444,9 +602,9 @@ function CardJogador(
     : "—";
   return (
     <article
-      class={`bf-merc-card bf-merc-card--${POS_ABREV[j.posicao].toLowerCase()} ${
-        isCutout ? "bf-merc-card--cutout" : ""
-      }`}
+      class={`bf-merc-card bf-merc-card--${
+        POS_ABREV[j.posicao].toLowerCase()
+      } ${isCutout ? "bf-merc-card--cutout" : ""}`}
     >
       <div class="bf-merc-card__foto">
         {hasFoto
@@ -506,9 +664,17 @@ function CardJogador(
             }`}
             onClick={() => podeInteressar && onInteresse(j)}
             disabled={!podeInteressar || pendendo}
-            title={interessado ? "Remover interesse" : "Quero esse jogador"}
+            title={interessado
+              ? `Empenhou: ${nomeOferecido ?? "?"} — clique pra desistir`
+              : "Empenhar jogador em troca dele"}
           >
-            {interessado ? "Interessado ✓" : "Tenho interesse"}
+            {interessado
+              ? (
+                <>
+                  Empenhou <strong>{nomeOferecido ?? "?"}</strong>
+                </>
+              )
+              : "Tenho interesse"}
             {j.interessados.length > 0 && (
               <span class="bf-merc-card__count">{j.interessados.length}</span>
             )}
