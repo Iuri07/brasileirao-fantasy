@@ -1,4 +1,4 @@
-import { useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import JerseySvg from "../components/JerseySvg.tsx";
 import type { CoresClube } from "../lib/cores.ts";
 
@@ -109,8 +109,12 @@ export default function MercadoBrowser(
   const [status, setStatus] = useState<string>("");
   const [clube, setClube] = useState<string>("");
   const [tipo, setTipo] = useState<
-    "todos" | "free" | "venda" | "meu"
+    "todos" | "free" | "venda" | "meu" | "minhas-venda"
   >("todos");
+  // Confirmação custom (substitui window.confirm pra ficar no estilo)
+  const [confirma, setConfirma] = useState<
+    { titulo: string; texto: string; onOk: () => void } | null
+  >(null);
   const [pendendo, setPendendo] = useState<number | null>(null);
   const [draftAberto, setDraftAberto] = useState(false);
   const [interesses, setInteresses] = useState<MeuInteresse[]>(meusInteresses);
@@ -124,6 +128,19 @@ export default function MercadoBrowser(
     | { modo: "interesse"; pedido: AtletaMercado }
     | null
   >(null);
+
+  // Trava scroll do body quando qualquer modal está aberto — senão o
+  // background rola junto e o bottom-nav (position: fixed) salta.
+  useEffect(() => {
+    const anyOpen = draftAberto || interessesAberto || !!confirma || !!modal;
+    if (typeof document === "undefined") return;
+    if (!anyOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [draftAberto, interessesAberto, confirma, modal]);
 
   async function enviarOferta(
     pedido: AtletaMercado,
@@ -321,10 +338,12 @@ export default function MercadoBrowser(
   function abrirInteresse(j: AtletaMercado) {
     if (!minhaChave || j.donoChave) return;
     if (j.interessados.includes(minhaChave)) {
-      // já interessado → confirma remoção em vez de abrir modal de troca
-      if (confirm("Remover interesse e liberar o jogador empenhado?")) {
-        removerInteresse(j.atleta_id);
-      }
+      setConfirma({
+        titulo: "Remover interesse?",
+        texto:
+          "O jogador empenhado é liberado e seu interesse some da fila do draft.",
+        onOk: () => removerInteresse(j.atleta_id),
+      });
       return;
     }
     setModal({ modo: "interesse", pedido: j });
@@ -338,13 +357,15 @@ export default function MercadoBrowser(
 
   const filtrados = useMemo(() => {
     const buscaNorm = norm(busca.trim());
-    const src = tipo === "meu" ? meu : jogadores;
+    const usaMeu = tipo === "meu" || tipo === "minhas-venda";
+    const src = usaMeu ? meu : jogadores;
     return src.filter((j) => {
       if (posicao && j.posicao !== posicao) return false;
       if (status && String(j.statusId) !== status) return false;
       if (clube && j.clubeNome !== clube) return false;
       if (tipo === "free" && j.donoChave) return false;
       if (tipo === "venda" && !j.donoChave) return false;
+      if (tipo === "minhas-venda" && !(j as AtletaMeuTime).aVenda) return false;
       if (buscaNorm && !norm(j.nome).includes(buscaNorm)) return false;
       return true;
     }).sort((a, b) => (b.mediaPontos ?? 0) - (a.mediaPontos ?? 0));
@@ -354,10 +375,19 @@ export default function MercadoBrowser(
     <div class="bf-mercado">
       {minhaChave && (
         <div class="bf-mercado__stats">
-          <div class="bf-mercado__stat">
+          <button
+            type="button"
+            class={`bf-mercado__stat bf-mercado__stat--btn ${
+              tipo === "minhas-venda" ? "bf-mercado__stat--ativo" : ""
+            }`}
+            onClick={() =>
+              setTipo(tipo === "minhas-venda" ? "todos" : "minhas-venda")}
+            disabled={qtdAVenda === 0}
+            title="Filtrar meus jogadores à venda"
+          >
             <span class="bf-mercado__stat-val">{qtdAVenda}</span>
             <span class="bf-mercado__stat-lbl">à venda</span>
-          </div>
+          </button>
           <div class="bf-mercado__stat-div" />
           <button
             type="button"
@@ -402,7 +432,13 @@ export default function MercadoBrowser(
           posicaoDraft={posicaoDraft}
           onClose={() => setInteressesAberto(false)}
           onMover={moverInteresse}
-          onRemover={removerInteresse}
+          onPedirRemover={(m) =>
+            setConfirma({
+              titulo: "Remover interesse?",
+              texto:
+                `Tira ${m.nome} da fila e libera ${m.oferecidoNome} do empenho.`,
+              onOk: () => removerInteresse(m.atleta_id),
+            })}
         />
       )}
 
@@ -476,7 +512,7 @@ export default function MercadoBrowser(
 
       <div class="bf-mercado__grid">
         {filtrados.map((j) =>
-          tipo === "meu"
+          tipo === "meu" || tipo === "minhas-venda"
             ? (
               <CardMeu
                 key={j.atleta_id}
@@ -513,6 +549,53 @@ export default function MercadoBrowser(
             : enviarOferta}
         />
       )}
+
+      {confirma && (
+        <ModalConfirma
+          titulo={confirma.titulo}
+          texto={confirma.texto}
+          onCancel={() => setConfirma(null)}
+          onOk={() => {
+            const fn = confirma.onOk;
+            setConfirma(null);
+            fn();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ModalConfirma(
+  { titulo, texto, onCancel, onOk }: {
+    titulo: string;
+    texto: string;
+    onCancel: () => void;
+    onOk: () => void;
+  },
+) {
+  return (
+    <div class="bf-modal bf-modal--confirm" onClick={onCancel}>
+      <div class="bf-modal__card" onClick={(e) => e.stopPropagation()}>
+        <h3 class="bf-modal__titulo">{titulo}</h3>
+        <p class="bf-modal__txt">{texto}</p>
+        <div class="bf-modal__acoes" style="padding:0 16px 16px">
+          <button
+            type="button"
+            class="bf-modal__btn"
+            onClick={onCancel}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="bf-modal__btn bf-modal__btn--danger"
+            onClick={onOk}
+          >
+            Remover
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -898,32 +981,36 @@ function ModalDraft(
             </li>
           ))}
         </ol>
-        <div class="bf-draft__regras">
-          <p>
-            Ordem inicial = inverso da classificação. Quem não usa o pick sobe;
-            quem usa vai pro fim da fila.
-          </p>
-          <p>
-            A cada <strong>5 rodadas</strong>{" "}
-            (ciclo completo) a ordem reseta pro inverso da classificação atual.
-          </p>
-          <p>
-            Empate no interesse por free agent → quem está mais alto na lista
-            leva.
-          </p>
-        </div>
+        <details class="bf-regras">
+          <summary>Como funciona</summary>
+          <div class="bf-regras__body">
+            <p>
+              Ordem inicial = inverso da classificação. Quem não usa o pick
+              sobe; quem usa vai pro fim da fila.
+            </p>
+            <p>
+              A cada <strong>5 rodadas</strong>{" "}
+              (ciclo completo) a ordem reseta pro inverso da classificação
+              atual.
+            </p>
+            <p>
+              Empate no interesse por free agent → quem está mais alto na lista
+              leva.
+            </p>
+          </div>
+        </details>
       </div>
     </div>
   );
 }
 
 function ModalInteresses(
-  { itens, posicaoDraft, onClose, onMover, onRemover }: {
+  { itens, posicaoDraft, onClose, onMover, onPedirRemover }: {
     itens: MeuInteresse[];
     posicaoDraft: number | null;
     onClose: () => void;
     onMover: (atletaId: number, dir: -1 | 1) => void;
-    onRemover: (atletaId: number) => void;
+    onPedirRemover: (m: MeuInteresse) => void;
   },
 ) {
   return (
@@ -1004,15 +1091,7 @@ function ModalInteresses(
                     <button
                       type="button"
                       class="bf-int__btn bf-int__btn--del"
-                      onClick={() => {
-                        if (
-                          confirm(
-                            `Remover interesse em ${m.nome} e liberar ${m.oferecidoNome}?`,
-                          )
-                        ) {
-                          onRemover(m.atleta_id);
-                        }
-                      }}
+                      onClick={() => onPedirRemover(m)}
                       aria-label="Remover"
                     >
                       ×
@@ -1022,17 +1101,21 @@ function ModalInteresses(
               ))}
             </ol>
           )}
-        <div class="bf-draft__regras" style="margin-top:14px">
-          <p>
-            Conflitos com outros times resolvem por{" "}
-            <strong>posição do draft</strong>: quem está mais alto leva
-            primeiro.
-          </p>
-          <p>
-            Seus empates internos resolvem por <strong>essa ordem</strong>{" "}
-            (do topo pra baixo).
-          </p>
-        </div>
+        <details class="bf-regras">
+          <summary>Como funciona</summary>
+          <div class="bf-regras__body">
+            <p>
+              Conflitos com outros times resolvem por{" "}
+              <strong>posição do draft</strong>: quem está mais alto leva
+              primeiro.
+            </p>
+            <p>
+              Seus empates internos resolvem por <strong>essa ordem</strong>
+              {" "}
+              (do topo pra baixo).
+            </p>
+          </div>
+        </details>
       </div>
     </div>
   );

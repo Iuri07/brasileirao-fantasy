@@ -2387,6 +2387,12 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"] {
   cursor: default;
   opacity: 0.5;
 }
+.bf-mercado__stat--ativo {
+  background: color-mix(in srgb, var(--bf-lime) 14%, transparent);
+}
+.bf-mercado__stat--ativo .bf-mercado__stat-lbl {
+  color: var(--bf-lime);
+}
 .bf-mercado__stat-val {
   font-family: var(--bf-font-cond);
   font-weight: 700;
@@ -2475,24 +2481,57 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"] {
   font-size: 13px;
   letter-spacing: 0.06em;
 }
-.bf-draft__regras {
-  margin-top: 14px;
-  padding-top: 12px;
+/* Bloco de regras colapsável — sutil por padrão. Expande no click. */
+.bf-regras {
+  margin-top: 10px;
   border-top: 1px solid var(--bf-line);
+  padding-top: 8px;
+}
+.bf-regras > summary {
+  list-style: none;
+  cursor: pointer;
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bf-fg-3);
+  padding: 2px 0;
+  transition: color 120ms;
+}
+.bf-regras > summary::-webkit-details-marker {
+  display: none;
+}
+.bf-regras > summary::before {
+  content: "›";
+  display: inline-block;
+  width: 12px;
+  margin-right: 4px;
+  transition: transform 160ms var(--bf-ease-out);
+  color: var(--bf-fg-3);
+}
+.bf-regras[open] > summary::before {
+  transform: rotate(90deg);
+}
+.bf-regras > summary:hover {
+  color: var(--bf-fg-1);
+}
+.bf-regras__body {
+  margin-top: 6px;
   font-family: var(--bf-font-body);
-  font-size: 12px;
-  color: var(--bf-fg-2);
+  font-size: 11px;
+  color: var(--bf-fg-3);
   line-height: 1.5;
 }
-.bf-draft__regras p {
-  margin: 0 0 6px;
+.bf-regras__body p {
+  margin: 0 0 4px;
 }
-.bf-draft__regras p:last-child {
+.bf-regras__body p:last-child {
   margin: 0;
 }
-.bf-draft__regras strong {
-  color: var(--bf-lime);
-  font-weight: 700;
+.bf-regras__body strong {
+  color: var(--bf-fg-1);
+  font-weight: 600;
 }
 
 /* Meus interesses (modal) */
@@ -2670,13 +2709,39 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"] {
   gap: 6px;
 }
 .bf-mercado__select {
-  padding: 8px 10px;
+  padding: 8px 28px 8px 10px;
   background: var(--bf-ink);
   border: 1px solid var(--bf-line-strong);
   border-radius: var(--bf-radius-sm);
-  color: #fff;
-  font-family: var(--bf-font-body);
+  color: var(--bf-fg-0);
+  font-family: var(--bf-font-cond);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* zera estilo nativo do browser */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  /* seta custom (chevron) */
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237A7B82' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px 6px;
+  cursor: pointer;
+}
+.bf-mercado__select:focus {
+  outline: none;
+  border-color: var(--bf-lime);
+}
+/* Opções dentro do dropdown — alguns browsers respeitam, outros (Safari)
+   usam o estilo do OS. Pelo menos pega Chrome/Firefox. */
+.bf-mercado__select option {
+  background: var(--bf-ink);
+  color: var(--bf-fg-0);
+  font-family: var(--bf-font-cond);
   font-size: 12px;
+  text-transform: uppercase;
 }
 .bf-mercado__meta {
   padding: 10px 4px 6px;
@@ -3080,6 +3145,11 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"] {
   background: var(--bf-lime);
   border-color: var(--bf-lime);
   color: var(--bf-lime-ink);
+}
+.bf-modal__btn--danger {
+  background: var(--bf-red);
+  border-color: var(--bf-red);
+  color: #fff;
 }
 @keyframes bf-modal-in {
   from {
