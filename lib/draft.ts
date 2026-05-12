@@ -135,22 +135,19 @@ export async function setDiasResolucao(
   await kv.set(DIAS_KEY, limpos);
 }
 
-/** Calcula a próxima data (a partir de `from`, default = agora) em que
- *  algum dos `dias` da semana acontece. Considera "hoje" como válido se
- *  bater. Retorna null se a lista estiver vazia. */
+/** Próxima resolução: 23:59:59 do próximo dia configurado, contando hoje
+ *  se ainda estiver dentro do dia. Retorna null se a lista estiver vazia. */
 export function proximaResolucao(
   dias: number[],
   from: Date = new Date(),
 ): Date | null {
   if (dias.length === 0) return null;
-  const base = new Date(from);
-  base.setHours(0, 0, 0, 0);
   for (let i = 0; i < 8; i++) {
-    const dia = (base.getDay() + i) % 7;
-    if (dias.includes(dia)) {
-      const r = new Date(base);
-      r.setDate(base.getDate() + i);
-      return r;
+    const cand = new Date(from);
+    cand.setDate(cand.getDate() + i);
+    cand.setHours(23, 59, 59, 999);
+    if (dias.includes(cand.getDay()) && cand.getTime() > from.getTime()) {
+      return cand;
     }
   }
   return null;

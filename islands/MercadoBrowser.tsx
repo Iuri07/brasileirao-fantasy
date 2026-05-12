@@ -67,10 +67,10 @@ interface Props {
   draftMeta?: DraftMetaProp | null;
   /** Meus interesses em ordem de prioridade (top = primeiro). */
   meusInteresses?: MeuInteresse[];
-  /** Dias até fechamento do mercado da Cartola (null = sem info). */
-  diasAteFechamento?: number | null;
-  /** Dias até a próxima resolução do draft (null = sem config). */
-  diasAteResolucao?: number | null;
+  /** Milissegundos até o fechamento do mercado (null = sem info). */
+  msAteFechamento?: number | null;
+  /** Milissegundos até a próxima resolução do draft (null = sem config). */
+  msAteResolucao?: number | null;
 }
 
 const POS_ABREV: Record<string, string> = {
@@ -104,8 +104,8 @@ export default function MercadoBrowser(
     draftOrdem = [],
     draftMeta = null,
     meusInteresses = [],
-    diasAteFechamento = null,
-    diasAteResolucao = null,
+    msAteFechamento = null,
+    msAteResolucao = null,
   }: Props,
 ) {
   const [jogadores, setJogadores] = useState<AtletaMercado[]>(inicial);
@@ -377,32 +377,45 @@ export default function MercadoBrowser(
     }).sort((a, b) => (b.mediaPontos ?? 0) - (a.mediaPontos ?? 0));
   }, [jogadores, meu, busca, posicao, status, clube, tipo]);
 
-  function tDias(n: number, sing: string, plur: string): string {
-    if (n === 0) return "hoje";
-    if (n === 1) return `em 1 ${sing}`;
-    return `em ${n} ${plur}`;
+  // Formata e classifica urgência baseado em ms restantes
+  function timing(
+    ms: number,
+  ): { texto: string; severity: "normal" | "warn" | "danger" } {
+    const H = 60 * 60 * 1000;
+    if (ms <= 0) return { texto: "agora", severity: "danger" };
+    if (ms < 6 * H) {
+      const h = Math.ceil(ms / H);
+      return { texto: `em ${h}h`, severity: "danger" };
+    }
+    if (ms < 24 * H) {
+      const h = Math.ceil(ms / H);
+      return { texto: `em ${h}h`, severity: "warn" };
+    }
+    const d = Math.ceil(ms / (24 * H));
+    return { texto: d === 1 ? "em 1 dia" : `em ${d} dias`, severity: "normal" };
   }
+
+  const tFech = msAteFechamento != null ? timing(msAteFechamento) : null;
+  const tResol = msAteResolucao != null ? timing(msAteResolucao) : null;
 
   return (
     <div class="bf-mercado">
-      {(diasAteFechamento != null || diasAteResolucao != null) && (
+      {(tFech || tResol) && (
         <div class="bf-mercado__timings">
-          {diasAteFechamento != null && (
-            <span class="bf-mercado__timing">
+          {tFech && (
+            <span
+              class={`bf-mercado__timing bf-mercado__timing--${tFech.severity}`}
+            >
               <span class="bf-mercado__timing-lbl">Mercado fecha</span>
-              <span class="bf-mercado__timing-val">
-                {diasAteFechamento === 0
-                  ? "agora"
-                  : tDias(diasAteFechamento, "dia", "dias")}
-              </span>
+              <span class="bf-mercado__timing-val">{tFech.texto}</span>
             </span>
           )}
-          {diasAteResolucao != null && (
-            <span class="bf-mercado__timing">
+          {tResol && (
+            <span
+              class={`bf-mercado__timing bf-mercado__timing--${tResol.severity}`}
+            >
               <span class="bf-mercado__timing-lbl">Conflitos resolvem</span>
-              <span class="bf-mercado__timing-val">
-                {tDias(diasAteResolucao, "dia", "dias")}
-              </span>
+              <span class="bf-mercado__timing-val">{tResol.texto}</span>
             </span>
           )}
         </div>

@@ -2431,6 +2431,18 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"] {
   color: var(--bf-fg-1);
   font-weight: 600;
 }
+.bf-mercado__timing--warn .bf-mercado__timing-val,
+.bf-mercado__timing--warn .bf-mercado__timing-lbl {
+  color: var(--bf-yellow);
+}
+.bf-mercado__timing--danger .bf-mercado__timing-val,
+.bf-mercado__timing--danger .bf-mercado__timing-lbl {
+  color: var(--bf-red);
+}
+.bf-mercado__timing--warn .bf-mercado__timing-val,
+.bf-mercado__timing--danger .bf-mercado__timing-val {
+  font-weight: 700;
+}
 .bf-mercado__stats {
   display: flex;
   align-items: stretch;

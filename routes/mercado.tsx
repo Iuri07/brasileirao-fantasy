@@ -55,10 +55,10 @@ interface Data {
   draftMeta: DraftMeta;
   /** Meus interesses em ordem de prioridade (top = primeiro). */
   meusInteresses: MeuInteresse[];
-  /** Dias até fechamento do mercado (Cartola). null se mercado já fechado. */
-  diasAteFechamento: number | null;
-  /** Dias até a próxima resolução de conflitos. null se sem dias configurados. */
-  diasAteResolucao: number | null;
+  /** Milissegundos até o fechamento do mercado (Cartola). null se sem info. */
+  msAteFechamento: number | null;
+  /** Milissegundos até a próxima resolução de conflitos. null se sem config. */
+  msAteResolucao: number | null;
   userEmail: string | null;
   userRole: "admin" | "user" | null;
   userNome: string | null;
@@ -238,10 +238,10 @@ export const handler: Handlers<Data, State> = {
       }
     }
 
-    // Dias até fechamento do mercado (Cartola fornece timestamp em UTC s).
+    // Tempo até o fechamento do mercado (Cartola fornece timestamp em UTC s).
     // Tenta KV primeiro (preenchido pelo cron); fallback fetch direto da
     // Cartola caso o KV não tenha (deploy novo / mercado em rodada).
-    let diasAteFechamento: number | null = null;
+    let msAteFechamento: number | null = null;
     let fechTimestamp: number | null = rodadaStatus?.fechamento?.timestamp ??
       null;
     if (!fechTimestamp) {
@@ -255,26 +255,13 @@ export const handler: Handlers<Data, State> = {
       }
     }
     if (fechTimestamp) {
-      const ms = fechTimestamp * 1000 - Date.now();
-      if (ms > 0) {
-        // arredonda pra cima — "1 dia restante" se faltar 12h
-        diasAteFechamento = Math.ceil(ms / (24 * 60 * 60 * 1000));
-      } else {
-        diasAteFechamento = 0; // mercado fechado / em rodada
-      }
+      msAteFechamento = Math.max(0, fechTimestamp * 1000 - Date.now());
     }
 
-    // Próxima resolução do draft (dias da semana configurados pelo admin)
+    // Tempo até a próxima resolução de conflitos do draft
     const diasResolucao = await getDiasResolucao(kv);
     const prox = proximaResolucao(diasResolucao);
-    let diasAteResolucao: number | null = null;
-    if (prox) {
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-      diasAteResolucao = Math.round(
-        (prox.getTime() - hoje.getTime()) / (24 * 60 * 60 * 1000),
-      );
-    }
+    const msAteResolucao = prox ? prox.getTime() - Date.now() : null;
 
     return ctx.render({
       jogadores,
@@ -286,8 +273,8 @@ export const handler: Handlers<Data, State> = {
       draftOrdem,
       draftMeta,
       meusInteresses,
-      diasAteFechamento,
-      diasAteResolucao,
+      msAteFechamento,
+      msAteResolucao,
       userEmail: ctx.state.session?.email ?? null,
       userRole: ctx.state.session?.role ?? null,
       userNome: ctx.state.session?.name ?? null,
@@ -301,7 +288,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=62" />
+        <link rel="stylesheet" href="/bf-styles.css?v=63" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -320,8 +307,8 @@ export default function MercadoPage({ data }: PageProps<Data>) {
           draftOrdem={data.draftOrdem}
           draftMeta={data.draftMeta}
           meusInteresses={data.meusInteresses}
-          diasAteFechamento={data.diasAteFechamento}
-          diasAteResolucao={data.diasAteResolucao}
+          msAteFechamento={data.msAteFechamento}
+          msAteResolucao={data.msAteResolucao}
         />
         <BottomNav active="mercado" />
       </div>
