@@ -61,7 +61,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=66" />
+        <link rel="stylesheet" href="/bf-styles.css?v=67" />
       </Head>
       <div class="bf-viewport">
         <TopBar

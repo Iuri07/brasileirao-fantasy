@@ -82,8 +82,8 @@ const STATUS_LABEL: Record<number, { sym: string; cor: string; txt: string }> =
     7: { sym: "✓", cor: "var(--bf-lime)", txt: "Provável" },
     2: { sym: "?", cor: "var(--bf-yellow)", txt: "Dúvida" },
     3: { sym: "✕", cor: "var(--bf-red)", txt: "Suspenso" },
-    5: { sym: "+", cor: "var(--bf-red)", txt: "Contundido" },
-    6: { sym: "–", cor: "var(--bf-fg-3)", txt: "Nulo" },
+    5: { sym: "✚", cor: "var(--bf-red)", txt: "Contundido" },
+    6: { sym: "−", cor: "var(--bf-fg-3)", txt: "Nulo" },
   };
 
 function norm(s: string): string {
