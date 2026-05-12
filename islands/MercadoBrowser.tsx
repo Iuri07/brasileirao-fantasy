@@ -95,7 +95,7 @@ export default function MercadoBrowser(
     jogadores: inicial,
     minhaChave = null,
     meuElenco = [],
-    qtdAVenda = 0,
+    qtdAVenda: _qtdAVendaInicial = 0,
     posicaoDraft = null,
     draftOrdem = [],
     draftMeta = null,
@@ -104,6 +104,11 @@ export default function MercadoBrowser(
 ) {
   const [jogadores, setJogadores] = useState<AtletaMercado[]>(inicial);
   const [meu, setMeu] = useState<AtletaMeuTime[]>(meuElenco);
+  // Derivado de `meu` — atualiza automaticamente ao pôr/tirar à venda
+  const qtdAVenda = useMemo(
+    () => meu.filter((j) => j.aVenda).length,
+    [meu],
+  );
   const [busca, setBusca] = useState("");
   const [posicao, setPosicao] = useState<string>("");
   const [status, setStatus] = useState<string>("");
