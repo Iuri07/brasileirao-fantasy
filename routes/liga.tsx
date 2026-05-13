@@ -64,12 +64,30 @@ import type { State } from "./_middleware.ts";
 
 export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
+    const T0 = performance.now();
+    const timings: string[] = [];
+    const mark = (label: string, since: number) => {
+      timings.push(`${label};dur=${(performance.now() - since).toFixed(1)}`);
+    };
+
     const kv = await Deno.openKv();
     const [elencos, rodada, fotos] = await Promise.all([
       getAllElencos(kv),
       getRodadaStatus(kv),
       getFotos(kv),
     ]);
+    mark("kv1", T0);
+
+    // Lê TODOS os históricos em paralelo (antes era sequencial dentro do
+    // for, custava 9× latência KV)
+    const Thist = performance.now();
+    const chavesArr = Object.keys(elencos);
+    const historicos = await Promise.all(
+      chavesArr.map((c) => getHistorico(kv, c)),
+    );
+    const historicoPorChave = new Map<string, Record<string, number>>();
+    chavesArr.forEach((c, i) => historicoPorChave.set(c, historicos[i]));
+    mark("hist", Thist);
 
     const times: TimeLinha[] = [];
     for (const [chave, elenco] of Object.entries(elencos)) {
@@ -91,7 +109,7 @@ export const handler: Handlers<Data, State> = {
       const ptsRodada = Math.round(
         escalados.reduce((s, j) => s + (j.pontos ?? 0), 0) * 100,
       ) / 100;
-      const historico = await getHistorico(kv, chave);
+      const historico = historicoPorChave.get(chave) ?? {};
 
       const pino = (j: typeof escalados[number]): Pino => ({
         nome: j.apelido_api,
@@ -136,7 +154,9 @@ export const handler: Handlers<Data, State> = {
       b.total - a.total || b.pontuacaoRodada - a.pontuacaoRodada
     );
 
-    return ctx.render({
+    mark("data", T0);
+    const Trender = performance.now();
+    const resp = await ctx.render({
       rodada: rodada?.rodada ?? 0,
       aoVivo: rodada?.status === "ao_vivo",
       subsMax: MAX_SUBS_AO_VIVO,
@@ -147,6 +167,10 @@ export const handler: Handlers<Data, State> = {
       userNome: ctx.state.session?.name ?? null,
       userPicture: ctx.state.session?.picture ?? null,
     });
+    mark("render", Trender);
+    mark("total", T0);
+    resp.headers.set("Server-Timing", timings.join(","));
+    return resp;
   },
 };
 

@@ -44,20 +44,34 @@ type Data = DataLive | DataBloqueado;
 
 export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
+    const T0 = performance.now();
+    const timings: string[] = [];
+    const mark = (label: string, since: number) => {
+      timings.push(`${label};dur=${(performance.now() - since).toFixed(1)}`);
+    };
     const CHAVE_USUARIO = ctx.state.session?.chave ?? CHAVE_FALLBACK_DEV;
     const kv = await Deno.openKv();
-    const [elencos, fotos, mercado, rodadaStatus] = await Promise.all([
+
+    // Round 1: KV only (Cartola só se KV não tiver resposta clara)
+    const [elencos, fotos, rodadaStatus] = await Promise.all([
       getAllElencos(kv),
       getFotos(kv),
-      fetchMercadoStatus().catch(() => null),
       getRodadaStatus(kv),
     ]);
+    mark("kv1", T0);
 
-    // Disponibilidade: ao vivo da Cartola real (bola_rolando ou
-    // status_mercado=2) OU simulação ativa (rodadaStatus.status === "ao_vivo").
-    const aoVivoOk = !!mercado?.bola_rolando ||
-      mercado?.status_mercado === 2 ||
-      rodadaStatus?.status === "ao_vivo";
+    const aoVivoPorKv = rodadaStatus?.status === "ao_vivo";
+    // Cartola só é necessária se KV diz "não ao vivo" e queremos mostrar
+    // o próximo timestamp de abertura
+    const Tcart = performance.now();
+    const mercado = aoVivoPorKv
+      ? null
+      : await fetchMercadoStatus().catch(() => null);
+    if (!aoVivoPorKv) mark("cartola", Tcart);
+
+    const aoVivoOk = aoVivoPorKv ||
+      !!mercado?.bola_rolando ||
+      mercado?.status_mercado === 2;
     const userInfo: UserInfo = {
       userEmail: ctx.state.session?.email ?? null,
       userRole: ctx.state.session?.role ?? null,
@@ -69,7 +83,15 @@ export const handler: Handlers<Data, State> = {
       const motivo = mercado?.status_mercado === 1
         ? "Mercado aberto — ainda não começou a rodada"
         : "Sem rodada ao vivo agora";
-      return ctx.render({ available: false, motivo, proximoTs, ...userInfo });
+      mark("total", T0);
+      const resp = await ctx.render({
+        available: false,
+        motivo,
+        proximoTs,
+        ...userInfo,
+      });
+      resp.headers.set("Server-Timing", timings.join(","));
+      return resp;
     }
 
     const visual = timeLigaInfo(CHAVE_USUARIO);
@@ -91,7 +113,9 @@ export const handler: Handlers<Data, State> = {
     const escalados = calculados.filter((j) => j.escalacao === "Sim").map(map);
     const banco = calculados.filter((j) => j.escalacao === "Banco").map(map);
 
-    return ctx.render({
+    mark("data", T0);
+    const Trender = performance.now();
+    const resp = await ctx.render({
       available: true,
       chave: CHAVE_USUARIO,
       displayName,
@@ -100,6 +124,10 @@ export const handler: Handlers<Data, State> = {
       banco,
       ...userInfo,
     });
+    mark("render", Trender);
+    mark("total", T0);
+    resp.headers.set("Server-Timing", timings.join(","));
+    return resp;
   },
 };
 
