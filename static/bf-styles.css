@@ -2608,6 +2608,42 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"] {
   align-items: center;
   gap: 4px;
 }
+/* Skeleton placeholder enquanto /api/mercado/data carrega */
+.bf-merc-card--skeleton {
+  position: relative;
+  padding: 78px 12px 12px;
+  background: var(--bf-chassis);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-md);
+  min-height: 180px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.bf-merc-card--skeleton::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--bf-line) 30%, transparent) 50%,
+    transparent 100%
+  );
+  animation: bf-skel-shimmer 1.4s linear infinite;
+}
+@keyframes bf-skel-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+.bf-mercado__meta-loading {
+  color: var(--bf-fg-3);
+  font-style: italic;
+}
+
 /* Banner exibido enquanto a rodada está ao vivo: mercado é só-leitura */
 .bf-mercado__fechado {
   margin: 4px var(--bf-gutter) 12px;

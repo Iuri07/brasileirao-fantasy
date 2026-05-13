@@ -54,6 +54,8 @@ export interface DraftMetaProp {
 interface Props {
   /** Rodada rolando — gating de ações de mutação. */
   aoVivo?: boolean;
+  /** Quando true, vem inicial vazio e fetcha /api/mercado/data no mount */
+  lazy?: boolean;
   jogadores: AtletaMercado[];
   /** Chave do meu time (pra saber se já estou interessado) */
   minhaChave?: string | null;
@@ -95,6 +97,7 @@ function norm(s: string): string {
 export default function MercadoBrowser(
   {
     aoVivo = false,
+    lazy = false,
     jogadores: inicial,
     minhaChave = null,
     meuElenco = [],
@@ -127,6 +130,30 @@ export default function MercadoBrowser(
   const [draftAberto, setDraftAberto] = useState(false);
   const [interesses, setInteresses] = useState<MeuInteresse[]>(meusInteresses);
   const [interessesAberto, setInteressesAberto] = useState(false);
+  const [carregando, setCarregando] = useState(lazy);
+
+  // Lazy load: SSR mandou shell vazio; busca dados pesados na hidratação
+  useEffect(() => {
+    if (!lazy) return;
+    let cancelado = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/mercado/data");
+        const d = await r.json();
+        if (cancelado) return;
+        setJogadores(d.jogadores ?? []);
+        setMeu(d.meuElenco ?? []);
+        setInteresses(d.meusInteresses ?? []);
+      } catch {
+        // mantém vazio em caso de erro
+      } finally {
+        if (!cancelado) setCarregando(false);
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [lazy]);
 
   // Modal único — distingue por modo:
   // - "oferta": trade entre times (precisa enviar pra dono)
@@ -514,11 +541,25 @@ export default function MercadoBrowser(
       </div>
 
       <div class="bf-mercado__meta">
-        <span>{filtrados.length}</span> jogadores
+        {carregando
+          ? <span class="bf-mercado__meta-loading">carregando…</span>
+          : (
+            <>
+              <span>{filtrados.length}</span> jogadores
+            </>
+          )}
       </div>
 
       <div class="bf-mercado__grid">
-        {filtrados.map((j) =>
+        {carregando &&
+          Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={`skel-${i}`}
+              class="bf-merc-card bf-merc-card--skeleton"
+              aria-hidden="true"
+            />
+          ))}
+        {!carregando && filtrados.map((j) =>
           tipo === "meu" || tipo === "minhas-venda"
             ? (
               <CardMeu
@@ -544,7 +585,7 @@ export default function MercadoBrowser(
               />
             )
         )}
-        {filtrados.length === 0 && (
+        {!carregando && filtrados.length === 0 && (
           <div class="bf-empty-state">Nenhum jogador encontrado</div>
         )}
       </div>
