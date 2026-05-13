@@ -23,6 +23,7 @@ import { escudoUrl } from "../lib/escudos.ts";
 import { coresClube } from "../lib/cores.ts";
 import { fotoUrl } from "../lib/fotos.ts";
 import { timeLigaInfo } from "../lib/times-liga.ts";
+import { cdn } from "../lib/cdn.ts";
 
 const CHAVE_USUARIO = "aguiar";
 
@@ -193,7 +194,7 @@ export default function Liga({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=79" />
+        <link rel="stylesheet" href="/bf-styles.css?v=80" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -266,7 +267,8 @@ export default function Liga({ data }: PageProps<Data>) {
               chave: t.chave,
               nome: info?.displayName ?? t.nome,
               accent: info?.accent ?? "#888",
-              logo: info?.logo,
+              // wrap pelo CDN — em prod /times_escudos/* não existe localmente
+              logo: cdn(info?.logo ?? null),
               pontosPorRodada: t.historico,
             };
           })}
