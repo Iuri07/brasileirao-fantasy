@@ -204,7 +204,7 @@ export default function Liga({ data }: PageProps<Data>) {
                     ? (
                       <Field
                         jogadores={t.escalacao}
-                        showPoints
+                        showPoints={!data.aoVivo}
                         accent={accent}
                         banco={t.banco}
                       />
