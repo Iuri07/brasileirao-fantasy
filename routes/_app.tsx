@@ -91,19 +91,30 @@ export default function App({ Component }: AppProps) {
                 if (a) maybePrefetch(a.href);
               }, { passive: true });
 
-              // Barra de progresso + fade no clique — feedback imediato
+              // Barra de progresso atrasada — só aparece se a próxima
+              // página demorar mais que THRESH ms. Pra navegações rápidas
+              // (skeleton + cache) fica invisível, sem flicker.
               var navBar = document.getElementById('bf-nav-progress');
+              var THRESH = 180;
+              var navTimer = null;
               function startProgress() {
                 document.body.classList.add('bf-leaving');
-                if (navBar) navBar.classList.add('bf-nav-progress--on');
+                if (navTimer) clearTimeout(navTimer);
+                navTimer = setTimeout(function() {
+                  if (navBar) navBar.classList.add('bf-nav-progress--on');
+                }, THRESH);
               }
               function endProgress() {
                 document.body.classList.remove('bf-leaving');
+                if (navTimer) { clearTimeout(navTimer); navTimer = null; }
                 if (navBar) {
-                  navBar.classList.add('bf-nav-progress--done');
-                  setTimeout(function() {
-                    navBar.classList.remove('bf-nav-progress--on', 'bf-nav-progress--done');
-                  }, 220);
+                  // Se ainda tava animando, finaliza pra 100% rápido
+                  if (navBar.classList.contains('bf-nav-progress--on')) {
+                    navBar.classList.add('bf-nav-progress--done');
+                    setTimeout(function() {
+                      navBar.classList.remove('bf-nav-progress--on', 'bf-nav-progress--done');
+                    }, 220);
+                  }
                 }
               }
               document.addEventListener('click', function(e) {
