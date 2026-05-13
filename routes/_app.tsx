@@ -35,6 +35,16 @@ export default function App({ Component }: AppProps) {
             __html: JSON.stringify({
               prerender: [
                 {
+                  // EAGER: pré-renderiza imediatamente os 5 links da
+                  // bottom nav. Mobile-first: usuário não tem hover, mas
+                  // sempre vai pular entre essas rotas — vale gastar.
+                  source: "document",
+                  where: { selector_matches: ".bf-bottom-nav__item" },
+                  eagerness: "eager",
+                },
+                {
+                  // MODERATE: hover/touchstart em qualquer link interno
+                  // dispara prerender. Pra navegação fora da bottom nav.
                   source: "document",
                   where: {
                     and: [
