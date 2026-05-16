@@ -134,16 +134,28 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* padding-bottom maior pra dar espaço pro fade não engolir o conteúdo */
-  padding: 12px var(--bf-gutter) 20px;
-  /* Frosted glass + fade: fundo mais translúcido (45%) e o blur/cor
-     vão sumindo nos últimos ~30% via mask, evitando corte abrupto
-     entre header e conteúdo. */
+  padding: 12px var(--bf-gutter);
   background: color-mix(in srgb, var(--bf-ink) 45%, transparent);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
-  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+/* Fade decorativo abaixo da topbar — pointer-events:none pra não
+   bloquear clicks no conteúdo que passa por baixo ao rolar. */
+.bf-topbar::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--bf-ink) 35%, transparent),
+    transparent
+  );
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .bf-iconbtn {
