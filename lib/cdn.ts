@@ -14,26 +14,22 @@
 const CDN_BASE =
   "https://cdn.jsdelivr.net/gh/Iuri07/brasileirao-fantasy-assets@master";
 
-// Detecção de "estou rodando em Deno Deploy":
-// - browser: `Deno` não existe → false (e o guard evita ReferenceError
-//   na chunk client; sem ele, todos os islands quebram em hidratação).
-// - Deno Deploy clássico (.deno.dev): DENO_DEPLOYMENT_ID setado.
-// - Deno Deploy EA (.deno.net): DENO_DEPLOYMENT_ID pode não vir;
-//   DENO_REGION / DENO_REVISION_ID costumam estar populados.
-// - dev local: nenhum dos três → IN_DEPLOY=false, serve do symlink local.
-function detectDenoDeploy(): boolean {
+// Decisão de usar CDN: invertida pra evitar bug onde env var não vem
+// (Deno Deploy EA não popula DENO_DEPLOYMENT_ID consistentemente).
+// Default: se está rodando em algum runtime Deno, usa CDN.
+// Override pra dev local com symlinks: USE_LOCAL_ASSETS=1.
+// No browser, `Deno` não existe → IN_DEPLOY=false (mas URLs já vêm
+// resolvidas do SSR, então não importa).
+function detectUseDeploy(): boolean {
   if (typeof Deno === "undefined") return false;
   try {
-    return !!(
-      Deno.env.get("DENO_DEPLOYMENT_ID") ||
-      Deno.env.get("DENO_REGION") ||
-      Deno.env.get("DENO_REVISION_ID")
-    );
+    if (Deno.env.get("USE_LOCAL_ASSETS") === "1") return false;
   } catch {
-    return false;
+    // env access negado → assume prod
   }
+  return true;
 }
-const IN_DEPLOY = detectDenoDeploy();
+const IN_DEPLOY = detectUseDeploy();
 
 /** Retorna a URL final do asset. URLs absolutas (http(s)://) passam direto.
  *  Em prod, paths começando com '/' viram URL absoluta do jsDelivr. */
