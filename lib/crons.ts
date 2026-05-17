@@ -310,7 +310,11 @@ export function registrarCrons(): void {
   });
 
   // Status + pontuação ao vivo: a cada 5 minutos
-  Deno.cron("atualizar", "*/5 * * * *", async () => {
+  // 1min de cadência — granularidade fina pros timestamps da timeline
+  // (Cartola só dá scout acumulado, sem timestamp por lance). 5min era
+  // demais: todos os gols/cartões num período de 5min ficavam com o
+  // mesmo horário.
+  Deno.cron("atualizar", "* * * * *", async () => {
     try {
       const kv = await Deno.openKv();
       await atualizarTudo(kv);
