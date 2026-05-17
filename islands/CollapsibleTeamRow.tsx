@@ -102,7 +102,6 @@ export default function CollapsibleTeamRow(
         aria-expanded={open}
       >
         <span class="bf-team-row__pos">
-          {isLider ? "🏆" : `#${pos}`}
           {posDelta !== null && posDelta !== 0 && (
             <span
               class={`bf-team-row__delta bf-team-row__delta--${
@@ -116,6 +115,7 @@ export default function CollapsibleTeamRow(
               {Math.abs(posDelta)}
             </span>
           )}
+          {isLider ? "🏆" : `#${pos}`}
         </span>
         <div class="bf-team-row__meta">
           <div class="bf-team-row__name">{displayName}</div>
