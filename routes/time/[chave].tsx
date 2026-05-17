@@ -5,6 +5,7 @@ import {
   getAllElencos,
   getFotos,
   getRodadaStatus,
+  isRodadaEmAndamento,
   MAX_SUBS_AO_VIVO,
 } from "../../lib/kv.ts";
 import { getMelhorTimeCached } from "../../lib/substituicao.ts";
@@ -133,7 +134,7 @@ export const handler: Handlers<Data, State> = {
       posicao: posicao || null,
       totalTimes: ranking.length,
       escalacao: escalados.length ? escalacao : null,
-      aoVivo: rodada?.status === "ao_vivo",
+      aoVivo: isRodadaEmAndamento(rodada?.status),
       subsAplicadas,
       subsMax: MAX_SUBS_AO_VIVO,
       userEmail: ctx.state.session?.email ?? null,
@@ -153,7 +154,7 @@ export default function TimeDetalhe({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>{displayName} · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=100" />
+        <link rel="stylesheet" href="/bf-styles.css?v=101" />
       </Head>
       <div class="bf-viewport">
         <TopBar

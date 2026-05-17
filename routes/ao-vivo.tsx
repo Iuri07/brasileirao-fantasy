@@ -4,6 +4,7 @@ import {
   getAllElencos,
   getFotos,
   getRodadaStatus,
+  isRodadaEmAndamento,
   MAX_SUBS_AO_VIVO,
 } from "../lib/kv.ts";
 import { getMelhorTimeCached } from "../lib/substituicao.ts";
@@ -98,7 +99,7 @@ export const handler: Handlers<Data, State> = {
     ]);
     mark("kv1", T0);
 
-    const aoVivo = rodadaStatus?.status === "ao_vivo";
+    const aoVivo = isRodadaEmAndamento(rodadaStatus?.status);
 
     // === Monta a liga inteira sempre (mesmo fora de rodada ao vivo) ===
     // Fora do live: parcial = 0, delta = 0, eventos vazios. Mas a página
@@ -252,7 +253,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=100" />
+        <link rel="stylesheet" href="/bf-styles.css?v=101" />
       </Head>
       <div class="bf-viewport">
         <TopBar

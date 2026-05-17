@@ -304,10 +304,20 @@ export async function getRodadaStatus(
   return r.value;
 }
 
-/** Verifica se a rodada está rolando ao vivo (KV ou simulação admin). */
+/** Verifica se a rodada está em andamento — cobre `ao_vivo` (bola
+ *  rolando agora) E `aguardando_inicio` (mercado fechado mas entre
+ *  jogos). Cartola só marca bola_rolando=true durante o 90min de
+ *  cada jogo; entre jogos da mesma rodada cai pra false. Pra UX
+ *  isso é tudo "rodada rolando". */
+export function isRodadaEmAndamento(
+  status: RodadaStatus["status"] | null | undefined,
+): boolean {
+  return status === "ao_vivo" || status === "aguardando_inicio";
+}
+
 export async function isAoVivo(kv: Deno.Kv): Promise<boolean> {
   const s = await getRodadaStatus(kv);
-  return s?.status === "ao_vivo";
+  return isRodadaEmAndamento(s?.status);
 }
 
 export async function setRodadaStatus(

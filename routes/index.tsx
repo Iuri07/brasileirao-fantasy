@@ -7,6 +7,7 @@ import {
   getFotos,
   getRodadaStatus,
   getSubsUsadas,
+  isRodadaEmAndamento,
   MAX_SUBS_AO_VIVO,
   TODAS_CHAVES,
 } from "../lib/kv.ts";
@@ -182,7 +183,7 @@ export const handler: Handlers<HomeData, State> = {
     // - mercado/status só se rodada do KV não tem fechamento (raro)
     // - pontuados só durante ao vivo
     // - partidas sempre (não tem placar/horário em KV)
-    const aoVivoKv = rodada?.status === "ao_vivo";
+    const aoVivoKv = isRodadaEmAndamento(rodada?.status);
     const temFechamentoKv = !!rodada?.fechamento?.timestamp;
     const Tcart = performance.now();
     const [mercado, partidasResp, pontuadosResp] = await Promise.all([
@@ -320,7 +321,7 @@ export const handler: Handlers<HomeData, State> = {
     const rodadaAtual = rodada?.rodada ?? mercado?.rodada_atual ?? 0;
     // Combina KV + Cartola: confia em qualquer fonte que diga ao vivo.
     const aoVivoReal = !!mercado?.bola_rolando ||
-      (rodada?.status === "ao_vivo");
+      isRodadaEmAndamento(rodada?.status);
 
     // Countdown: usa fechamento do KV se tiver, senão da Cartola.
     // Durante o ao vivo esconde porque ações de mercado bloqueiam.
@@ -427,7 +428,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=100" />
+        <link rel="stylesheet" href="/bf-styles.css?v=101" />
       </Head>
       <div class="bf-viewport">
         <TopBar

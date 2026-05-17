@@ -4,6 +4,7 @@ import {
   getRodadaStatus,
   getSubsUsadas,
   incrementSubsUsadas,
+  isRodadaEmAndamento,
   MAX_SUBS_AO_VIVO,
   setElenco,
   TODAS_CHAVES,
@@ -109,7 +110,7 @@ export const handler: Handlers = {
     // vez do Cartola direto — assim a simulação do admin também trava.
     const afetaEscala = sai.escalacao === "Sim" || entra.escalacao === "Sim";
     const rodadaStatus = await getRodadaStatus(kv);
-    const aoVivo = rodadaStatus?.status === "ao_vivo";
+    const aoVivo = isRodadaEmAndamento(rodadaStatus?.status);
     const rodadaAtual = rodadaStatus?.rodada ?? 0;
     let subsUsadas = 0;
     if (aoVivo && afetaEscala) {

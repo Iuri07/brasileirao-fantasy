@@ -5,6 +5,7 @@ import {
   getAVenda,
   getDraftOrdem,
   getRodadaStatus,
+  isRodadaEmAndamento,
 } from "../lib/kv.ts";
 import {
   type DraftMeta,
@@ -112,7 +113,7 @@ export const handler: Handlers<Data, State> = {
     mark("data", T0);
     const Trender = performance.now();
     const resp = await ctx.render({
-      aoVivo: rodadaStatus?.status === "ao_vivo",
+      aoVivo: isRodadaEmAndamento(rodadaStatus?.status),
       minhaChave: ctx.state.session?.chave ?? null,
       qtdAVenda,
       posicaoDraft,
@@ -193,7 +194,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=100" />
+        <link rel="stylesheet" href="/bf-styles.css?v=101" />
       </Head>
       <div class="bf-viewport">
         <TopBar
