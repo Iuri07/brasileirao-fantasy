@@ -571,6 +571,85 @@ body {
 .bf-event-chip__qtd {
   opacity: 0.85;
 }
+/* Tag do dono do jogador (DOMINGOS, IAN, AGUIAR...) no lado do apelido
+   nos eventos da liga. Discreta, condensada, pra não roubar atenção
+   do apelido em si. */
+.bf-event-row__dono {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--bf-fg-3);
+  vertical-align: middle;
+}
+
+/* ============================================================
+   TIMELINE — eventos chave gerados via diff entre polls de Cartola
+   ============================================================ */
+.bf-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 var(--bf-gutter);
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.bf-timeline__row {
+  display: grid;
+  grid-template-columns: 38px 18px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--bf-line);
+  border-left: 3px solid var(--bf-fg-3);
+  border-radius: var(--bf-radius-sm);
+  font-family: var(--bf-font-cond);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bf-fg-1);
+}
+.bf-timeline__row--positivo {
+  border-left-color: var(--bf-lime);
+}
+.bf-timeline__row--negativo {
+  border-left-color: var(--bf-red);
+}
+.bf-timeline__row--neutro {
+  border-left-color: var(--bf-fg-3);
+}
+.bf-timeline__time {
+  font-family: var(--bf-font-mono);
+  font-size: 10px;
+  color: var(--bf-fg-3);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.bf-timeline__icon {
+  font-size: 14px;
+  text-align: center;
+}
+.bf-timeline__name {
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bf-timeline__label {
+  font-size: 10px;
+  color: var(--bf-fg-2);
+  font-weight: 600;
+}
 .bf-event-row__line {
   display: flex;
   align-items: center;

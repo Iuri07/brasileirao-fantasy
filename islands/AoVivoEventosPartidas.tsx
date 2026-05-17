@@ -1,8 +1,8 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import SectionHeader from "../components/SectionHeader.tsx";
 import Partidas from "../components/Partidas.tsx";
 import { escudoUrl } from "../lib/escudos.ts";
-import { eventos, type EventoScout } from "../lib/scout.ts";
+import { eventos, type EventoScout, SCOUT } from "../lib/scout.ts";
 
 /** Metadados estáticos de cada atleta da liga — vêm do SSR. */
 export interface AtletaMeta {
@@ -12,6 +12,21 @@ export interface AtletaMeta {
   posicao: string;
   escudo: string | null;
   foto: string | null;
+  /** Nome do dono do time na liga (DOMINGOS, IAN, AGUIAR...). */
+  dono: string;
+}
+
+/** Entrada da timeline — gerada por diff de scouts entre 2 polls. */
+interface TimelineEvent {
+  ts: Date;
+  atletaId: number;
+  apelido: string;
+  dono: string;
+  escudo: string | null;
+  clube: string;
+  codigo: string;
+  qtd: number;
+  info: typeof SCOUT[keyof typeof SCOUT];
 }
 
 interface Props {
@@ -59,6 +74,18 @@ export default function AoVivoEventosPartidas({ ligaAtletas }: Props) {
   const [partidas, setPartidas] = useState<CartolaPartidasResp | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [atualizadoEm, setAtualizadoEm] = useState<Date | null>(null);
+  /** Timeline gerada por diff entre polls. Persiste durante a sessão. */
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  /** Snapshot do último scout por atleta — pra computar diff no próximo poll.
+      useRef pra não disparar re-render quando atualiza. */
+  const prevScoutsRef = useRef<
+    Record<string, Record<string, number>>
+  >({});
+  /** True na primeira execução — não loga eventos no boot (eles já existiam). */
+  const isFirstFetchRef = useRef(true);
+
+  // Map atleta_id → metadados pra olhar no diff sem refazer Array.find.
+  const metaPorId = new Map(ligaAtletas.map((a) => [a.atleta_id, a]));
 
   async function refetch() {
     try {
@@ -72,6 +99,50 @@ export default function AoVivoEventosPartidas({ ligaAtletas }: Props) {
           return r.json();
         }),
       ]);
+
+      // === Diff de scouts pra alimentar a timeline ===
+      // Só gera eventos a partir do 2º poll — o primeiro estabelece a
+      // baseline (todos os pontos já marcados antes do user abrir a tela).
+      const novosScouts: Record<string, Record<string, number>> = {};
+      const curr = (pResp as CartolaPontuadosResp)?.atletas ?? {};
+      const novosEventos: TimelineEvent[] = [];
+      const agora = new Date();
+      for (const [id, p] of Object.entries(curr)) {
+        const scout = p?.scout ?? {};
+        novosScouts[id] = scout;
+        const atletaId = Number(id);
+        const meta = metaPorId.get(atletaId);
+        if (!meta) continue; // só liga players
+        if (isFirstFetchRef.current) continue; // skip boot
+        const prev = prevScoutsRef.current[id] ?? {};
+        for (const [codigo, qtd] of Object.entries(scout)) {
+          const prevQtd = prev[codigo] ?? 0;
+          const diff = qtd - prevQtd;
+          if (diff <= 0) continue;
+          const info = SCOUT[codigo];
+          // Filtra só eventos "chaves" (gol, cartão, defesa difícil, etc.)
+          if (!info?.chave) continue;
+          novosEventos.push({
+            ts: agora,
+            atletaId,
+            apelido: meta.apelido,
+            dono: meta.dono,
+            escudo: meta.escudo,
+            clube: meta.clube,
+            codigo,
+            qtd: diff,
+            info,
+          });
+        }
+      }
+      prevScoutsRef.current = novosScouts;
+      isFirstFetchRef.current = false;
+
+      if (novosEventos.length > 0) {
+        // Prepend (mais recentes primeiro) e limita a 50 entradas
+        setTimeline((prev) => [...novosEventos, ...prev].slice(0, 50));
+      }
+
       setPontuados(pResp);
       setPartidas(pdResp);
       setAtualizadoEm(new Date());
@@ -121,6 +192,49 @@ export default function AoVivoEventosPartidas({ ligaAtletas }: Props) {
 
   return (
     <>
+      {
+        /* Timeline — eventos detectados via diff entre polls. Aparece
+          quando há pelo menos 1 evento desde que a tela abriu. */
+      }
+      {timeline.length > 0 && (
+        <>
+          <SectionHeader>Timeline</SectionHeader>
+          <div class="bf-timeline">
+            {timeline.map((e, i) => {
+              const hora = e.ts.toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZone: "America/Sao_Paulo",
+              });
+              return (
+                <div
+                  class={`bf-timeline__row bf-timeline__row--${e.info.tipo}`}
+                  key={`${e.atletaId}-${e.codigo}-${e.ts.getTime()}-${i}`}
+                >
+                  <span class="bf-timeline__time">{hora}</span>
+                  <span class="bf-timeline__icon">{e.info.icon}</span>
+                  <span class="bf-timeline__name">
+                    {e.escudo && (
+                      <img
+                        class="bf-event-row__escudo"
+                        src={e.escudo}
+                        alt=""
+                      />
+                    )}
+                    {e.apelido}
+                    <span class="bf-event-row__dono">{e.dono}</span>
+                  </span>
+                  <span class="bf-timeline__label">
+                    {e.info.label}
+                    {e.qtd > 1 && <span>×{e.qtd}</span>}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
       <SectionHeader
         right={atualizadoTxt && (
           <span class="bf-meta-text">atualizado às {atualizadoTxt}</span>
@@ -155,6 +269,7 @@ export default function AoVivoEventosPartidas({ ligaAtletas }: Props) {
                       />
                     )}
                     {j.apelido}
+                    <span class="bf-event-row__dono">{j.dono}</span>
                   </div>
                   <div class="bf-event-row__chips">
                     {j.events.slice(0, 6).map((e: EventoScout) => (

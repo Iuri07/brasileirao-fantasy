@@ -222,6 +222,10 @@ export const handler: Handlers<Data, State> = {
       const ativos = calculados.filter((j) =>
         j.escalacao === "Sim" || j.escalacao === "Banco"
       );
+      // Display name vem do mapping da liga (timeLigaInfo) — mais limpo
+      // que elenco.dono que tem capitalização inconsistente.
+      const visual = timeLigaInfo(chave);
+      const donoDisplay = (visual?.displayName ?? elenco.dono).toUpperCase();
       for (const j of ativos) {
         ligaAtletas.push({
           atleta_id: j.atleta_id,
@@ -230,10 +234,9 @@ export const handler: Handlers<Data, State> = {
           posicao: j.posicao,
           escudo: escudoUrl(j.clube),
           foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
+          dono: donoDisplay,
         });
       }
-      // suprime warning de elenco não usado (precisava só pra iterar chaves)
-      void elenco;
     }
 
     mark("data", T0);
@@ -260,7 +263,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=102" />
+        <link rel="stylesheet" href="/bf-styles.css?v=103" />
       </Head>
       <div class="bf-viewport">
         <TopBar
