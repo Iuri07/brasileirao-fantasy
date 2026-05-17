@@ -83,4 +83,6 @@ export interface CartolaPontuadoAtleta {
   atleta_id: number;
   pontuacao: number;
   entrou_em_campo: boolean;
+  /** Scout do jogador: { "G": 1, "A": 2, "CA": 1 } — código Cartola → qtd. */
+  scout?: Record<string, number>;
 }

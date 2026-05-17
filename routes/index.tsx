@@ -428,7 +428,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=117" />
+        <link rel="stylesheet" href="/bf-styles.css?v=118" />
       </Head>
       <div class="bf-viewport">
         <TopBar

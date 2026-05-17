@@ -21,6 +21,13 @@ import {
 import { fetchPlayerPhoto, sleep } from "./sportsdb.ts";
 import { setHistoricoRodada } from "./historico.ts";
 import { calcularMelhorTime } from "./substituicao.ts";
+import {
+  appendEvento,
+  type EventoHist,
+  getEstadoScout,
+  setEstadoScout,
+} from "./eventos-hist.ts";
+import { SCOUT } from "./scout.ts";
 import { CUTOUTS_DISPONIVEIS } from "./cutouts-manifest.ts";
 import type { AtletaCacheEntry, AtletaCacheKV } from "./types.ts";
 
@@ -189,6 +196,40 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
       atualizadoEm: now,
     });
     return;
+  }
+
+  // === Detecta eventos chave (diff de scout) pra histórico persistido ===
+  // Pra cada atleta com scout novo, compara com último estado salvo;
+  // pra cada código incrementado, registra um EventoHist. Histórico
+  // sobrevive reload (vs timeline client que era só da sessão).
+  const rodadaPontuados = pontuados.rodada_id ?? mercado.rodada_atual;
+  const agoraMs = Date.now();
+  for (const [idStr, p] of Object.entries(pontuados.atletas)) {
+    const scoutNovo = p?.scout ?? {};
+    if (Object.keys(scoutNovo).length === 0) continue;
+    const atletaId = Number(idStr);
+    const scoutAntigo = await getEstadoScout(kv, rodadaPontuados, atletaId);
+    let mudou = false;
+    for (const [codigo, qtd] of Object.entries(scoutNovo)) {
+      const antigo = scoutAntigo[codigo] ?? 0;
+      if (qtd <= antigo) continue;
+      // Filtra só códigos "chave" (gol, cartão, defesa, etc.) — scouts
+      // ruidosos (passe errado, falta cometida etc) ficam fora.
+      const info = SCOUT[codigo];
+      if (!info?.chave) continue;
+      const evento: EventoHist = {
+        ts: agoraMs,
+        rodada: rodadaPontuados,
+        atletaId,
+        codigo,
+        qtd: qtd - antigo,
+      };
+      await appendEvento(kv, evento);
+      mudou = true;
+    }
+    if (mudou) {
+      await setEstadoScout(kv, rodadaPontuados, atletaId, scoutNovo);
+    }
   }
 
   // Atualiza pontos + entrou_em_campo nos elencos

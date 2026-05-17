@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import SectionHeader from "../components/SectionHeader.tsx";
 import Partidas from "../components/Partidas.tsx";
 import ScoutIcon from "../components/ScoutIcon.tsx";
@@ -88,20 +88,13 @@ export default function AoVivoEventosPartidas({ ligaAtletas }: Props) {
   const [view, setView] = useState<"eventos" | "timeline">("eventos");
   /** Timeline gerada por diff entre polls. Persiste durante a sessão. */
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
-  /** Snapshot do último scout por atleta — pra computar diff no próximo poll.
-      useRef pra não disparar re-render quando atualiza. */
-  const prevScoutsRef = useRef<
-    Record<string, Record<string, number>>
-  >({});
-  /** True na primeira execução — não loga eventos no boot (eles já existiam). */
-  const isFirstFetchRef = useRef(true);
 
-  // Map atleta_id → metadados pra olhar no diff sem refazer Array.find.
+  // Map atleta_id → metadados pra enrichment dos eventos do server.
   const metaPorId = new Map(ligaAtletas.map((a) => [a.atleta_id, a]));
 
   async function refetch() {
     try {
-      const [pResp, pdResp] = await Promise.all([
+      const [pResp, pdResp, evResp] = await Promise.all([
         fetch("/api/live/atletas/pontuados").then((r) => {
           if (!r.ok) throw new Error(`pontuados ${r.status}`);
           return r.json();
@@ -110,51 +103,44 @@ export default function AoVivoEventosPartidas({ ligaAtletas }: Props) {
           if (!r.ok) throw new Error(`partidas ${r.status}`);
           return r.json();
         }),
+        fetch("/api/eventos-hist").then((r) => {
+          if (!r.ok) throw new Error(`eventos-hist ${r.status}`);
+          return r.json();
+        }),
       ]);
 
-      // === Diff de scouts pra alimentar a timeline ===
-      // Só gera eventos a partir do 2º poll — o primeiro estabelece a
-      // baseline (todos os pontos já marcados antes do user abrir a tela).
-      const novosScouts: Record<string, Record<string, number>> = {};
-      const curr = (pResp as CartolaPontuadosResp)?.atletas ?? {};
-      const novosEventos: TimelineEvent[] = [];
-      const agora = new Date();
-      for (const [id, p] of Object.entries(curr)) {
-        const scout = p?.scout ?? {};
-        novosScouts[id] = scout;
-        const atletaId = Number(id);
-        const meta = metaPorId.get(atletaId);
+      // === Timeline vem do server (persistida pelo cron via diff
+      // entre snapshots de scout). Sobrevive reload e cobre desde o
+      // início da rodada — não só da sessão. ===
+      type EvHist = {
+        ts: number;
+        atletaId: number;
+        codigo: string;
+        qtd: number;
+      };
+      const evHist: EvHist[] = evResp?.eventos ?? [];
+      const novos: TimelineEvent[] = [];
+      for (const e of evHist) {
+        const meta = metaPorId.get(e.atletaId);
         if (!meta) continue; // só liga players
-        if (isFirstFetchRef.current) continue; // skip boot
-        const prev = prevScoutsRef.current[id] ?? {};
-        for (const [codigo, qtd] of Object.entries(scout)) {
-          const prevQtd = prev[codigo] ?? 0;
-          const diff = qtd - prevQtd;
-          if (diff <= 0) continue;
-          const info = SCOUT[codigo];
-          // Filtra só eventos "chaves" (gol, cartão, defesa difícil, etc.)
-          if (!info?.chave) continue;
-          novosEventos.push({
-            ts: agora,
-            atletaId,
-            apelido: meta.apelido,
-            dono: meta.dono,
-            donoEscudo: meta.donoEscudo,
-            escudo: meta.escudo,
-            clube: meta.clube,
-            codigo,
-            qtd: diff,
-            info,
-          });
-        }
+        const info = SCOUT[e.codigo];
+        if (!info) continue;
+        novos.push({
+          ts: new Date(e.ts),
+          atletaId: e.atletaId,
+          apelido: meta.apelido,
+          dono: meta.dono,
+          donoEscudo: meta.donoEscudo,
+          escudo: meta.escudo,
+          clube: meta.clube,
+          codigo: e.codigo,
+          qtd: e.qtd,
+          info,
+        });
       }
-      prevScoutsRef.current = novosScouts;
-      isFirstFetchRef.current = false;
-
-      if (novosEventos.length > 0) {
-        // Prepend (mais recentes primeiro) e limita a 50 entradas
-        setTimeline((prev) => [...novosEventos, ...prev].slice(0, 50));
-      }
+      // Já vem ordenado desc do server (key prefix com -ts), limita
+      // por segurança.
+      setTimeline(novos.slice(0, 100));
 
       setPontuados(pResp);
       setPartidas(pdResp);
@@ -247,7 +233,7 @@ export default function AoVivoEventosPartidas({ ligaAtletas }: Props) {
             <div class="bf-empty-state">
               {carregando
                 ? "Carregando…"
-                : "Aguardando próximos eventos — a timeline lista lances chave (gols, cartões, defesas) conforme acontecem nesta sessão."}
+                : "Sem eventos chave nesta rodada ainda. A timeline lista gols, cartões, defesas e outros lances importantes assim que detectados (~5min de atraso do real)."}
             </div>
           )
           : (
