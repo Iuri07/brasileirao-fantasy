@@ -2136,7 +2136,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 }
 .bf-field__pitch {
   position: relative;
-  aspect-ratio: 5 / 7;
+  /* Aspect 5/8 (era 5/7) dá ~14% mais altura — evita overlap dos pinos
+     quando estão em modo live (cards mais altos com pontos). */
+  aspect-ratio: 5 / 8;
   background: radial-gradient(
     ellipse at center,
     color-mix(in srgb, var(--field-tint) 8%, transparent),
@@ -2177,18 +2179,21 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   align-items: center;
   z-index: 2;
 }
-/* Inverted: ataque no topo, goleiro embaixo (defendendo a linha de baixo) */
+/* Inverted: ataque no topo, goleiro embaixo (defendendo a linha de baixo).
+   Em modo live os cards ficam mais altos (com pontos) — gaps maiores
+   evitam overlap. Gk empurrado pra baixo pra ocupar a área final do
+   campo (reduz espaço vazio abaixo). */
 .bf-field__row--ata {
   top: 4%;
 }
 .bf-field__row--mid {
-  top: 24%;
+  top: 28%;
 }
 .bf-field__row--def {
-  top: 48%;
+  top: 56%;
 }
 .bf-field__row--gk {
-  top: 72%;
+  top: 84%;
 }
 
 /* Bench dentro do field — mesma estética dos pinos, dimmed */
@@ -4216,12 +4221,11 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   overflow-anchor: none;
 }
 
-/* Pool de free agents (modo edição) */
+/* Pool de free agents (modo edição) + ReservasRow (view mode) */
 .bf-pool {
   margin: 12px var(--bf-gutter) 0;
   padding: 12px 0;
   border-top: 1px dashed var(--bf-line-strong);
-  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.2));
 }
 .bf-pool__label {
   padding: 0 4px 6px;
