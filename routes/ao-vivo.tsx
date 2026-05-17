@@ -388,7 +388,7 @@ function AoVivoBloqueado(
         <circle cx="32" cy="32" r="22" />
         <path d="M32 18v14l9 6" />
       </svg>
-      <h2 class="bf-aovivo-blocked__title">Ao Vivo indisponível</h2>
+      <h2 class="bf-aovivo-blocked__title">Ao Vivo indisponivel</h2>
       <p class="bf-aovivo-blocked__motivo">{motivo}</p>
       {ate && (
         <p class="bf-aovivo-blocked__contagem">

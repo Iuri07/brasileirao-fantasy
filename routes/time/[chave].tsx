@@ -214,7 +214,7 @@ export default function TimeDetalhe({ data }: PageProps<Data>) {
             )
             : null}
         >
-          Escalação
+          Escalacao
         </SectionHeader>
         {data.escalacao
           ? (

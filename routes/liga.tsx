@@ -232,7 +232,7 @@ export default function Liga({ data }: PageProps<Data>) {
           })}
         </div>
 
-        <SectionHeader>Evolução</SectionHeader>
+        <SectionHeader>Evolucao</SectionHeader>
         <LeagueChart
           times={data.times.map((t): LinhaTime => {
             const info = timeLigaInfo(t.chave);

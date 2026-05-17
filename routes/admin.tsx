@@ -90,10 +90,10 @@ export default function AdminPage({ data }: PageProps<Data>) {
           </p>
         </article>
 
-        <SectionHeader>Atribuições</SectionHeader>
+        <SectionHeader>Atribuicoes</SectionHeader>
         <AdminEmailMap atribuicoes={data.atribuicoes} />
 
-        <SectionHeader>Resolução de conflitos do draft</SectionHeader>
+        <SectionHeader>Resolucao de conflitos do draft</SectionHeader>
         <article class="bf-card">
           <p class="bf-status-card__sub" style="margin:0 0 12px">
             Dias da semana em que os conflitos de interesse no draft são

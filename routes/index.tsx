@@ -544,7 +544,7 @@ export default function Home({ data }: PageProps<HomeData>) {
             </div>
           )}
 
-        <SectionHeader>Próximos</SectionHeader>
+        <SectionHeader>Proximos</SectionHeader>
         <PartidasExpandable
           partidas={data.partidas}
           clubes={data.clubesPartidas}

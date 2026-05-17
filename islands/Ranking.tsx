@@ -451,7 +451,7 @@ export default function Ranking() {
         {tabBar}
         <div class="sem-dados">
           <BolaPNG size={52} corTime="#00FF88" />
-          <h2>Aguardando início da rodada...</h2>
+          <h2>Aguardando inicio da rodada...</h2>
           <p>Os dados aparecerão aqui assim que a rodada começar.</p>
           <button class="btn-atualizar" onClick={buscarDados}>
             Verificar agora
@@ -496,7 +496,7 @@ export default function Ranking() {
       {aoVivoSemRodada && (
         <div class="sem-dados">
           <BolaPNG size={52} corTime="#00FF88" />
-          <h2>Rodada ainda não começou</h2>
+          <h2>Rodada ainda nao comecou</h2>
           {dados.fechamento
             ? (
               <p>
