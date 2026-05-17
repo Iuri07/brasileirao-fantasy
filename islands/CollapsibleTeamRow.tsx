@@ -124,7 +124,9 @@ export default function CollapsibleTeamRow(
             <Sparkline historico={historico} accent={accent} />
           )}
         </div>
-        <TeamCrest chave={chave} size={36} />
+        <div class="bf-team-row__crest">
+          <TeamCrest chave={chave} size={36} />
+        </div>
         {subsBadge && (
           <span
             class={`bf-team-row__subs ${

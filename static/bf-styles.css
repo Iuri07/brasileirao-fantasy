@@ -1179,6 +1179,17 @@ body {
 }
 .bf-team-row__summary > .bf-team-row__meta {
   flex: 1 1 auto;
+  min-width: 0;
+}
+/* Wrapper de tamanho fixo pro escudo — força bounding box consistente
+   entre rows, independente de PNGs com aspect ratios diferentes. */
+.bf-team-row__summary > .bf-team-row__crest {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .bf-team-row__summary > .bf-team-row__subs {
   flex: 0 0 auto;
