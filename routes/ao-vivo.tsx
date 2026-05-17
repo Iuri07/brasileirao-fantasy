@@ -1,21 +1,53 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
 import {
-  CHAVES_TIMES,
   getAllElencos,
   getFotos,
   getRodadaStatus,
+  MAX_SUBS_AO_VIVO,
 } from "../lib/kv.ts";
-import { calcularMelhorTime } from "../lib/substituicao.ts";
+import { getMelhorTimeCached } from "../lib/substituicao.ts";
+import { getHistorico, totalPontos } from "../lib/historico.ts";
 import TopBar from "../components/TopBar.tsx";
 import BottomNav from "../components/BottomNav.tsx";
+import Field, {
+  type BancoPino,
+  type Escalacao,
+  type Pino,
+} from "../components/Field.tsx";
+import CollapsibleTeamRow from "../islands/CollapsibleTeamRow.tsx";
+import LeagueChart, { type LinhaTime } from "../islands/LeagueChart.tsx";
+import SectionHeader from "../components/SectionHeader.tsx";
 import { escudoUrl } from "../lib/escudos.ts";
+import { coresClube } from "../lib/cores.ts";
 import { fotoUrl } from "../lib/fotos.ts";
 import { timeLigaInfo } from "../lib/times-liga.ts";
-import AoVivoLive, { type AtletaBase } from "../islands/AoVivoLive.tsx";
+import { cdn } from "../lib/cdn.ts";
 import type { State } from "./_middleware.ts";
 
 const CHAVE_FALLBACK_DEV = "aguiar";
+
+const POS_ABREV: Record<string, string> = {
+  "Goleiro": "GOL",
+  "Lateral": "LAT",
+  "Zagueiro": "ZAG",
+  "Meia": "MEI",
+  "Atacante": "ATK",
+  "Técnico": "TEC",
+};
+
+interface TimeLinha {
+  chave: string;
+  nome: string;
+  dono: string;
+  pontuacaoRodada: number;
+  total: number;
+  rodadasJogadas: number;
+  escalacao: Escalacao | null;
+  banco: BancoPino[];
+  historico: Record<string, number>;
+  subsAplicadas: number;
+}
 
 interface UserInfo {
   userEmail: string | null;
@@ -26,11 +58,10 @@ interface UserInfo {
 
 interface DataLive extends UserInfo {
   available: true;
-  chave: string;
-  displayName: string;
-  accent: string;
-  escalados: AtletaBase[];
-  banco: AtletaBase[];
+  rodada: number;
+  subsMax: number;
+  times: TimeLinha[];
+  meuChave: string;
 }
 
 interface DataBloqueado extends UserInfo {
@@ -48,10 +79,16 @@ export const handler: Handlers<Data, State> = {
     const mark = (label: string, since: number) => {
       timings.push(`${label};dur=${(performance.now() - since).toFixed(1)}`);
     };
-    const CHAVE_USUARIO = ctx.state.session?.chave ?? CHAVE_FALLBACK_DEV;
     const kv = await Deno.openKv();
+    const meuChave = ctx.state.session?.chave ?? CHAVE_FALLBACK_DEV;
 
-    // Round 1: KV only (Cartola só se KV não tiver resposta clara)
+    const userInfo: UserInfo = {
+      userEmail: ctx.state.session?.email ?? null,
+      userRole: ctx.state.session?.role ?? null,
+      userNome: ctx.state.session?.name ?? null,
+      userPicture: ctx.state.session?.picture ?? null,
+    };
+
     const [elencos, fotos, rodadaStatus] = await Promise.all([
       getAllElencos(kv),
       getFotos(kv),
@@ -59,29 +96,11 @@ export const handler: Handlers<Data, State> = {
     ]);
     mark("kv1", T0);
 
-    const aoVivoPorKv = rodadaStatus?.status === "ao_vivo";
-    // Confia no rodadaStatus do KV (cron atualiza cada 5min). Cartola
-    // bola_rolando seria mais fresh, mas custa ~800ms — não compensa
-    // pra um delay de até 5min na detecção de início/fim de rodada.
-    const aoVivoOk = aoVivoPorKv;
-    // Reutiliza o fechamento do KV pra mostrar o "próximo" quando não
-    // ao vivo (substitui o mercado.fechamento.timestamp)
-    const mercado = rodadaStatus
-      ? {
-        bola_rolando: aoVivoPorKv,
-        status_mercado: rodadaStatus.status === "aguardando" ? 1 : 2,
-        fechamento: rodadaStatus.fechamento,
-      } as const
-      : null;
-    const userInfo: UserInfo = {
-      userEmail: ctx.state.session?.email ?? null,
-      userRole: ctx.state.session?.role ?? null,
-      userNome: ctx.state.session?.name ?? null,
-      userPicture: ctx.state.session?.picture ?? null,
-    };
-    if (!aoVivoOk) {
-      const proximoTs = mercado?.fechamento?.timestamp ?? null;
-      const motivo = mercado?.status_mercado === 1
+    const aoVivo = rodadaStatus?.status === "ao_vivo";
+    if (!aoVivo) {
+      // Sem rodada rolando → bloqueia com placeholder + countdown.
+      const proximoTs = rodadaStatus?.fechamento?.timestamp ?? null;
+      const motivo = rodadaStatus?.status === "aguardando"
         ? "Mercado aberto — ainda não começou a rodada"
         : "Sem rodada ao vivo agora";
       mark("total", T0);
@@ -95,34 +114,105 @@ export const handler: Handlers<Data, State> = {
       return resp;
     }
 
-    const visual = timeLigaInfo(CHAVE_USUARIO);
-    const meta = CHAVES_TIMES[CHAVE_USUARIO];
-    const displayName = visual?.displayName ?? meta?.nome_time ?? "Time";
-    const accent = visual?.accent ?? "#888";
+    // === Live: monta a liga inteira (mirror de /liga handler) ===
 
-    const elenco = elencos[CHAVE_USUARIO];
-    const todos = elenco ? Object.values(elenco.jogadores) : [];
-    const calculados = todos.length ? calcularMelhorTime(todos) : [];
-    const map = (j: typeof calculados[number]): AtletaBase => ({
-      atleta_id: j.atleta_id,
-      apelido: j.apelido_api,
-      clube: j.clube,
-      posicao: j.posicao as AtletaBase["posicao"],
-      escudo: escudoUrl(j.clube),
-      foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
-    });
-    const escalados = calculados.filter((j) => j.escalacao === "Sim").map(map);
-    const banco = calculados.filter((j) => j.escalacao === "Banco").map(map);
+    const chavesArr = Object.keys(elencos);
+    const Thist = performance.now();
+    const historicos = await Promise.all(
+      chavesArr.map((c) => getHistorico(kv, c)),
+    );
+    const historicoPorChave = new Map<string, Record<string, number>>();
+    chavesArr.forEach((c, i) => historicoPorChave.set(c, historicos[i]));
+    mark("hist", Thist);
+
+    const Tmelhor = performance.now();
+    const melhoresPorChave = new Map<
+      string,
+      Awaited<ReturnType<typeof getMelhorTimeCached>>
+    >();
+    await Promise.all(
+      Object.entries(elencos).map(async ([chave, elenco]) => {
+        const r = await getMelhorTimeCached(kv, chave, elenco);
+        melhoresPorChave.set(chave, r);
+      }),
+    );
+    mark("melhor", Tmelhor);
+
+    const times: TimeLinha[] = [];
+    for (const [chave, elenco] of Object.entries(elencos)) {
+      const calculados = melhoresPorChave.get(chave) ?? [];
+      const escalados = calculados.filter((j) => j.escalacao === "Sim");
+      const reservas = calculados.filter((j) => j.escalacao === "Banco");
+      const subsAplicadas = escalados.filter((j) => j.substituido).length;
+      const banco: BancoPino[] = reservas.map((j) => ({
+        nome: j.apelido_api,
+        pts: j.pontos,
+        escudo: escudoUrl(j.clube),
+        cores: coresClube(j.clube),
+        pos: POS_ABREV[j.posicao],
+        posicao: j.posicao,
+        statusId: j.status_id,
+        foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
+        subSaiu: j.descido === true,
+      }));
+      const ptsRodada = Math.round(
+        escalados.reduce((s, j) => s + (j.pontos ?? 0), 0) * 100,
+      ) / 100;
+      const historico = historicoPorChave.get(chave) ?? {};
+
+      const pino = (j: typeof escalados[number]): Pino => ({
+        nome: j.apelido_api,
+        pts: j.pontos,
+        escudo: escudoUrl(j.clube),
+        cores: coresClube(j.clube),
+        pos: POS_ABREV[j.posicao],
+        statusId: j.status_id,
+        foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
+        subEntrou: j.substituido,
+      });
+      const gk = escalados.find((j) => j.posicao === "Goleiro");
+      const def = escalados.filter((j) =>
+        j.posicao === "Zagueiro" || j.posicao === "Lateral"
+      );
+      const mid = escalados.filter((j) => j.posicao === "Meia");
+      const ata = escalados.filter((j) => j.posicao === "Atacante");
+      const escalacao: Escalacao | null = escalados.length
+        ? {
+          gk: gk ? pino(gk) : {},
+          def: def.map(pino),
+          mid: mid.map(pino),
+          ata: ata.map(pino),
+        }
+        : null;
+
+      times.push({
+        chave,
+        nome: elenco.nome_time,
+        dono: elenco.dono,
+        pontuacaoRodada: ptsRodada,
+        total: totalPontos(historico),
+        rodadasJogadas: Object.keys(historico).length,
+        escalacao,
+        banco,
+        historico,
+        subsAplicadas,
+      });
+    }
+
+    // Ordena por pontos da rodada (ao vivo: o que importa é AGORA, não
+    // total acumulado — diferente de /liga que ordena por total)
+    times.sort((a, b) =>
+      b.pontuacaoRodada - a.pontuacaoRodada || b.total - a.total
+    );
 
     mark("data", T0);
     const Trender = performance.now();
     const resp = await ctx.render({
       available: true,
-      chave: CHAVE_USUARIO,
-      displayName,
-      accent,
-      escalados,
-      banco,
+      rodada: rodadaStatus?.rodada ?? 0,
+      subsMax: MAX_SUBS_AO_VIVO,
+      times,
+      meuChave,
       ...userInfo,
     });
     mark("render", Trender);
@@ -150,7 +240,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=81" />
+        <link rel="stylesheet" href="/bf-styles.css?v=82" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -160,18 +250,85 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
           userPicture={data.userPicture}
         />
         {data.available
-          ? (
-            <AoVivoLive
-              chave={data.chave}
-              displayName={data.displayName}
-              accent={data.accent}
-              escalados={data.escalados}
-              banco={data.banco}
-            />
-          )
+          ? <AoVivoLiga data={data} />
           : <AoVivoBloqueado motivo={data.motivo} proximoTs={data.proximoTs} />}
         <BottomNav active="live" />
       </div>
+    </>
+  );
+}
+
+function AoVivoLiga({ data }: { data: DataLive }) {
+  return (
+    <>
+      <header class="bf-liga-hero">
+        <span class="bf-label-micro">Ao Vivo</span>
+        <h1 class="bf-liga-hero__title">RODADA {data.rodada}</h1>
+        <div class="bf-liga-hero__meta">
+          <span class="bf-liga-hero__rodada">
+            {data.times.length} jogadores
+          </span>
+        </div>
+      </header>
+
+      <div class="bf-liga-list">
+        {data.times.map((t, i) => {
+          const pos = i + 1;
+          const visual = timeLigaInfo(t.chave);
+          const displayName = visual?.displayName ?? t.nome;
+          const isMe = t.chave === data.meuChave;
+          const accent = visual?.accent ?? "var(--bf-fg-2)";
+          // Mostra pontos da rodada AO VIVO em vez do total acumulado.
+          const rodadaFmt = t.pontuacaoRodada.toFixed(1).replace(".", ",");
+          return (
+            <CollapsibleTeamRow
+              key={t.chave}
+              chave={t.chave}
+              pos={pos}
+              displayName={displayName}
+              dono={t.dono}
+              totalFmt={rodadaFmt}
+              accent={accent}
+              isMine={isMe}
+              historico={t.historico}
+              subsBadge={{ aplicadas: t.subsAplicadas, max: data.subsMax }}
+            >
+              <div class="bf-team-row__expanded">
+                {t.escalacao
+                  ? (
+                    <Field
+                      jogadores={t.escalacao}
+                      showPoints={true}
+                      liveMode={true}
+                      accent={accent}
+                      banco={t.banco}
+                    />
+                  )
+                  : (
+                    <div class="bf-empty-state">
+                      Sem escalação no elenco
+                    </div>
+                  )}
+              </div>
+            </CollapsibleTeamRow>
+          );
+        })}
+      </div>
+
+      <SectionHeader>Evolução</SectionHeader>
+      <LeagueChart
+        times={data.times.map((t): LinhaTime => {
+          const info = timeLigaInfo(t.chave);
+          return {
+            chave: t.chave,
+            nome: info?.displayName ?? t.nome,
+            accent: info?.accent ?? "#888",
+            logo: cdn(info?.logo ?? null),
+            pontosPorRodada: t.historico,
+          };
+        })}
+        destaque={data.meuChave}
+      />
     </>
   );
 }
