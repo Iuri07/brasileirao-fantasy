@@ -1,11 +1,6 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
-import {
-  getAllElencos,
-  getFotos,
-  getRodadaStatus,
-  MAX_SUBS_AO_VIVO,
-} from "../lib/kv.ts";
+import { getAllElencos, getFotos, getRodadaStatus } from "../lib/kv.ts";
 import { getMelhorTimeCached } from "../lib/substituicao.ts";
 import { getHistorico, totalPontos } from "../lib/historico.ts";
 import TopBar from "../components/TopBar.tsx";
@@ -46,13 +41,10 @@ interface TimeLinha {
   escalacao: Escalacao | null;
   banco: BancoPino[];
   historico: Record<string, number>;
-  subsAplicadas: number;
 }
 
 interface Data {
   rodada: number;
-  aoVivo: boolean;
-  subsMax: number;
   times: TimeLinha[];
   meuChave: string;
   userEmail: string | null;
@@ -109,7 +101,6 @@ export const handler: Handlers<Data, State> = {
       const calculados = melhoresPorChave.get(chave) ?? [];
       const escalados = calculados.filter((j) => j.escalacao === "Sim");
       const reservas = calculados.filter((j) => j.escalacao === "Banco");
-      const subsAplicadas = escalados.filter((j) => j.substituido).length;
       const banco: BancoPino[] = reservas.map((j) => ({
         nome: j.apelido_api,
         pts: j.pontos,
@@ -161,7 +152,6 @@ export const handler: Handlers<Data, State> = {
         escalacao,
         banco,
         historico,
-        subsAplicadas,
       });
     }
 
@@ -173,8 +163,6 @@ export const handler: Handlers<Data, State> = {
     const Trender = performance.now();
     const resp = await ctx.render({
       rodada: rodada?.rodada ?? 0,
-      aoVivo: rodada?.status === "ao_vivo",
-      subsMax: MAX_SUBS_AO_VIVO,
       times,
       meuChave: ctx.state.session?.chave ?? CHAVE_USUARIO,
       userEmail: ctx.state.session?.email ?? null,
@@ -234,9 +222,6 @@ export default function Liga({ data }: PageProps<Data>) {
                 accent={accent}
                 isMine={isMe}
                 historico={t.historico}
-                subsBadge={data.aoVivo
-                  ? { aplicadas: t.subsAplicadas, max: data.subsMax }
-                  : null}
               >
                 <div class="bf-team-row__expanded">
                   {t.escalacao
