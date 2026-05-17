@@ -74,6 +74,39 @@ export default function ReservasRow(
                   {status.sym}
                 </span>
               )}
+              {
+                /* Badges de auto-sub: ↑ entrou no lugar de titular,
+                  ↓ era titular e foi rebaixado (substituido pelo banco). */
+              }
+              {p.subEntrou && (
+                <span
+                  class="bf-pool__badge bf-pool__badge--sub-in"
+                  title="Entrou na auto-substituição"
+                  aria-label="Entrou"
+                >
+                  ↑
+                </span>
+              )}
+              {p.subSaiu && (
+                <span
+                  class="bf-pool__badge bf-pool__badge--sub-out"
+                  title="Saiu na auto-substituição"
+                  aria-label="Saiu"
+                >
+                  ↓
+                </span>
+              )}
+              {
+                /* Bolinha verde "em campo" — só quando NÃO há sub badge.
+                  BancoPino usa `entrouEmCampo`; Pino base usa `emCampo`. */
+              }
+              {(p.emCampo || p.entrouEmCampo) && !p.subEntrou && !p.subSaiu && (
+                <span
+                  class="bf-pool__badge bf-pool__badge--em-campo"
+                  title="Em campo"
+                  aria-label="Em campo"
+                />
+              )}
               {hasCutout
                 ? (
                   <img

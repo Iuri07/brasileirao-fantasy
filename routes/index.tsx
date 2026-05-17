@@ -272,6 +272,10 @@ export const handler: Handlers<HomeData, State> = {
 
     const meuElenco = elencos[CHAVE_USUARIO];
     const meuMelhor = melhoresPorChave.get(CHAVE_USUARIO) ?? [];
+    // Lookup atleta_id → entrada do melhor time (com subEntrou/descido).
+    // Pra propagar pros pinos os badges de auto-sub e "em campo".
+    const melhorMap = new Map<number, typeof meuMelhor[number]>();
+    for (const m of meuMelhor) melhorMap.set(m.atleta_id, m);
     const atletas: AtletaElenco[] = meuElenco
       ? Object.values(meuElenco.jogadores)
         // Inclui todos os 26 fixos: Sim (titular), Banco (reserva ativa),
@@ -280,16 +284,23 @@ export const handler: Handlers<HomeData, State> = {
           j.escalacao === "Sim" || j.escalacao === "Banco" ||
           j.escalacao === "Não"
         )
-        .map((j) => ({
-          atleta_id: j.atleta_id,
-          apelido: j.apelido_api,
-          clube: j.clube,
-          posicao: j.posicao as AtletaElenco["posicao"],
-          escalacao: j.escalacao as "Sim" | "Banco" | "Não",
-          pontos: liveP(j.atleta_id, j.pontos),
-          foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
-          statusId: j.status_id,
-        }))
+        .map((j) => {
+          const m = melhorMap.get(j.atleta_id);
+          const live = livePts[String(j.atleta_id)];
+          return {
+            atleta_id: j.atleta_id,
+            apelido: j.apelido_api,
+            clube: j.clube,
+            posicao: j.posicao as AtletaElenco["posicao"],
+            escalacao: j.escalacao as "Sim" | "Banco" | "Não",
+            pontos: liveP(j.atleta_id, j.pontos),
+            foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
+            statusId: j.status_id,
+            subEntrou: m?.substituido ?? false,
+            subSaiu: m?.descido === true,
+            emCampo: !!live?.entrou_em_campo,
+          };
+        })
       : [];
     const banco: BancoPino[] = meuElenco
       ? meuMelhor
@@ -428,7 +439,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=122" />
+        <link rel="stylesheet" href="/bf-styles.css?v=123" />
       </Head>
       <div class="bf-viewport">
         <TopBar

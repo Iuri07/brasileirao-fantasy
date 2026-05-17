@@ -154,7 +154,7 @@ export default function TimeDetalhe({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>{displayName} · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=122" />
+        <link rel="stylesheet" href="/bf-styles.css?v=123" />
       </Head>
       <div class="bf-viewport">
         <TopBar
