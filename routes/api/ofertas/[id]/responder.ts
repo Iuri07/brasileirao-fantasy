@@ -7,6 +7,7 @@ import {
   setAVenda,
   setElenco,
 } from "../../../../lib/kv.ts";
+import { registrarTroca } from "../../../../lib/historico-trocas.ts";
 import type { JogadorKV } from "../../../../lib/types.ts";
 import type { State } from "../../../_middleware.ts";
 
@@ -91,6 +92,10 @@ export const handler: Handlers<unknown, State> = {
           { status: 400, headers: H },
         );
       }
+      // Snapshot da escalação ANTES do swap — pra histórico/desfazer.
+      const escAOriginal = jogOferecido.escalacao;
+      const escBOriginal = jogPedido.escalacao;
+
       const movido1: JogadorKV = {
         ...jogOferecido,
         escalacao: jogPedido.escalacao,
@@ -113,6 +118,23 @@ export const handler: Handlers<unknown, State> = {
         oferta.paraChave,
         lista.filter((id) => id !== oferta.atletaPedido),
       );
+
+      // Registra no histórico pra admin poder desfazer depois.
+      await registrarTroca(kv, {
+        ofertaId: oferta.id,
+        chaveA: oferta.deChave,
+        atletaA: {
+          atleta_id: jogOferecido.atleta_id,
+          apelido: jogOferecido.apelido_api,
+          escalacaoOriginal: escAOriginal,
+        },
+        chaveB: oferta.paraChave,
+        atletaB: {
+          atleta_id: jogPedido.atleta_id,
+          apelido: jogPedido.apelido_api,
+          escalacaoOriginal: escBOriginal,
+        },
+      });
     }
 
     const status = body.decisao;

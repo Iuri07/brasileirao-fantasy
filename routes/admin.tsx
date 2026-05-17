@@ -121,6 +121,22 @@ export default function AdminPage({ data }: PageProps<Data>) {
           </a>
         </article>
 
+        <SectionHeader>Histórico de Trocas</SectionHeader>
+        <article class="bf-card">
+          <p class="bf-status-card__sub" style="margin:0 0 12px">
+            Trocas concluídas (oferta aceita) registradas pra poder desfazer
+            depois. Reverte os jogadores aos elencos originais com a escalação
+            que tinham antes da troca.
+          </p>
+          <a
+            href="/admin/trocas"
+            class="bf-btn"
+            style="display:inline-flex"
+          >
+            Ver histórico →
+          </a>
+        </article>
+
         <SectionHeader>Atribuicoes</SectionHeader>
         <AdminEmailMap atribuicoes={data.atribuicoes} />
 
