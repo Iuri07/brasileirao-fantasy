@@ -428,7 +428,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=112" />
+        <link rel="stylesheet" href="/bf-styles.css?v=113" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -492,11 +492,7 @@ export default function Home({ data }: PageProps<HomeData>) {
                   data.exibidaParcial ? "bf-status-card__metric-foot--lime" : ""
                 }`}
               >
-                {data.aoVivoReal
-                  ? "parcial · ao vivo"
-                  : data.exibidaParcial
-                  ? "parcial"
-                  : "final"}
+                {data.exibidaParcial ? "parcial" : "final"}
               </span>
             </div>
             <div class="bf-status-card__divider"></div>

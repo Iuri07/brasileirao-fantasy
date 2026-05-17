@@ -1807,6 +1807,11 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.005em;
+  /* inline-flex pra bolinha de "ao vivo" ficar ao lado do número
+     (vertical-align em inline-block quebrava linha em alguns casos). */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .bf-status-card__metric-value--sm {
   font-size: 24px;
@@ -1815,12 +1820,11 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   display: inline-block;
   width: 8px;
   height: 8px;
-  margin-left: 6px;
-  vertical-align: 0.6em;
   border-radius: 999px;
   background: var(--bf-lime);
   box-shadow: 0 0 8px var(--bf-lime-glow);
   animation: bf-pulse 1.4s var(--bf-ease-in-out) infinite;
+  flex-shrink: 0;
 }
 .bf-status-card__metric-value--lime {
   color: var(--bf-lime);
