@@ -284,6 +284,10 @@ body {
   letter-spacing: 0.03em;
   text-transform: uppercase;
   color: #fff;
+  /* Caps da Dripping Marker ficam altas dentro do glyph (drips ocupam
+     a parte de baixo). translateY desloca visualmente pra caps
+     alinharem com itens vizinhos sem afetar layout. */
+  transform: translateY(0.18em);
 }
 
 /* ============================================================
@@ -740,6 +744,8 @@ body {
   color: #fff;
   margin: 0;
   text-shadow: 0 0 14px rgba(255, 27, 141, 0.45);
+  /* Caps altas dentro do glyph — desloca pra centralizar visualmente. */
+  transform: translateY(0.12em);
 }
 .bf-liga-hero__meta {
   display: inline-flex;
@@ -4039,6 +4045,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Caps altas dentro do glyph (drips ocupam o baixo) — desloca pra
+     alinhar com pills/icons vizinhos no flex center. */
+  transform: translateY(0.18em);
 }
 @media (max-width: 480px) {
   .bf-meu-time__titulo {
