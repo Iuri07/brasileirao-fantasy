@@ -5,7 +5,20 @@
    Pure black chassis, neon spray accents, splatter motifs.
    ============================================================ */
 
-@import url("https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow+Condensed:wght@500;700;800;900&family=Barlow:wght@400;500;600;700&family=Permanent+Marker&family=Rubik+Spray+Paint&family=Rubik+Wet+Paint&family=Bungee&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow+Condensed:wght@500;700;800;900&family=Barlow:wght@400;500;600;700&family=Permanent+Marker&family=Bungee&display=swap");
+
+/* "A Dripping Marker" — fonte graffiti autêntica (Wick van den Belt, free
+   pra uso comercial). Substitui Rubik Wet Paint/Spray Paint que tinham
+   estética de "auto-gerado". Servida direto pelo jsDelivr (repo de
+   assets) pra evitar 404 em prod — CSS estático não passa pelo cdn(). */
+@font-face {
+  font-family: "Dripping Marker";
+  src: url("https://cdn.jsdelivr.net/gh/Iuri07/brasileirao-fantasy-assets@master/fonts/dripping-marker.ttf")
+    format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* ----------------------------------------------------------
@@ -70,11 +83,7 @@
   /* ----------------------------------------------------------
      TYPE — Families
      ---------------------------------------------------------- */
-  --bf-font-graffiti:
-    "Rubik Wet Paint",
-    "Rubik Spray Paint",
-    "Permanent Marker",
-    cursive;
+  --bf-font-graffiti: "Dripping Marker", "Permanent Marker", cursive;
   --bf-font-graffiti-2: "Bungee", "Archivo Black", system-ui, sans-serif;
   --bf-font-marker: "Permanent Marker", "Brush Script MT", cursive;
   --bf-font-display: "Archivo Black", "Barlow Condensed", system-ui, sans-serif;

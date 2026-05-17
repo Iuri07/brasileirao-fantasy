@@ -25,6 +25,7 @@ function isPublic(p: string): boolean {
   if (p.startsWith("/escudos/")) return true;
   if (p.startsWith("/times_escudos/")) return true;
   if (p.startsWith("/players/")) return true;
+  if (p.startsWith("/fonts/")) return true;
   if (p.startsWith("/assets/")) return true;
   if (p.startsWith("/design-system/")) return true;
   if (p === "/bf-styles.css") return true;
@@ -102,7 +103,8 @@ export async function handler(req: Request, ctx: FreshContext<State>) {
       p.startsWith("/atletas/") ||
       p.startsWith("/escudos/") ||
       p.startsWith("/players/") ||
-      p.startsWith("/times_escudos/");
+      p.startsWith("/times_escudos/") ||
+      p.startsWith("/fonts/");
     if (isAsset) {
       const headers = new Headers(resp.headers);
       headers.set(
