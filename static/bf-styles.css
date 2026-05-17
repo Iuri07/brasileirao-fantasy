@@ -1976,12 +1976,12 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
   pointer-events: auto;
 }
-/* Indicadores de auto-substituição — fica no topo-esquerdo da cabeça,
-   sobreposto ao avatar/camisa. Não colide com escudo/status (top: 49). */
+/* Indicadores de auto-substituição — mesma altura do escudo/status
+   (head-card boundary, top: 49), no canto direito. Mutuamente
+   exclusivo com em-campo (lógica no PlayerPin já garante). */
 .bf-pin__badge--sub-in,
 .bf-pin__badge--sub-out {
-  left: -4px;
-  top: -4px;
+  right: 0;
   width: 18px;
   height: 18px;
   border-radius: 999px;
