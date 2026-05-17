@@ -11,6 +11,18 @@ export default function App({ Component }: AppProps) {
         <title>Fantasy Cartola - Ranking</title>
         <link rel="stylesheet" href="/styles.css?v=54" />
         {
+          /* Font Awesome 6 free — usado nos ícones dos scouts (eventos
+             da liga + timeline). CDN do cdnjs com integrity. ~57KB css
+             + ~70KB font, cacheado forever. */
+        }
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+          integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"
+        />
+        {
           /* Preconnect pro CDN de imagens — economiza ~100ms no primeiro
              load por estabelecer TLS antes do primeiro img request. */
         }
@@ -20,6 +32,7 @@ export default function App({ Component }: AppProps) {
           crossorigin="anonymous"
         />
         <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+        <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
 
         {
           /* Speculation Rules — Chrome/Edge pré-renderizam a página

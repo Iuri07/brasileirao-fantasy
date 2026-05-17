@@ -571,7 +571,8 @@ body {
   align-items: center;
 }
 .bf-scout-icon {
-  display: block;
+  display: inline-block;
+  line-height: 1;
   flex-shrink: 0;
 }
 /* Cartão amarelo — força cor amarela (CA tem tipo "negativo" mas

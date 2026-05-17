@@ -194,7 +194,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=105" />
+        <link rel="stylesheet" href="/bf-styles.css?v=106" />
       </Head>
       <div class="bf-viewport">
         <TopBar
