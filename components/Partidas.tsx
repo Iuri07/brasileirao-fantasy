@@ -7,17 +7,29 @@ interface Props {
   limit?: number;
 }
 
-const DIA_SEMANA = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"];
+/** Horário do jogo SEMPRE em America/Sao_Paulo (UTC-3 / UTC-2 horário
+    de verão). Sem o `timeZone` explícito, `getHours()` usaria TZ do
+    runtime — Deno Deploy roda em UTC e mostraria 3h adiantado. */
+const FMT_HORARIO = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: "America/Sao_Paulo",
+  weekday: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
 
 function formatHorario(ts: number, partidaData: string): string {
   const d = new Date(ts * 1000);
   if (isNaN(d.getTime())) {
-    // Fallback parseando string "YYYY-MM-DD HH:MM:SS" como local
     return partidaData?.slice(11, 16) ?? "—";
   }
-  const dia = DIA_SEMANA[d.getDay()];
-  const hora = d.getHours().toString().padStart(2, "0");
-  const min = d.getMinutes().toString().padStart(2, "0");
+  const parts = FMT_HORARIO.formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  // pt-BR weekday vem como "dom.", "seg.", etc — tira pontuação +
+  // upper + 3 chars pra bater com o estilo anterior (DOM, SEG, ...).
+  const dia = get("weekday").toUpperCase().replace(/[.,]/g, "").slice(0, 3);
+  const hora = get("hour");
+  const min = get("minute");
   return `${dia} ${hora}h${min === "00" ? "" : min}`;
 }
 
