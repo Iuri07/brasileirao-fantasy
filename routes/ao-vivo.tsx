@@ -57,9 +57,10 @@ interface UserInfo {
   userPicture: string | null;
 }
 
-interface DataLive extends UserInfo {
-  available: true;
+interface Data extends UserInfo {
   rodada: number;
+  /** True quando rodada está rolando — afeta só o label do header. */
+  aoVivo: boolean;
   subsMax: number;
   times: TimeLinha[];
   meuChave: string;
@@ -72,14 +73,6 @@ interface DataLive extends UserInfo {
       Passado pra island filtrar pontuados Cartola e renderizar eventos. */
   ligaAtletas: AtletaMeta[];
 }
-
-interface DataBloqueado extends UserInfo {
-  available: false;
-  motivo: string;
-  proximoTs: number | null;
-}
-
-type Data = DataLive | DataBloqueado;
 
 export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
@@ -106,24 +99,10 @@ export const handler: Handlers<Data, State> = {
     mark("kv1", T0);
 
     const aoVivo = rodadaStatus?.status === "ao_vivo";
-    if (!aoVivo) {
-      // Sem rodada rolando → bloqueia com placeholder + countdown.
-      const proximoTs = rodadaStatus?.fechamento?.timestamp ?? null;
-      const motivo = rodadaStatus?.status === "aguardando"
-        ? "Mercado aberto — ainda não começou a rodada"
-        : "Sem rodada ao vivo agora";
-      mark("total", T0);
-      const resp = await ctx.render({
-        available: false,
-        motivo,
-        proximoTs,
-        ...userInfo,
-      });
-      resp.headers.set("Server-Timing", timings.join(","));
-      return resp;
-    }
 
-    // === Live: monta a liga inteira (mirror de /liga handler) ===
+    // === Monta a liga inteira sempre (mesmo fora de rodada ao vivo) ===
+    // Fora do live: parcial = 0, delta = 0, eventos vazios. Mas a página
+    // continua útil mostrando ranking + escalações + próximas partidas.
 
     const chavesArr = Object.keys(elencos);
     const Thist = performance.now();
@@ -252,8 +231,8 @@ export const handler: Handlers<Data, State> = {
     mark("data", T0);
     const Trender = performance.now();
     const resp = await ctx.render({
-      available: true,
       rodada: rodadaStatus?.rodada ?? 0,
+      aoVivo,
       subsMax: MAX_SUBS_AO_VIVO,
       times,
       meuChave,
@@ -268,25 +247,12 @@ export const handler: Handlers<Data, State> = {
   },
 };
 
-function formatProximaAbertura(ts: number | null): string | null {
-  if (!ts) return null;
-  const diff = ts * 1000 - Date.now();
-  if (diff <= 0) return null;
-  const min = Math.floor(diff / 60000);
-  const d = Math.floor(min / (60 * 24));
-  const h = Math.floor((min % (60 * 24)) / 60);
-  const m = min % 60;
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}min`;
-  return `${m}min`;
-}
-
 export default function AoVivoPage({ data }: PageProps<Data>) {
   return (
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=96" />
+        <link rel="stylesheet" href="/bf-styles.css?v=97" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -295,20 +261,20 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
           userNome={data.userNome}
           userPicture={data.userPicture}
         />
-        {data.available
-          ? <AoVivoLiga data={data} />
-          : <AoVivoBloqueado motivo={data.motivo} proximoTs={data.proximoTs} />}
+        <AoVivoLiga data={data} />
         <BottomNav active="live" />
       </div>
     </>
   );
 }
 
-function AoVivoLiga({ data }: { data: DataLive }) {
+function AoVivoLiga({ data }: { data: Data }) {
   return (
     <>
       <header class="bf-liga-hero">
-        <span class="bf-label-micro">Ao Vivo</span>
+        <span class="bf-label-micro">
+          {data.aoVivo ? "Ao Vivo" : "Aguardando"}
+        </span>
         <h1 class="bf-liga-hero__title">RODADA {data.rodada}</h1>
         <div class="bf-liga-hero__meta">
           <span class="bf-liga-hero__rodada">
@@ -339,10 +305,12 @@ function AoVivoLiga({ data }: { data: DataLive }) {
               dono={t.dono}
               totalFmt={rodadaFmt}
               ptsLabel="PARCIAL"
-              posDelta={posDelta}
+              posDelta={data.aoVivo ? posDelta : null}
               accent={accent}
               isMine={isMe}
-              subsBadge={{ aplicadas: t.subsAplicadas, max: data.subsMax }}
+              subsBadge={data.aoVivo
+                ? { aplicadas: t.subsAplicadas, max: data.subsMax }
+                : null}
             >
               <div class="bf-team-row__expanded">
                 {t.escalacao
@@ -350,13 +318,13 @@ function AoVivoLiga({ data }: { data: DataLive }) {
                     <>
                       <Field
                         jogadores={t.escalacao}
-                        showPoints={true}
-                        liveMode={true}
+                        showPoints={data.aoVivo}
+                        liveMode={data.aoVivo}
                         accent={accent}
                       />
                       <ReservasRow
                         jogadores={t.banco}
-                        showPoints={true}
+                        showPoints={data.aoVivo}
                       />
                     </>
                   )
@@ -373,35 +341,5 @@ function AoVivoLiga({ data }: { data: DataLive }) {
 
       <AoVivoEventosPartidas ligaAtletas={data.ligaAtletas} />
     </>
-  );
-}
-
-function AoVivoBloqueado(
-  { motivo, proximoTs }: { motivo: string; proximoTs: number | null },
-) {
-  const ate = formatProximaAbertura(proximoTs);
-  return (
-    <div class="bf-aovivo-blocked">
-      <svg
-        class="bf-aovivo-blocked__icon"
-        viewBox="0 0 64 64"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <circle cx="32" cy="32" r="22" />
-        <path d="M32 18v14l9 6" />
-      </svg>
-      <h2 class="bf-aovivo-blocked__title">Ao Vivo indisponivel</h2>
-      <p class="bf-aovivo-blocked__motivo">{motivo}</p>
-      {ate && (
-        <p class="bf-aovivo-blocked__contagem">
-          Mercado fecha em <strong>{ate}</strong>
-        </p>
-      )}
-      <a href="/" class="bf-aovivo-blocked__cta">Voltar para a home</a>
-    </div>
   );
 }
