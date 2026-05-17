@@ -4395,10 +4395,6 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* Caps altas dentro do glyph (drips ocupam o baixo) — shift maior
-     pro título compensar. Pills/icons usam shift menor (eles já são
-     ~centrados naturalmente; só precisam descer pouco pra acompanhar). */
-  transform: translateY(0.32em);
 }
 /* Pills e botões — shift menor que o título pra alinhar caps com
    conteúdo central deles. Sem isso, ficavam acima das caps do título. */
