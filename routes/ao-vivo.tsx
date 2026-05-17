@@ -319,7 +319,12 @@ function AoVivoLiga({ data }: { data: Data }) {
                       <Field
                         jogadores={t.escalacao}
                         showPoints={data.aoVivo}
-                        liveMode={data.aoVivo}
+                        /* liveMode sempre true em /ao-vivo: detecção via
+                           rodadaStatus pode estar atrás (cron de 5min),
+                           mas se calcularMelhorTime já marcou substituido,
+                           a rodada já rolou. Status ✓/✕/? perde sentido
+                           aqui — quer ver subs/em-campo. */
+                        liveMode={true}
                         accent={accent}
                       />
                       <ReservasRow
