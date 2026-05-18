@@ -238,7 +238,7 @@ export default function AdminTimesGrid({ times }: Props) {
 
             <div class="bf-times-grid__fields">
               <label class="bf-times-grid__label">
-                <span>Email (login Google)</span>
+                <span>Email Google</span>
                 <input
                   type="email"
                   placeholder="email@gmail.com"
@@ -247,7 +247,7 @@ export default function AdminTimesGrid({ times }: Props) {
                 />
               </label>
               <label class="bf-times-grid__label">
-                <span>Nome do time</span>
+                <span>Nome</span>
                 <input
                   type="text"
                   value={r.nome}
@@ -255,7 +255,7 @@ export default function AdminTimesGrid({ times }: Props) {
                 />
               </label>
               <label class="bf-times-grid__label">
-                <span>Display name (curto)</span>
+                <span>Display</span>
                 <input
                   type="text"
                   value={r.displayName}
@@ -263,7 +263,7 @@ export default function AdminTimesGrid({ times }: Props) {
                 />
               </label>
               <label class="bf-times-grid__label">
-                <span>Logo (URL externa)</span>
+                <span>Logo URL</span>
                 <input
                   type="url"
                   placeholder="https://..."
@@ -277,7 +277,7 @@ export default function AdminTimesGrid({ times }: Props) {
                 />
               </label>
               <label class="bf-times-grid__label bf-times-grid__label--file">
-                <span>Ou upload (PNG/JPG/WEBP/SVG ≤ 2 MB)</span>
+                <span>Upload (≤2MB)</span>
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp,image/svg+xml"

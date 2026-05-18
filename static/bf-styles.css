@@ -4928,43 +4928,46 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
    Substitui bf-times-visual + bf-admin-list no dashboard desktop.
    ==================================================================== */
 .bf-times-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 14px;
-}
-
-.bf-times-grid__card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px;
+  gap: 8px;
+}
+
+/* Layout horizontal: 1 linha por time.
+   Colunas: [logo 48 + heading 200] | [campos auto-flow] | [ações fixas]. */
+.bf-times-grid__card {
+  display: grid;
+  grid-template-columns: 220px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
   background:
-    linear-gradient(160deg,
-      color-mix(in srgb, var(--accent, #888) 8%, var(--bg-2)) 0%,
-      var(--bg-1) 60%);
-  border: 1px solid var(--line-2);
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--accent, #888) 10%, var(--bg-2)) 0%,
+      var(--bg-1) 30%);
+  border: 1px solid var(--line-1);
   border-left: 3px solid var(--accent, #888);
-  border-radius: 10px;
+  border-radius: 8px;
   position: relative;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.03),
-    0 4px 16px rgba(0,0,0,0.25);
-  transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.025);
+  transition: background 160ms var(--ease-out), border-color 160ms;
 }
 .bf-times-grid__card:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.04),
-    0 6px 20px rgba(0,0,0,0.35);
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--accent, #888) 14%, var(--bg-2)) 0%,
+      var(--bg-1) 35%);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line-1));
 }
 .bf-times-grid__card[data-customizado="1"]::after {
   content: "";
   position: absolute;
-  top: 0; right: 0;
-  width: 6px; height: 6px;
+  top: 50%;
+  right: -2px;
+  transform: translateY(-50%);
+  width: 5px; height: 5px;
   border-radius: 50%;
   background: var(--accent);
-  transform: translate(8px, -3px);
   box-shadow: 0 0 8px var(--accent);
 }
 
@@ -4972,19 +4975,18 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line-1);
+  min-width: 0;
 }
 .bf-times-grid__preview {
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
   background:
     radial-gradient(circle at 50% 35%,
-      color-mix(in srgb, var(--accent, #888) 18%, var(--bg-2)) 0%,
+      color-mix(in srgb, var(--accent, #888) 22%, var(--bg-2)) 0%,
       var(--bg-2) 70%);
   border: 1px solid var(--line-2);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4995,27 +4997,27 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   max-width: 80%;
   max-height: 80%;
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
 }
 .bf-times-grid__sigla {
   font-family: var(--font-mono);
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--accent);
-  letter-spacing: 0.05em;
-  text-shadow: 0 0 12px color-mix(in srgb, var(--accent) 50%, transparent);
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
 }
 
 .bf-times-grid__heading {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
   flex: 1;
 }
 .bf-times-grid__name {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--fg-0);
   letter-spacing: 0.02em;
@@ -5025,55 +5027,66 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 }
 .bf-times-grid__dono {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--fg-1);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 .bf-times-grid__chave {
   color: var(--fg-2);
-  text-transform: uppercase;
 }
 .bf-times-grid__badge {
   display: inline-block;
-  margin-top: 4px;
-  padding: 2px 6px;
+  margin-top: 3px;
+  padding: 1px 5px;
   background: color-mix(in srgb, var(--accent) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   border-radius: 999px;
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 8px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  align-self: flex-start;
 }
 
+/* Campos em linha — 5 inputs lado a lado.
+   Email maior pq tem mais texto. Logo URL e file dividem a última coluna. */
 .bf-times-grid__fields {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
+  grid-template-columns: 1.4fr 1fr 1fr 1.2fr 1.1fr;
+  gap: 8px;
+  min-width: 0;
 }
 .bf-times-grid__label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  min-width: 0;
 }
 .bf-times-grid__label > span {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   color: var(--fg-1);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .bf-times-grid__label input[type="text"],
 .bf-times-grid__label input[type="email"],
 .bf-times-grid__label input[type="url"] {
-  padding: 8px 10px;
+  padding: 6px 8px;
   background: var(--bg-2);
   border: 1px solid var(--line-1);
-  border-radius: 5px;
+  border-radius: 4px;
   color: var(--fg-0);
-  font-size: 13px;
+  font-size: 12px;
   font-family: var(--font-sans);
+  width: 100%;
+  min-width: 0;
   transition: border-color 120ms, background 120ms;
 }
 .bf-times-grid__label input:focus {
@@ -5082,19 +5095,21 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   background: var(--bg-3);
 }
 .bf-times-grid__label--file input[type="file"] {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--fg-1);
-  padding: 4px 0;
+  padding: 2px 0;
+  width: 100%;
+  min-width: 0;
 }
 .bf-times-grid__label--file input[type="file"]::file-selector-button {
-  margin-right: 8px;
-  padding: 5px 10px;
+  margin-right: 6px;
+  padding: 4px 8px;
   background: var(--bg-3);
   border: 1px solid var(--line-2);
-  border-radius: 4px;
+  border-radius: 3px;
   color: var(--fg-0);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
@@ -5108,21 +5123,41 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 .bf-times-grid__footer {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding-top: 10px;
-  border-top: 1px solid var(--line-1);
+  gap: 6px;
+  flex-shrink: 0;
+}
+.bf-times-grid__footer .bf-btn {
+  padding: 7px 12px;
+  font-size: 11px;
 }
 .bf-times-grid__status {
-  margin-left: auto;
-  font-size: 11px;
+  font-size: 10px;
   font-family: var(--font-mono);
+  min-width: 64px;
+  text-align: right;
 }
 .bf-times-grid__ok { color: var(--syn-green); }
 .bf-times-grid__err { color: var(--syn-red); }
 .bf-times-grid__hint { color: var(--fg-1); }
 
-/* Em telas estreitas (mobile), o grid fica 1 coluna naturalmente via auto-fill */
+/* Em telas mais estreitas que desktop largo, empilha header acima
+   dos campos. Mantém ainda 1 linha por time mas em 2 sub-linhas. */
+@media (max-width: 1280px) {
+  .bf-times-grid__card {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "header  actions"
+      "fields  fields";
+  }
+  .bf-times-grid__header { grid-area: header; }
+  .bf-times-grid__fields { grid-area: fields; }
+  .bf-times-grid__footer { grid-area: actions; }
+}
+@media (max-width: 720px) {
+  .bf-times-grid__fields {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 
 /* ====================================================================
    ADMIN SECTIONS — fundo um pouco mais sólido pras seções ficarem
