@@ -64,7 +64,7 @@ import * as $AdminEmailMap from "./islands/AdminEmailMap.tsx";
 import * as $AdminHistoricoMatriz from "./islands/AdminHistoricoMatriz.tsx";
 import * as $AdminOfertasPanel from "./islands/AdminOfertasPanel.tsx";
 import * as $AdminSimularRodada from "./islands/AdminSimularRodada.tsx";
-import * as $AdminTimesVisual from "./islands/AdminTimesVisual.tsx";
+import * as $AdminTimesGrid from "./islands/AdminTimesGrid.tsx";
 import * as $AdminTransferirPanel from "./islands/AdminTransferirPanel.tsx";
 import * as $AdminTrocasPanel from "./islands/AdminTrocasPanel.tsx";
 import * as $AoVivoEventosPartidas from "./islands/AoVivoEventosPartidas.tsx";
@@ -149,7 +149,7 @@ const manifest = {
     "./islands/AdminHistoricoMatriz.tsx": $AdminHistoricoMatriz,
     "./islands/AdminOfertasPanel.tsx": $AdminOfertasPanel,
     "./islands/AdminSimularRodada.tsx": $AdminSimularRodada,
-    "./islands/AdminTimesVisual.tsx": $AdminTimesVisual,
+    "./islands/AdminTimesGrid.tsx": $AdminTimesGrid,
     "./islands/AdminTransferirPanel.tsx": $AdminTransferirPanel,
     "./islands/AdminTrocasPanel.tsx": $AdminTrocasPanel,
     "./islands/AoVivoEventosPartidas.tsx": $AoVivoEventosPartidas,

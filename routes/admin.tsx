@@ -13,7 +13,7 @@ import AdminEmailMap from "../islands/AdminEmailMap.tsx";
 import AdminDraftDias from "../islands/AdminDraftDias.tsx";
 import AdminSimularRodada from "../islands/AdminSimularRodada.tsx";
 import AdminHistoricoMatriz from "../islands/AdminHistoricoMatriz.tsx";
-import AdminTimesVisual from "../islands/AdminTimesVisual.tsx";
+import AdminTimesGrid from "../islands/AdminTimesGrid.tsx";
 import { listarTodasOfertas } from "../lib/ofertas.ts";
 import { listarTrocas } from "../lib/historico-trocas.ts";
 import type { State } from "./_middleware.ts";
@@ -34,6 +34,8 @@ interface VisualItem {
   sigla: string;
   accent: string;
   customizado: boolean;
+  dono: string;
+  email: string | null;
 }
 
 interface HistoricoTimeItem {
@@ -91,6 +93,7 @@ export const handler: Handlers<Data, State> = {
     const visuais: VisualItem[] = TODAS_CHAVES.map((chave) => {
       const baseInfo = timeLigaInfo(chave);
       const resolved = resolveTimeVisual(chave, todosOverrides[chave] ?? null, baseInfo);
+      const meta = CHAVES_TIMES[chave];
       return {
         chave,
         nomeTime: resolved.nomeTime,
@@ -99,6 +102,8 @@ export const handler: Handlers<Data, State> = {
         sigla: resolved.sigla,
         accent: resolved.accent,
         customizado: resolved.customizado,
+        dono: meta?.dono ?? "",
+        email: chaveToEmail[chave] ?? null,
       };
     });
 
@@ -135,7 +140,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=124" />
+        <link rel="stylesheet" href="/bf-styles.css?v=125" />
       </Head>
       <div class="bf-viewport bf-admin-viewport">
         <TopBar
@@ -152,8 +157,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
             <nav class="bf-admin-desktop__nav">
               <a href="#visao-geral">Visão geral</a>
               <a href="#historico">Pontos por rodada</a>
-              <a href="#visuais">Visuais (logo + nome)</a>
-              <a href="#atribuicoes">Atribuições de email</a>
+              <a href="#times">Times (visual + email)</a>
               <a href="#ofertas">Ofertas pendentes</a>
               <a href="#trocas">Histórico de trocas</a>
               <a href="#draft">Draft</a>
@@ -208,24 +212,14 @@ export default function AdminPage({ data }: PageProps<Data>) {
               />
             </section>
 
-            <section id="visuais" class="bf-admin-section">
+            <section id="times" class="bf-admin-section">
               <header class="bf-admin-section__header">
-                <h2>Visuais dos times</h2>
+                <h2>Times</h2>
                 <span class="bf-admin-section__sub">
-                  Logo (upload ou URL) e nome. Resetar volta pro default do código.
+                  Logo, nome e email atrelado de cada time. Resetar volta o visual pro default.
                 </span>
               </header>
-              <AdminTimesVisual times={data.visuais} />
-            </section>
-
-            <section id="atribuicoes" class="bf-admin-section">
-              <header class="bf-admin-section__header">
-                <h2>Atribuições de email</h2>
-                <span class="bf-admin-section__sub">
-                  Email Google → time. Quem loga via SSO vai pro time mapeado.
-                </span>
-              </header>
-              <AdminEmailMap atribuicoes={data.atribuicoes} />
+              <AdminTimesGrid times={data.visuais} />
             </section>
 
             <section id="ofertas" class="bf-admin-section">
