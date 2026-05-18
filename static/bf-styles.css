@@ -1172,7 +1172,8 @@ body {
    a posição, valor de pontos e glow ao expandir. */
 .bf-team-row {
   position: relative;
-  background: var(--bf-chassis);
+  /* Fundo transparente — só o glow lateral do ::before pinta a cor. */
+  background: transparent;
   border: 1px solid var(--bf-line);
   border-left: 4px solid var(--accent, var(--bf-fg-2));
   border-radius: var(--bf-radius-lg);
@@ -1715,8 +1716,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   margin: 0 var(--bf-gutter);
   position: relative;
   overflow: hidden;
-  /* Neon border + glow na cor accent do time do usuário (passada
-     inline via --user-accent). Fallback magenta. */
+  /* Fundo transparente — deixa o splatter + bg da página dominarem.
+     Mantém a borda neon + glow do accent do time. */
+  background: transparent;
   border-color: color-mix(
     in srgb,
     var(--user-accent, var(--bf-magenta)) 65%,

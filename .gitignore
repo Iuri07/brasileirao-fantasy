@@ -19,3 +19,7 @@ static/escudos
 static/players
 static/times_escudos
 static/fonts
+
+
+# Claude Code local settings (não compartilhado)
+.claude/settings.local.json
