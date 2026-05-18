@@ -43,10 +43,13 @@ function detectUseDeploy(): boolean {
 const IN_DEPLOY = detectUseDeploy();
 
 /** Retorna a URL final do asset. URLs absolutas (http(s)://) passam direto.
- *  Em prod, paths começando com '/' viram URL absoluta do jsDelivr. */
+ *  Em prod, paths começando com '/' viram URL absoluta do jsDelivr.
+ *  Exceção: /uploads/ é servido pelo próprio app (volume Docker, asset
+ *  dinâmico) e nunca passa pelo CDN. */
 export function cdn(path: string | null | undefined): string | null {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  if (path.startsWith("/uploads/")) return path; // asset dinâmico
   if (!IN_DEPLOY) return path; // dev: serve do Deno local
   if (!path.startsWith("/")) path = "/" + path;
   return CDN_BASE + path;

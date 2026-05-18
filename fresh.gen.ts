@@ -6,12 +6,19 @@ import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
 import * as $admin from "./routes/admin.tsx";
+import * as $admin_ofertas from "./routes/admin/ofertas.tsx";
+import * as $admin_times from "./routes/admin/times.tsx";
+import * as $admin_times_chave_ from "./routes/admin/times/[chave].tsx";
+import * as $admin_trocas from "./routes/admin/trocas.tsx";
 import * as $ao_vivo from "./routes/ao-vivo.tsx";
 import * as $api_admin_atualizar from "./routes/api/admin/atualizar.ts";
 import * as $api_admin_draft_dias from "./routes/api/admin/draft-dias.ts";
 import * as $api_admin_draft_fechar from "./routes/api/admin/draft-fechar.ts";
 import * as $api_admin_draft_ordem from "./routes/api/admin/draft-ordem.ts";
 import * as $api_admin_email_map from "./routes/api/admin/email-map.ts";
+import * as $api_admin_eventos_estimar from "./routes/api/admin/eventos-estimar.ts";
+import * as $api_admin_historico from "./routes/api/admin/historico.ts";
+import * as $api_admin_ofertas_cancelar from "./routes/api/admin/ofertas-cancelar.ts";
 import * as $api_admin_seed from "./routes/api/admin/seed.ts";
 import * as $api_admin_simular_rodada from "./routes/api/admin/simular-rodada.ts";
 import * as $api_admin_sync_atletas from "./routes/api/admin/sync-atletas.ts";
@@ -19,6 +26,9 @@ import * as $api_admin_sync_fotos_apifootball from "./routes/api/admin/sync-foto
 import * as $api_admin_sync_fotos_ogol from "./routes/api/admin/sync-fotos-ogol.ts";
 import * as $api_admin_sync_fotos from "./routes/api/admin/sync-fotos.ts";
 import * as $api_admin_sync_historico from "./routes/api/admin/sync-historico.ts";
+import * as $api_admin_time_visual from "./routes/api/admin/time-visual.ts";
+import * as $api_admin_transferir from "./routes/api/admin/transferir.ts";
+import * as $api_admin_trocas_desfazer from "./routes/api/admin/trocas-desfazer.ts";
 import * as $api_atleta_id_interesse from "./routes/api/atleta/[id]/interesse.ts";
 import * as $api_atletas_buscar from "./routes/api/atletas/buscar.ts";
 import * as $api_auth_google_callback from "./routes/api/auth/google/callback.ts";
@@ -33,6 +43,7 @@ import * as $api_elenco_dono_jogador_add from "./routes/api/elenco/[dono]/jogado
 import * as $api_elenco_dono_jogador_remove from "./routes/api/elenco/[dono]/jogador/remove.ts";
 import * as $api_elenco_dono_jogador_swap from "./routes/api/elenco/[dono]/jogador/swap.ts";
 import * as $api_elenco_dono_swap_escalacao from "./routes/api/elenco/[dono]/swap-escalacao.ts";
+import * as $api_eventos_hist from "./routes/api/eventos-hist.ts";
 import * as $api_live_path_ from "./routes/api/live/[...path].ts";
 import * as $api_me_prioridade from "./routes/api/me/prioridade.ts";
 import * as $api_mercado_data from "./routes/api/mercado/data.ts";
@@ -47,9 +58,16 @@ import * as $login from "./routes/login.tsx";
 import * as $mercado from "./routes/mercado.tsx";
 import * as $ranking from "./routes/ranking.tsx";
 import * as $time_chave_ from "./routes/time/[chave].tsx";
+import * as $uploads_path_ from "./routes/uploads/[...path].ts";
 import * as $AdminDraftDias from "./islands/AdminDraftDias.tsx";
 import * as $AdminEmailMap from "./islands/AdminEmailMap.tsx";
+import * as $AdminHistoricoMatriz from "./islands/AdminHistoricoMatriz.tsx";
+import * as $AdminOfertasPanel from "./islands/AdminOfertasPanel.tsx";
 import * as $AdminSimularRodada from "./islands/AdminSimularRodada.tsx";
+import * as $AdminTimesVisual from "./islands/AdminTimesVisual.tsx";
+import * as $AdminTransferirPanel from "./islands/AdminTransferirPanel.tsx";
+import * as $AdminTrocasPanel from "./islands/AdminTrocasPanel.tsx";
+import * as $AoVivoEventosPartidas from "./islands/AoVivoEventosPartidas.tsx";
 import * as $AoVivoLive from "./islands/AoVivoLive.tsx";
 import * as $CollapsibleTeamRow from "./islands/CollapsibleTeamRow.tsx";
 import * as $LeagueChart from "./islands/LeagueChart.tsx";
@@ -68,12 +86,19 @@ const manifest = {
     "./routes/_app.tsx": $_app,
     "./routes/_middleware.ts": $_middleware,
     "./routes/admin.tsx": $admin,
+    "./routes/admin/ofertas.tsx": $admin_ofertas,
+    "./routes/admin/times.tsx": $admin_times,
+    "./routes/admin/times/[chave].tsx": $admin_times_chave_,
+    "./routes/admin/trocas.tsx": $admin_trocas,
     "./routes/ao-vivo.tsx": $ao_vivo,
     "./routes/api/admin/atualizar.ts": $api_admin_atualizar,
     "./routes/api/admin/draft-dias.ts": $api_admin_draft_dias,
     "./routes/api/admin/draft-fechar.ts": $api_admin_draft_fechar,
     "./routes/api/admin/draft-ordem.ts": $api_admin_draft_ordem,
     "./routes/api/admin/email-map.ts": $api_admin_email_map,
+    "./routes/api/admin/eventos-estimar.ts": $api_admin_eventos_estimar,
+    "./routes/api/admin/historico.ts": $api_admin_historico,
+    "./routes/api/admin/ofertas-cancelar.ts": $api_admin_ofertas_cancelar,
     "./routes/api/admin/seed.ts": $api_admin_seed,
     "./routes/api/admin/simular-rodada.ts": $api_admin_simular_rodada,
     "./routes/api/admin/sync-atletas.ts": $api_admin_sync_atletas,
@@ -82,6 +107,9 @@ const manifest = {
     "./routes/api/admin/sync-fotos-ogol.ts": $api_admin_sync_fotos_ogol,
     "./routes/api/admin/sync-fotos.ts": $api_admin_sync_fotos,
     "./routes/api/admin/sync-historico.ts": $api_admin_sync_historico,
+    "./routes/api/admin/time-visual.ts": $api_admin_time_visual,
+    "./routes/api/admin/transferir.ts": $api_admin_transferir,
+    "./routes/api/admin/trocas-desfazer.ts": $api_admin_trocas_desfazer,
     "./routes/api/atleta/[id]/interesse.ts": $api_atleta_id_interesse,
     "./routes/api/atletas/buscar.ts": $api_atletas_buscar,
     "./routes/api/auth/google/callback.ts": $api_auth_google_callback,
@@ -98,6 +126,7 @@ const manifest = {
     "./routes/api/elenco/[dono]/jogador/swap.ts": $api_elenco_dono_jogador_swap,
     "./routes/api/elenco/[dono]/swap-escalacao.ts":
       $api_elenco_dono_swap_escalacao,
+    "./routes/api/eventos-hist.ts": $api_eventos_hist,
     "./routes/api/live/[...path].ts": $api_live_path_,
     "./routes/api/me/prioridade.ts": $api_me_prioridade,
     "./routes/api/mercado/data.ts": $api_mercado_data,
@@ -112,11 +141,18 @@ const manifest = {
     "./routes/mercado.tsx": $mercado,
     "./routes/ranking.tsx": $ranking,
     "./routes/time/[chave].tsx": $time_chave_,
+    "./routes/uploads/[...path].ts": $uploads_path_,
   },
   islands: {
     "./islands/AdminDraftDias.tsx": $AdminDraftDias,
     "./islands/AdminEmailMap.tsx": $AdminEmailMap,
+    "./islands/AdminHistoricoMatriz.tsx": $AdminHistoricoMatriz,
+    "./islands/AdminOfertasPanel.tsx": $AdminOfertasPanel,
     "./islands/AdminSimularRodada.tsx": $AdminSimularRodada,
+    "./islands/AdminTimesVisual.tsx": $AdminTimesVisual,
+    "./islands/AdminTransferirPanel.tsx": $AdminTransferirPanel,
+    "./islands/AdminTrocasPanel.tsx": $AdminTrocasPanel,
+    "./islands/AoVivoEventosPartidas.tsx": $AoVivoEventosPartidas,
     "./islands/AoVivoLive.tsx": $AoVivoLive,
     "./islands/CollapsibleTeamRow.tsx": $CollapsibleTeamRow,
     "./islands/LeagueChart.tsx": $LeagueChart,

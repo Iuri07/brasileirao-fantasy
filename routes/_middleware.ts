@@ -24,6 +24,7 @@ function isPublic(p: string): boolean {
   if (p.startsWith("/atletas/")) return true;
   if (p.startsWith("/escudos/")) return true;
   if (p.startsWith("/times_escudos/")) return true;
+  if (p.startsWith("/uploads/")) return true;
   if (p.startsWith("/players/")) return true;
   if (p.startsWith("/fonts/")) return true;
   if (p.startsWith("/assets/")) return true;

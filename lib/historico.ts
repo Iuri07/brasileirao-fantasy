@@ -30,3 +30,28 @@ export function totalPontos(h: HistoricoKV): number {
 export function rodadasJogadas(h: HistoricoKV): number {
   return Object.keys(h).length;
 }
+
+/** Remove uma rodada do histórico. Usado pelo admin pra "limpar" células
+ *  na matriz de edição. */
+export async function deleteHistoricoRodada(
+  kv: Deno.Kv,
+  chave: string,
+  rodada: number,
+): Promise<void> {
+  const atual = await getHistorico(kv, chave);
+  delete atual[String(rodada)];
+  await kv.set(["historico", chave], atual);
+}
+
+/** Lê o histórico de TODOS os times de uma vez. Útil pra construir a
+ *  matriz times x rodadas que o admin edita. */
+export async function getAllHistoricos(
+  kv: Deno.Kv,
+): Promise<Record<string, HistoricoKV>> {
+  const out: Record<string, HistoricoKV> = {};
+  for await (const e of kv.list<HistoricoKV>({ prefix: ["historico"] })) {
+    const chave = String(e.key[1]);
+    out[chave] = e.value;
+  }
+  return out;
+}

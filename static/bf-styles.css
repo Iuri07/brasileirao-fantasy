@@ -4539,3 +4539,371 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     transform: scale(1.15);
   }
 }
+
+/* ====================================================================
+   ADMIN DESKTOP DASHBOARD (≥1024px)
+   Em mobile, a versão antiga (cards-link) continua visível.
+   ==================================================================== */
+
+.bf-admin-desktop { display: none; }
+.bf-admin-mobile { display: block; }
+
+@media (min-width: 1024px) {
+  .bf-admin-desktop { display: grid; }
+  .bf-admin-mobile { display: none; }
+
+  /* Topbar continua, mas viewport amplia */
+  .bf-admin-viewport {
+    max-width: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .bf-admin-desktop {
+    grid-template-columns: 220px 1fr;
+    gap: 0;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+  .bf-admin-desktop__sidebar {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    padding: 16px 12px;
+    border-right: 1px solid var(--line-1);
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+  .bf-admin-desktop__sidebar-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--fg-1);
+    margin: 0 0 12px;
+    padding: 0 8px;
+  }
+  .bf-admin-desktop__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .bf-admin-desktop__nav a {
+    display: block;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-0);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: background 120ms;
+  }
+  .bf-admin-desktop__nav a:hover {
+    background: var(--bf-bg-elev);
+    border-left-color: var(--accent-soft);
+  }
+  .bf-admin-desktop__main {
+    padding: 16px 24px 0;
+    min-width: 0;
+  }
+  .bf-admin-section {
+    padding: 28px 0;
+    border-bottom: 1px solid var(--line-1);
+    scroll-margin-top: 16px;
+  }
+  .bf-admin-section:last-child { border-bottom: none; }
+  .bf-admin-section__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .bf-admin-section__header h2 {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fg-0);
+  }
+  .bf-admin-section__sub {
+    font-size: 12px;
+    color: var(--fg-1);
+  }
+
+  /* Overview cards */
+  .bf-admin-overview {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .bf-admin-overview__card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 20px;
+    background: var(--bg-1);
+    border: 1px solid var(--line-1);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--fg-0);
+  }
+  .bf-admin-overview__card--link:hover {
+    border-color: var(--accent-soft);
+    background: var(--bf-bg-elev);
+  }
+  .bf-admin-overview__num {
+    font-family: var(--font-mono);
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .bf-admin-overview__lbl {
+    font-size: 11px;
+    color: var(--fg-1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Times grid no desktop — colunas maiores */
+  .bf-admin-times--desktop {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .bf-admin-times--desktop .bf-admin-times__item {
+    width: auto;
+  }
+}
+
+/* ====================================================================
+   HISTORICO MATRIZ — funciona em qualquer largura mas brilha no desktop
+   ==================================================================== */
+.bf-historico-matriz {
+  width: 100%;
+}
+.bf-historico-matriz__scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line-1);
+  border-radius: 8px;
+  background: var(--bg-1);
+}
+.bf-historico-matriz__table {
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  width: 100%;
+  min-width: 720px;
+}
+.bf-historico-matriz__table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line-1);
+  padding: 10px 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-1);
+}
+.bf-historico-matriz__th-time {
+  text-align: left !important;
+  min-width: 160px;
+}
+.bf-historico-matriz__th-rodada { min-width: 56px; }
+.bf-historico-matriz__th-total {
+  min-width: 72px;
+  color: var(--accent) !important;
+}
+.bf-historico-matriz__th-time-row {
+  text-align: left;
+  padding: 6px 8px;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--fg-0);
+  border-right: 1px solid var(--line-1);
+  background: var(--bg-1);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bf-historico-matriz__escudo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.bf-historico-matriz__td {
+  padding: 0;
+  position: relative;
+  border-bottom: 1px solid var(--line-1);
+  border-right: 1px solid rgba(255,255,255,0.03);
+}
+.bf-historico-matriz__input {
+  width: 100%;
+  padding: 8px 6px;
+  background: transparent;
+  border: none;
+  color: var(--fg-0);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+}
+.bf-historico-matriz__input:focus {
+  background: rgba(155, 123, 255, 0.08);
+  box-shadow: inset 0 0 0 1px var(--accent-soft);
+}
+.bf-historico-matriz__td[data-status="saving"] .bf-historico-matriz__input {
+  background: rgba(255, 255, 255, 0.03);
+}
+.bf-historico-matriz__td[data-status="saved"] .bf-historico-matriz__input {
+  background: rgba(76, 195, 138, 0.10);
+}
+.bf-historico-matriz__td[data-status="error"] .bf-historico-matriz__input {
+  background: rgba(229, 72, 77, 0.12);
+}
+.bf-historico-matriz__status {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  font-size: 10px;
+  pointer-events: none;
+}
+.bf-historico-matriz__status--saving {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fg-1);
+  animation: bfPulse 800ms infinite ease-in-out;
+}
+.bf-historico-matriz__status--saved { color: var(--syn-green); font-weight: 700; }
+.bf-historico-matriz__status--error { color: var(--syn-red); font-weight: 700; }
+.bf-historico-matriz__td-total {
+  padding: 6px 10px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--accent);
+  border-bottom: 1px solid var(--line-1);
+  background: var(--bg-2);
+}
+.bf-historico-matriz__hint {
+  margin: 8px 4px 0;
+  font-size: 11px;
+  color: var(--fg-1);
+}
+
+/* ====================================================================
+   TIMES VISUAL editor (logo + nome)
+   ==================================================================== */
+.bf-times-visual {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bf-times-visual__row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 20px;
+  padding: 16px;
+  background: var(--bg-1);
+  border: 1px solid var(--line-1);
+  border-left: 3px solid var(--accent, #888);
+  border-radius: 8px;
+  align-items: center;
+}
+.bf-times-visual__preview {
+  width: 80px;
+  height: 80px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.bf-times-visual__preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.bf-times-visual__sigla {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--fg-1);
+  letter-spacing: 0.05em;
+}
+.bf-times-visual__fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 16px;
+  min-width: 0;
+}
+.bf-times-visual__label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bf-times-visual__label > span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.bf-times-visual__label input[type="text"],
+.bf-times-visual__label input[type="url"] {
+  padding: 7px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-1);
+  border-radius: 4px;
+  color: var(--fg-0);
+  font-size: 13px;
+  font-family: var(--font-sans);
+}
+.bf-times-visual__label input:focus {
+  outline: none;
+  border-color: var(--accent-soft);
+}
+.bf-times-visual__label input[type="file"] {
+  font-size: 12px;
+  color: var(--fg-1);
+}
+.bf-times-visual__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  min-width: 140px;
+}
+.bf-times-visual__ok { color: var(--syn-green); font-size: 12px; }
+.bf-times-visual__err { color: var(--syn-red); font-size: 11px; }
+.bf-times-visual__hint { color: var(--fg-1); font-size: 11px; }
+
+/* Em telas estreitas, empilha */
+@media (max-width: 800px) {
+  .bf-times-visual__row {
+    grid-template-columns: 1fr;
+  }
+  .bf-times-visual__fields {
+    grid-template-columns: 1fr;
+  }
+  .bf-times-visual__actions {
+    flex-direction: row;
+    align-items: center;
+  }
+}
