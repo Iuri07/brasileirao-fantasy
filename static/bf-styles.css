@@ -4934,13 +4934,13 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 }
 
 /* Layout horizontal: 1 linha por time.
-   Colunas: [logo 48 + heading 200] | [campos auto-flow] | [ações fixas]. */
+   Colunas: [logo 48 + heading auto] | [campos auto-flow] | [ações fixas]. */
 .bf-times-grid__card {
   display: grid;
-  grid-template-columns: 220px 1fr auto;
+  grid-template-columns: minmax(180px, 240px) 1fr auto;
   align-items: center;
   gap: 16px;
-  padding: 10px 14px;
+  padding: 12px 14px;
   background:
     linear-gradient(90deg,
       color-mix(in srgb, var(--accent, #888) 10%, var(--bg-2)) 0%,
@@ -5021,9 +5021,14 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   font-weight: 600;
   color: var(--fg-0);
   letter-spacing: 0.02em;
-  white-space: nowrap;
+  /* Permite quebrar em até 2 linhas — nomes longos tipo "TODOS COM BOLSONARO"
+     não cabem em 200px na fonte mono. */
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
 }
 .bf-times-grid__dono {
   font-family: var(--font-mono);
@@ -5032,6 +5037,8 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .bf-times-grid__chave {
   color: var(--fg-2);
@@ -5051,12 +5058,12 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   align-self: flex-start;
 }
 
-/* Campos em linha — 5 inputs lado a lado.
-   Email maior pq tem mais texto. Logo URL e file dividem a última coluna. */
+/* 5 campos em 2 linhas (3 cols + 3 cols): dá ~2x mais largura
+   por input vs antes (5 em linha apertava demais o email/URL). */
 .bf-times-grid__fields {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr 1.2fr 1.1fr;
-  gap: 8px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px 10px;
   min-width: 0;
 }
 .bf-times-grid__label {
@@ -5071,9 +5078,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   color: var(--fg-1);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  /* Sem ellipsis — labels curtas (Email/Nome/Display/Logo URL/Upload)
+     já cabem; se não couber, melhor quebrar do que cortar. */
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .bf-times-grid__label input[type="text"],
 .bf-times-grid__label input[type="email"],
@@ -5133,8 +5140,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 .bf-times-grid__status {
   font-size: 10px;
   font-family: var(--font-mono);
-  min-width: 64px;
+  min-width: 80px;
   text-align: right;
+  white-space: nowrap;
 }
 .bf-times-grid__ok { color: var(--syn-green); }
 .bf-times-grid__err { color: var(--syn-red); }
