@@ -4,6 +4,28 @@ import {
   getSessionIdFromRequest,
   type SessionKV,
 } from "../lib/auth.ts";
+import { applyVisualOverrides } from "../lib/times-liga.ts";
+import { applyNomeOverrides, getAllTimeVisuais } from "../lib/time-visual.ts";
+
+// Cache global de overrides de visual (logo + nome). Hidratado 1x por
+// processo na primeira request; admin endpoints invalidam via
+// `invalidateVisualCache()`.
+let visualCacheLoaded = false;
+async function ensureVisualCache(kv: Deno.Kv): Promise<void> {
+  if (visualCacheLoaded) return;
+  try {
+    const all = await getAllTimeVisuais(kv);
+    applyVisualOverrides(all);
+    applyNomeOverrides(all);
+    visualCacheLoaded = true;
+  } catch (e) {
+    console.error("[middleware] visual cache load failed:", e);
+  }
+}
+
+export function invalidateVisualCache(): void {
+  visualCacheLoaded = false;
+}
 
 /** Tipos compartilhados — qualquer rota lê via ctx.state. */
 export interface State {
@@ -47,6 +69,7 @@ export async function handler(req: Request, ctx: FreshContext<State>) {
 
   // 1. Carrega sessão (se houver cookie válido)
   const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
+  await ensureVisualCache(kv);
   const sessionId = getSessionIdFromRequest(req);
   const session = sessionId ? await getSession(kv, sessionId) : null;
   ctx.state.sessionId = sessionId;

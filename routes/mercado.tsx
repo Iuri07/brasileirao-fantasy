@@ -14,6 +14,7 @@ import {
   proximaResolucao,
 } from "../lib/draft.ts";
 import { fetchMercadoStatus } from "../lib/cartola.ts";
+import { getNomeTimeDisplay } from "../lib/time-visual.ts";
 import TopBar from "../components/TopBar.tsx";
 import BottomNav from "../components/BottomNav.tsx";
 import SectionHeader from "../components/SectionHeader.tsx";
@@ -84,7 +85,7 @@ export const handler: Handlers<Data, State> = {
       : null;
     const draftOrdem = draftOrdemKeys.map((c) => ({
       chave: c,
-      nome: CHAVES_TIMES[c]?.nome_time ?? c,
+      nome: getNomeTimeDisplay(c, CHAVES_TIMES[c]?.nome_time),
     }));
 
     // Tempo até o fechamento do mercado (Cartola fornece timestamp em UTC s).

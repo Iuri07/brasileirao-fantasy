@@ -78,6 +78,48 @@ const TIMES: Record<string, TimeLigaInfo> = {
   },
 };
 
+/** Overrides editáveis pelo admin (logo, displayName). Setado por
+ *  `applyVisualOverrides()` quando o middleware carrega o cache.
+ *  Sync porque o consumo é em SSR e components — async espalharia
+ *  refactor pelo app todo. */
+const OVERRIDES: Map<string, { logo?: string; displayName?: string }> = new Map();
+
+/** Atualiza o cache de overrides. Chamado pelo middleware na primeira
+ *  request de cada processo, e pelo endpoint POST/DELETE de visual. */
+export function applyVisualOverrides(
+  overrides: Record<string, { logo?: string; displayName?: string }>,
+): void {
+  OVERRIDES.clear();
+  for (const [chave, o] of Object.entries(overrides)) {
+    if (o?.logo || o?.displayName) {
+      OVERRIDES.set(chave, { logo: o.logo, displayName: o.displayName });
+    }
+  }
+}
+
+/** Limpa um override específico (admin DELETE). */
+export function clearVisualOverride(chave: string): void {
+  OVERRIDES.delete(chave);
+}
+
+/** Seta override pra um time específico (admin POST). */
+export function setVisualOverride(
+  chave: string,
+  patch: { logo?: string; displayName?: string },
+): void {
+  const cur = OVERRIDES.get(chave) ?? {};
+  OVERRIDES.set(chave, { ...cur, ...patch });
+}
+
 export function timeLigaInfo(chave: string): TimeLigaInfo | null {
-  return TIMES[chave] ?? null;
+  const base = TIMES[chave];
+  if (!base) return null;
+  const o = OVERRIDES.get(chave);
+  if (!o) return base;
+  // Merge override com defaults — não muta o TIMES original
+  return {
+    ...base,
+    logo: o.logo ?? base.logo,
+    displayName: o.displayName ?? base.displayName,
+  };
 }

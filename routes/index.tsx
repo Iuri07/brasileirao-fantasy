@@ -36,6 +36,7 @@ import MeuTimeEditor, { type AtletaElenco } from "../islands/MeuTimeEditor.tsx";
 import PartidasExpandable from "../islands/PartidasExpandable.tsx";
 import { escudoUrl } from "../lib/escudos.ts";
 import { coresClube } from "../lib/cores.ts";
+import { getNomeTimeDisplay } from "../lib/time-visual.ts";
 import { fotoUrl } from "../lib/fotos.ts";
 import { timeLigaInfo } from "../lib/times-liga.ts";
 import { getHistorico, rodadasJogadas, totalPontos } from "../lib/historico.ts";
@@ -252,7 +253,7 @@ export const handler: Handlers<HomeData, State> = {
         ) / 100;
         return {
           chave,
-          nome: elenco.nome_time,
+          nome: getNomeTimeDisplay(chave, elenco.nome_time),
           dono: elenco.dono,
           pontuacao,
         };
@@ -424,7 +425,7 @@ export const handler: Handlers<HomeData, State> = {
 export default function Home({ data }: PageProps<HomeData>) {
   const visual = timeLigaInfo(data.chave);
   const meta = CHAVES_TIMES[data.chave];
-  const displayName = visual?.displayName ?? meta?.nome_time ?? "Time";
+  const displayName = visual?.displayName ?? getNomeTimeDisplay(data.chave);
   const pontosFmt = data.pontuacaoExibida != null
     ? data.pontuacaoExibida.toFixed(1).replace(".", ",")
     : "—";

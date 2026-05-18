@@ -115,3 +115,48 @@ export async function getTimeVisualResolved(
   const override = await getTimeVisual(kv, chave);
   return resolveTimeVisual(chave, override);
 }
+
+// ============================================================
+// Cache em memória de nome_time overrides (sync access)
+// ============================================================
+// Usado pra TopBar e qualquer componente que renderiza o nome do time
+// sem ter acesso ao KV. Hidratado pelo middleware na primeira request.
+
+const NOME_OVERRIDES: Map<string, string> = new Map();
+
+export function applyNomeOverrides(
+  overrides: Record<string, TimeVisualOverride>,
+): void {
+  NOME_OVERRIDES.clear();
+  for (const [chave, o] of Object.entries(overrides)) {
+    if (o?.nome_time) NOME_OVERRIDES.set(chave, o.nome_time);
+  }
+}
+
+export function setNomeOverride(chave: string, nome?: string): void {
+  if (nome) NOME_OVERRIDES.set(chave, nome);
+  else NOME_OVERRIDES.delete(chave);
+}
+
+export function clearNomeOverride(chave: string): void {
+  NOME_OVERRIDES.delete(chave);
+}
+
+/** Retorna o nome customizado se houver, senão null. Consumidores
+ *  caem no `CHAVES_TIMES[chave].nome_time` ou `elenco.nome_time`. */
+export function getNomeOverrideSync(chave: string): string | null {
+  return NOME_OVERRIDES.get(chave) ?? null;
+}
+
+/** Resolve o nome final pra exibição: override KV → fallback (passado pelo
+ *  caller, ex: `elenco.nome_time`) → CHAVES_TIMES → chave. Usar isso em
+ *  TODO lugar que renderiza nome do time, pra refletir edição do admin. */
+export function getNomeTimeDisplay(
+  chave: string,
+  fallback?: string | null,
+): string {
+  const override = NOME_OVERRIDES.get(chave);
+  if (override) return override;
+  if (fallback) return fallback;
+  return CHAVES_TIMES[chave]?.nome_time ?? chave;
+}

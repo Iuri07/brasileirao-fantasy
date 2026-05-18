@@ -3,8 +3,11 @@ import { TODAS_CHAVES } from "../../../lib/kv.ts";
 import {
   deleteTimeVisual,
   getTimeVisualResolved,
+  setNomeOverride,
   setTimeVisual,
 } from "../../../lib/time-visual.ts";
+import { setVisualOverride, clearVisualOverride } from "../../../lib/times-liga.ts";
+import { invalidateVisualCache } from "../../_middleware.ts";
 import type { State } from "../../_middleware.ts";
 
 const H = { "Content-Type": "application/json" };
@@ -111,6 +114,13 @@ export const handler: Handlers<unknown, State> = {
       }
 
       const resolved = await getTimeVisualResolved(kv, chave);
+      // Hidrata o cache em memória — mais barato que invalidar e refazer load
+      setVisualOverride(chave, {
+        logo: resolved.logo ?? undefined,
+        displayName: resolved.displayName,
+      });
+      setNomeOverride(chave, resolved.nomeTime);
+      invalidateVisualCache(); // próxima request também recarrega tudo, por garantia
       return new Response(JSON.stringify({ ok: true, visual: resolved }), { headers: H });
     } catch (e) {
       return jsonErr(500, String(e));
@@ -123,6 +133,9 @@ export const handler: Handlers<unknown, State> = {
     if (!TODAS_CHAVES.includes(chave)) return jsonErr(400, "chave inválida");
     const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     await deleteTimeVisual(kv, chave);
+    clearVisualOverride(chave);
+    setNomeOverride(chave, undefined);
+    invalidateVisualCache();
     const resolved = await getTimeVisualResolved(kv, chave);
     return new Response(JSON.stringify({ ok: true, visual: resolved }), { headers: H });
   },

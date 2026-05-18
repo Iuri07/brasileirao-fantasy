@@ -18,6 +18,7 @@ import { escudoUrl } from "../lib/escudos.ts";
 import { coresClube } from "../lib/cores.ts";
 import { fotoUrl } from "../lib/fotos.ts";
 import { timeLigaInfo } from "../lib/times-liga.ts";
+import { getNomeTimeDisplay } from "../lib/time-visual.ts";
 import { cdn } from "../lib/cdn.ts";
 
 const CHAVE_USUARIO = "aguiar";
@@ -142,7 +143,7 @@ export const handler: Handlers<Data, State> = {
 
       times.push({
         chave,
-        nome: elenco.nome_time,
+        nome: getNomeTimeDisplay(chave, elenco.nome_time),
         dono: elenco.dono,
         pontuacaoRodada: ptsRodada,
         total: totalPontos(historico),

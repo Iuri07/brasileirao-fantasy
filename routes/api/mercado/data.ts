@@ -11,6 +11,7 @@ import {
 import { fetchAtletasMercadoCacheado } from "../../../lib/cartola.ts";
 import { fotoUrl } from "../../../lib/fotos.ts";
 import { coresClube } from "../../../lib/cores.ts";
+import { getNomeTimeDisplay } from "../../../lib/time-visual.ts";
 import type { State } from "../../_middleware.ts";
 
 const H = { "Content-Type": "application/json" };
@@ -108,7 +109,7 @@ export const handler: Handlers<unknown, State> = {
         // deno-lint-ignore no-explicit-any
         mediaPontos: (a as any).media_num ?? null,
         donoChave: owner ?? null,
-        donoTime: owner ? CHAVES_TIMES[owner]?.nome_time ?? null : null,
+        donoTime: owner ? getNomeTimeDisplay(owner, CHAVES_TIMES[owner]?.nome_time) : null,
         interessados: regs.map((r) => r.chave),
         meuOferecido: meuReg?.oferecido ?? null,
       });
@@ -142,7 +143,7 @@ export const handler: Handlers<unknown, State> = {
           // deno-lint-ignore no-explicit-any
           mediaPontos: (cartola as any)?.media_num ?? null,
           donoChave: chaveLogada,
-          donoTime: CHAVES_TIMES[chaveLogada]?.nome_time ?? null,
+          donoTime: getNomeTimeDisplay(chaveLogada, CHAVES_TIMES[chaveLogada]?.nome_time),
           interessados: [],
           aVenda: minhaAVenda.has(j.atleta_id),
         });

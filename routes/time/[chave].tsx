@@ -10,6 +10,7 @@ import {
 } from "../../lib/kv.ts";
 import { getMelhorTimeCached } from "../../lib/substituicao.ts";
 import { getHistorico, totalPontos } from "../../lib/historico.ts";
+import { getNomeTimeDisplay } from "../../lib/time-visual.ts";
 import TopBar from "../../components/TopBar.tsx";
 import BottomNav from "../../components/BottomNav.tsx";
 import TeamCrest from "../../components/TeamCrest.tsx";
@@ -125,7 +126,7 @@ export const handler: Handlers<Data, State> = {
 
     return ctx.render({
       chave,
-      nome: meta.nome_time,
+      nome: getNomeTimeDisplay(chave, meta.nome_time),
       dono: meta.dono,
       rodada: rodada?.rodada ?? 0,
       pontuacaoRodada: ptsRodada,

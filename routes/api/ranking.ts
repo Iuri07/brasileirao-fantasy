@@ -1,6 +1,7 @@
 import { Handlers } from "$fresh/server.ts";
 import { getAllElencos, getRodadaStatus } from "../../lib/kv.ts";
 import { calcularMelhorTime } from "../../lib/substituicao.ts";
+import { getNomeTimeDisplay } from "../../lib/time-visual.ts";
 
 const H = {
   "Content-Type": "application/json",
@@ -48,7 +49,7 @@ export const handler: Handlers = {
         ) / 100;
 
         return {
-          nome:      elenco.nome_time,
+          nome:      getNomeTimeDisplay(elenco.chave, elenco.nome_time),
           dono:      elenco.dono,
           chave:     elenco.chave,
           pontuacao,
