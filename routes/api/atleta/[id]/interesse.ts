@@ -36,7 +36,7 @@ export const handler: Handlers<unknown, State> = {
       body = await req.json();
     } catch { /* permite body vazio */ }
 
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     if (await isAoVivo(kv)) {
       return new Response(
         JSON.stringify({

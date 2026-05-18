@@ -86,7 +86,7 @@ export const handler: Handlers = {
     const path = (ctx.params.path as unknown as string) ?? "";
 
     // Intercepta endpoints quando simulação está ativa
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const sim = await kv.get<boolean>(["simulando"]);
     if (sim.value) {
       if (path === "atletas/pontuados") return await simularPontuados(kv);

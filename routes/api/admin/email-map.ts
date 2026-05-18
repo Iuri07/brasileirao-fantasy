@@ -47,7 +47,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
     try {
-      const kv = await Deno.openKv();
+      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
       await atribuirEmailATime(kv, email, chave);
       return new Response(JSON.stringify({ ok: true }), { headers: H });
     } catch (e) {
@@ -74,7 +74,7 @@ export const handler: Handlers<unknown, State> = {
         headers: H,
       });
     }
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     if (body.email) {
       await removerEmail(kv, String(body.email));
       return new Response(JSON.stringify({ ok: true }), { headers: H });

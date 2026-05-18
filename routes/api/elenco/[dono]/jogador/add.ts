@@ -28,7 +28,7 @@ export const handler: Handlers<unknown, State> = {
       return new Response(JSON.stringify({ ok: false, erro: "JSON inválido" }), { status: 400, headers: H });
     }
 
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const elenco = await getElenco(kv, chave);
     if (!elenco) {
       return new Response(JSON.stringify({ ok: false, erro: "Elenco não encontrado" }), { status: 404, headers: H });

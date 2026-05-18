@@ -16,7 +16,7 @@ export const handler: Handlers = {
     const stateFromUrl = url.searchParams.get("state");
     const err = url.searchParams.get("error");
 
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const stateRecord = stateFromUrl
       ? await consumeOAuthState(kv, stateFromUrl)
       : null;

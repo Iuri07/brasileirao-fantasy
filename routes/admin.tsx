@@ -30,7 +30,7 @@ interface Data {
 
 export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const emailMap = await getEmailMap(kv);
     const chaveToEmail: Record<string, string> = {};
     for (const [e, c] of Object.entries(emailMap)) {

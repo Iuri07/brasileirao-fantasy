@@ -53,7 +53,7 @@ export const handler: Handlers = {
     }
 
     try {
-      const kv = await Deno.openKv();
+      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
 
       // 1. Times do Brasileirão na API-Football
       const afTeams = await fetchTeams(71);

@@ -9,7 +9,7 @@ export const handler: Handlers = {
     if (!TODAS_CHAVES.includes(chave)) {
       return new Response(JSON.stringify({ erro: "Time não encontrado" }), { status: 404, headers: H });
     }
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const elenco = await getElenco(kv, chave);
     return new Response(JSON.stringify(elenco ?? null), { headers: H });
   },

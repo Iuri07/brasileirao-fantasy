@@ -35,6 +35,7 @@ import * as $api_elenco_dono_jogador_swap from "./routes/api/elenco/[dono]/jogad
 import * as $api_elenco_dono_swap_escalacao from "./routes/api/elenco/[dono]/swap-escalacao.ts";
 import * as $api_live_path_ from "./routes/api/live/[...path].ts";
 import * as $api_me_prioridade from "./routes/api/me/prioridade.ts";
+import * as $api_mercado_data from "./routes/api/mercado/data.ts";
 import * as $api_notificacoes from "./routes/api/notificacoes.ts";
 import * as $api_ofertas_id_responder from "./routes/api/ofertas/[id]/responder.ts";
 import * as $api_ofertas_index from "./routes/api/ofertas/index.ts";
@@ -59,7 +60,7 @@ import * as $NotifBell from "./islands/NotifBell.tsx";
 import * as $PartidasExpandable from "./islands/PartidasExpandable.tsx";
 import * as $Ranking from "./islands/Ranking.tsx";
 import * as $UserMenu from "./islands/UserMenu.tsx";
-import { type Manifest } from "$fresh/server.ts";
+import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
@@ -99,6 +100,7 @@ const manifest = {
       $api_elenco_dono_swap_escalacao,
     "./routes/api/live/[...path].ts": $api_live_path_,
     "./routes/api/me/prioridade.ts": $api_me_prioridade,
+    "./routes/api/mercado/data.ts": $api_mercado_data,
     "./routes/api/notificacoes.ts": $api_notificacoes,
     "./routes/api/ofertas/[id]/responder.ts": $api_ofertas_id_responder,
     "./routes/api/ofertas/index.ts": $api_ofertas_index,

@@ -86,7 +86,7 @@ export const handler: Handlers<Data, State> = {
     const mark = (label: string, since: number) => {
       timings.push(`${label};dur=${(performance.now() - since).toFixed(1)}`);
     };
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const meuChave = ctx.state.session?.chave ?? CHAVE_FALLBACK_DEV;
 
     const userInfo: UserInfo = {

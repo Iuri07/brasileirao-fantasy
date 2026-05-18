@@ -12,7 +12,7 @@ function parseSeguro(valor: unknown): unknown {
 
 export const handler: Handlers = {
   async GET() {
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const resultado = await kv.get(["classificacao"]);
     const valor = parseSeguro(resultado.value);
     return new Response(JSON.stringify(valor ?? null), {
@@ -36,7 +36,7 @@ export const handler: Handlers = {
     }
     // Normaliza se vier como string
     dados = parseSeguro(dados);
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     await kv.set(["classificacao"], dados);
     return new Response(JSON.stringify({ ok: true }), {
       status: 200, headers: { "Content-Type": "application/json" },

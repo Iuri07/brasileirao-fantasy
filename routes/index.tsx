@@ -167,7 +167,7 @@ export const handler: Handlers<HomeData, State> = {
     };
 
     const CHAVE_USUARIO = ctx.state.session?.chave ?? CHAVE_FALLBACK_DEV;
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     // Lê só do KV primeiro pra decidir se precisamos da Cartola.
     // Cartola só é necessária quando ao vivo (pontuados parciais) e/ou
     // quando o mercado tá aberto (fechamento countdown).

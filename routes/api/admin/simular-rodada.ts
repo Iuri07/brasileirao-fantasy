@@ -136,7 +136,7 @@ export const handler: Handlers<unknown, State> = {
     const encerrar = url.searchParams.get("encerrar") === "1";
     const zerar = url.searchParams.get("zerar") === "1";
 
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const status = await getRodadaStatus(kv);
     const rodadaAtual = status?.rodada ?? 1;
     const now = new Date().toISOString();

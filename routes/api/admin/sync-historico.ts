@@ -12,7 +12,7 @@ export const handler: Handlers = {
   async POST() {
     try {
       const { historico, donosNaoMapeados } = await fetchHistoricoFromSheet();
-      const kv = await Deno.openKv();
+      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
       let timesAtualizados = 0;
       let totalRodadas = 0;
       for (const [chave, rodadas] of Object.entries(historico)) {

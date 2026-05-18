@@ -14,7 +14,7 @@ const H = { "Content-Type": "application/json" };
  */
 export const handler: Handlers<unknown, State> = {
   async GET() {
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const dias = await getDiasResolucao(kv);
     return new Response(JSON.stringify({ ok: true, dias }), { headers: H });
   },
@@ -51,7 +51,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 400, headers: H },
       );
     }
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     await setDiasResolucao(kv, dias);
     const novos = await getDiasResolucao(kv);
     return new Response(JSON.stringify({ ok: true, dias: novos }), {

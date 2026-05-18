@@ -30,7 +30,7 @@ export const handler: Handlers<unknown, State> = {
     } catch {
       // body opcional
     }
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const rodada = body.rodada ?? (await getRodadaStatus(kv))?.rodada ?? 0;
     if (!rodada) {
       return new Response(

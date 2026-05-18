@@ -14,7 +14,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 403, headers: H },
       );
     }
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const recebidas = await listarOfertasRecebidas(kv, chave);
     return new Response(JSON.stringify({ ok: true, recebidas }), {
       headers: H,
@@ -54,7 +54,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     if (await isAoVivo(kv)) {
       return new Response(
         JSON.stringify({

@@ -1,0 +1,22 @@
+.git
+.github
+.env
+.env.*
+!.env.example
+.DS_Store
+.vscode
+.claude
+node_modules
+_fresh
+nohup.out
+*.log
+docs
+README.md
+*.md
+
+# Assets vivem em repo separado, servidos via jsDelivr — não embarcar no container
+static/atletas
+static/escudos
+static/players
+static/times_escudos
+static/fonts

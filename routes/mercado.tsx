@@ -51,7 +51,7 @@ export const handler: Handlers<Data, State> = {
       timings.push(`${label};dur=${(performance.now() - since).toFixed(1)}`);
     };
 
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const chaveLogadaAux = ctx.state.session?.chave;
 
     // SSR enxuto: lê SÓ dados leves (KV pequenos). A grade de

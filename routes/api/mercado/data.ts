@@ -34,7 +34,7 @@ const POSICAO: Record<
  */
 export const handler: Handlers<unknown, State> = {
   async GET(_req, ctx) {
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const chaveLogadaAux = ctx.state.session?.chave;
 
     const [

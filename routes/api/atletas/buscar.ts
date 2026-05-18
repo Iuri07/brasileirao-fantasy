@@ -10,7 +10,7 @@ export const handler: Handlers = {
     const q       = (url.searchParams.get("q") ?? "").toLowerCase().trim();
     const posicao = url.searchParams.get("posicao") ?? "";
 
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const chaves = posicao && POSICAO_NOME_CHAVE[posicao]
       ? [POSICAO_NOME_CHAVE[posicao]]
       : POSICAO_CHAVES_CACHE;

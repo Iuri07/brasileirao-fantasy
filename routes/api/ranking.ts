@@ -11,7 +11,7 @@ const H = {
 export const handler: Handlers = {
   async GET() {
     try {
-      const kv = await Deno.openKv();
+      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
       const [elencos, rodada] = await Promise.all([
         getAllElencos(kv),
         getRodadaStatus(kv),

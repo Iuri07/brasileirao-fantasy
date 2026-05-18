@@ -57,7 +57,7 @@ export const handler: Handlers<Data, State> = {
     const meta = CHAVES_TIMES[chave];
     if (!meta) return new Response("Not found", { status: 404 });
 
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const [elencos, rodada, fotos, historico] = await Promise.all([
       getAllElencos(kv),
       getRodadaStatus(kv),

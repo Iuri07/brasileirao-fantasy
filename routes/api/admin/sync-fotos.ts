@@ -22,7 +22,7 @@ export const handler: Handlers = {
    */
   async POST() {
     try {
-      const kv = await Deno.openKv();
+      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
 
       // 1. Coleta atleta_ids escalados (sim) em qualquer elenco
       const elencos = await getAllElencos(kv);

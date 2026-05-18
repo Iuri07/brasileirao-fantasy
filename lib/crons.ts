@@ -302,7 +302,7 @@ export function registrarCrons(): void {
   // Sync do catálogo de atletas: 1× por dia às 9h UTC (= 6h BRT)
   Deno.cron("sync-atletas", "0 9 * * *", async () => {
     try {
-      const kv = await Deno.openKv();
+      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
       await sincronizarAtletas(kv);
     } catch (e) {
       console.error("[cron] sync-atletas erro:", e);
@@ -316,7 +316,7 @@ export function registrarCrons(): void {
   // mesmo horário.
   Deno.cron("atualizar", "* * * * *", async () => {
     try {
-      const kv = await Deno.openKv();
+      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
       await atualizarTudo(kv);
     } catch (e) {
       console.error("[cron] atualizar erro:", e);

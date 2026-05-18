@@ -28,7 +28,7 @@ function nomeTime(chave: string): string {
 
 export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const [elencos, aVendaGlobal, ofertas] = await Promise.all([
       getAllElencos(kv),
       getAVendaGlobal(kv),

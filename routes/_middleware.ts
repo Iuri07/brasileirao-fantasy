@@ -45,7 +45,7 @@ export async function handler(req: Request, ctx: FreshContext<State>) {
   const p = url.pathname;
 
   // 1. Carrega sessão (se houver cookie válido)
-  const kv = await Deno.openKv();
+  const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
   const sessionId = getSessionIdFromRequest(req);
   const session = sessionId ? await getSession(kv, sessionId) : null;
   ctx.state.sessionId = sessionId;

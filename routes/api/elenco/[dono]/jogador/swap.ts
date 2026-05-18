@@ -29,7 +29,7 @@ export const handler: Handlers<unknown, State> = {
     }
 
     try {
-      const kv = await Deno.openKv();
+      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
 
       // Carrega todos os elencos para encontrar de onde vem o atleta que entra
       const elencos = await getAllElencos(kv);

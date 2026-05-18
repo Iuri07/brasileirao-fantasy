@@ -11,7 +11,7 @@ export const handler: Handlers = {
   async GET(req) {
     const url = new URL(req.url);
     const rodadaParam = url.searchParams.get("rodada");
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     let rodada = rodadaParam ? Number(rodadaParam) : 0;
     if (!rodada) {
       const status = await getRodadaStatus(kv);

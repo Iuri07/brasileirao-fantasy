@@ -20,7 +20,7 @@ const H = { "Content-Type": "application/json" };
 export const handler: Handlers = {
   async POST() {
     try {
-      const kv = await Deno.openKv();
+      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
       const [data, partidasData] = await Promise.all([
         fetchAtletasMercado(),
         fetchPartidas().catch(() => null),

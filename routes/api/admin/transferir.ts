@@ -77,7 +77,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const [from, to] = await Promise.all([
       getElenco(kv, fromChave),
       getElenco(kv, toChave),

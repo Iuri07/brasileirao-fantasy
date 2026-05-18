@@ -32,7 +32,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 400, headers: H },
       );
     }
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const rodadaStatus = await getRodadaStatus(kv);
     const rodadaAtual = rodadaStatus?.rodada ?? 1;
 

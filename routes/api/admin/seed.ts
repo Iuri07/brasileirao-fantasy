@@ -33,7 +33,7 @@ type DadosJSON = {
 export const handler: Handlers = {
   async POST() {
     try {
-      const kv = await Deno.openKv();
+      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
       const resultados: string[] = [];
       const typed = dados as DadosJSON;
 

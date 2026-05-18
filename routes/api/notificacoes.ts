@@ -27,7 +27,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 403, headers: H },
       );
     }
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const [notifs, elencos] = await Promise.all([
       listarNotifs(kv, chave),
       getAllElencos(kv),
@@ -80,7 +80,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 400, headers: H },
       );
     }
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     await marcarNotifLida(kv, chave, body.id);
     return new Response(JSON.stringify({ ok: true }), { headers: H });
   },

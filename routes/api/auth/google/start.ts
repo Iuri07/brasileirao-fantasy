@@ -23,7 +23,7 @@ export const handler: Handlers = {
     const url = new URL(req.url);
     const next = url.searchParams.get("next") ?? "/";
     const state = genOAuthState();
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     await saveOAuthState(kv, state, next);
     return new Response(null, {
       status: 302,

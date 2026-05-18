@@ -49,7 +49,7 @@ export const handler: Handlers = {
       // inclusos). escopo=elenco (default) → só os 26 fixos dos elencos.
       const escopo = url.searchParams.get("escopo") ?? "elenco";
 
-      const kv = await Deno.openKv();
+      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
 
       // 1. Coleta atleta_ids alvo
       const elencos = await getAllElencos(kv);

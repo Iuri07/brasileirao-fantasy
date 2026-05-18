@@ -27,7 +27,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 403, headers: H },
       );
     }
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const ordem = await getMinhaPrioridade(kv, chave);
     return new Response(JSON.stringify({ ok: true, ordem }), { headers: H });
   },
@@ -63,7 +63,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    const kv = await Deno.openKv();
+    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const atual = await getMinhaPrioridade(kv, chave);
     const atualSet = new Set(atual);
     const novaSet = new Set(ordemNova);
