@@ -31,7 +31,7 @@ const dados = JSON.parse(raw) as {
   }>;
 };
 
-const kv = await Deno.openKv();
+const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
 
 for (const time of dados.times) {
   const chave = DONOS_CHAVES[time.dono];
