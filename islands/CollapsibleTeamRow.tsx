@@ -101,7 +101,9 @@ export default function CollapsibleTeamRow(
         onClick={toggle}
         aria-expanded={open}
       >
-        <span class="bf-team-row__pos">
+        <span
+          class={`bf-team-row__pos ${isLider ? "bf-team-row__pos--lider" : ""}`}
+        >
           {posDelta !== null && posDelta !== 0 && (
             <span
               class={`bf-team-row__delta bf-team-row__delta--${
@@ -115,7 +117,18 @@ export default function CollapsibleTeamRow(
               {Math.abs(posDelta)}
             </span>
           )}
-          {isLider ? "🏆" : `#${pos}`}
+          {isLider
+            ? (
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-label="Líder"
+                role="img"
+              >
+                <path d="M7 4h10v2h3a2 2 0 0 1 2 2v3a4 4 0 0 1-4 4h-.42a5.99 5.99 0 0 1-3.58 3.83V19h2.5a1 1 0 0 1 0 2h-9a1 1 0 0 1 0-2H10v-.17A5.99 5.99 0 0 1 6.42 15H6a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h3V4Zm0 4H4v3a2 2 0 0 0 2 2h.5A6 6 0 0 1 7 8Zm10 5h.5a2 2 0 0 0 2-2V8H17a6 6 0 0 1 0 5Z" />
+              </svg>
+            )
+            : `#${pos}`}
         </span>
         <div class="bf-team-row__crest">
           <TeamCrest chave={chave} size={36} />

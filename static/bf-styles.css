@@ -1217,17 +1217,10 @@ body {
     0 0 16px color-mix(in srgb, var(--accent) 35%, transparent),
     var(--bf-shadow-card);
 }
+/* Líder mantém o mesmo visual dos outros — diferenciação fica só
+   no troféu SVG (em vez do "#1" numérico). */
 .bf-team-row--lider {
-  /* Sem chassis sólido — gradient transparente pinta só com o accent
-     do líder, deixando o bg da página aparecer atrás. */
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--accent) 14%, transparent) 0%,
-    transparent 60%
-  );
-  box-shadow:
-    0 0 18px color-mix(in srgb, var(--accent) 35%, transparent),
-    var(--bf-shadow-card);
+  /* sem overrides */
 }
 
 .bf-team-row__summary {
@@ -1290,8 +1283,15 @@ body {
   align-items: center;
   gap: 2px;
 }
-.bf-team-row--lider .bf-team-row__pos {
-  font-size: 22px;
+/* Líder: container do troféu SVG. Mesma altura visual do "#N" numérico. */
+.bf-team-row__pos--lider {
+  color: var(--bf-trophy, #FFD23F);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--bf-trophy, #FFD23F) 60%, transparent));
+}
+.bf-team-row__pos--lider svg {
+  width: 22px;
+  height: 22px;
+  display: block;
 }
 /* Delta de posição vs ranking geral — só /ao-vivo. Mostra se o time
    subiu ou caiu na rodada vs onde está acumulado. */
@@ -1407,10 +1407,7 @@ body {
   font-size: 18px;
   color: var(--accent, #fff);
 }
-.bf-team-row--lider .bf-team-row__pts-value {
-  font-size: 20px;
-  text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
-}
+/* Líder não diferencia mais nos pts — visual idêntico aos outros, exceto pelo troféu. */
 .bf-team-row__pts-foot {
   font-family: var(--bf-font-cond);
   font-weight: 700;
