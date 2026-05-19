@@ -5212,3 +5212,87 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     margin-top: 4px;
   }
 }
+
+/* ====================================================================
+   Modal de oferta multi-seleção + aceitação com extras
+   ==================================================================== */
+.bf-modal__resumo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 4px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--bf-radius-sm);
+  font-family: var(--bf-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+.bf-modal__resumo-lbl {
+  color: var(--bf-fg-2);
+  text-transform: uppercase;
+}
+.bf-modal__resumo-val {
+  font-weight: 700;
+  color: var(--bf-lime);
+}
+.bf-modal__resumo-warn {
+  color: var(--bf-yellow);
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* Destaque pra posição que casa com o pedido na lista do modal */
+.bf-modal__opt-pos--match {
+  color: var(--bf-lime);
+  font-weight: 800;
+}
+.bf-modal__opt--blocked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Slots de extras no ModalAceitarMulti */
+.bf-notif__slots {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 4px;
+}
+.bf-notif__slot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-sm);
+}
+.bf-notif__slot-head {
+  font-family: var(--bf-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bf-fg-2);
+}
+.bf-notif__slot-vazio {
+  font-style: italic;
+  color: var(--bf-fg-3);
+  font-size: 11px;
+}
+.bf-notif__slot-select {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bf-ink);
+  border: 1px solid var(--bf-line-strong);
+  border-radius: var(--bf-radius-sm);
+  color: var(--bf-fg-0);
+  font-family: var(--bf-font-body);
+  font-size: 13px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.bf-notif__slot-select:focus {
+  outline: none;
+  border-color: var(--bf-lime);
+}

@@ -63,7 +63,13 @@ export const handler: Handlers<Data, State> = {
     );
 
     const ofertasItens: OfertaItem[] = ofertas.map((o: Oferta) => {
-      const oferecido = lookup(o.atletaOferecido);
+      // Compat: ofertas pré-multi têm só `atletaOferecido`. As novas
+      // usam `atletasOferecidos: number[]`. Resolve via helper.
+      const ofereciodosIds = o.atletasOferecidos && o.atletasOferecidos.length
+        ? o.atletasOferecidos
+        : o.atletaOferecido
+        ? [o.atletaOferecido]
+        : [];
       const pedido = lookup(o.atletaPedido);
       return {
         id: o.id,
@@ -72,8 +78,7 @@ export const handler: Handlers<Data, State> = {
         deNomeTime: nomeTime(o.deChave),
         paraChave: o.paraChave,
         paraNomeTime: nomeTime(o.paraChave),
-        atletaOferecidoId: o.atletaOferecido,
-        atletaOferecidoApelido: oferecido.apelido,
+        atletasOferecidosApelidos: ofereciodosIds.map((id) => lookup(id).apelido),
         atletaPedidoId: o.atletaPedido,
         atletaPedidoApelido: pedido.apelido,
         mensagem: o.mensagem,
@@ -96,7 +101,7 @@ export default function AdminOfertasPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Negociáveis e Ofertas</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=136" />
+        <link rel="stylesheet" href="/bf-styles.css?v=137" />
       </Head>
       <div class="bf-viewport">
         <TopBar

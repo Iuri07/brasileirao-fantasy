@@ -17,16 +17,33 @@ export interface Oferta {
   deChave: string;
   /** Chave do time que recebe a oferta (dono do atleta pedido) */
   paraChave: string;
-  /** atleta_id do jogador oferecido (vem do elenco de `deChave`) */
-  atletaOferecido: number;
-  /** atleta_id do jogador pedido (do elenco de `paraChave`, à venda) */
+  /** atleta_ids dos jogadores oferecidos (1-3, vêm do elenco de `deChave`).
+   *  Trocas N:1 viram N:N quando destinatário aceita preenchendo
+   *  atletasExtra com N-1 jogadores do próprio elenco. */
+  atletasOferecidos: number[];
+  /** atleta_id do jogador pedido (do elenco de `paraChave`, negociável) */
   atletaPedido: number;
+  /** Atletas extras do destinatário escolhidos no momento de aceitar.
+   *  length = atletasOferecidos.length - 1. Vazio/undefined em 1:1. */
+  atletasExtra?: number[];
   status: StatusOferta;
   /** Unix ms */
   criadoEm: number;
   respondidoEm?: number;
   /** Mensagem opcional do ofertante */
   mensagem?: string;
+  /** @deprecated Compat com ofertas pré-multi. Use atletasOferecidos. */
+  atletaOferecido?: number;
+}
+
+/** Helper canônico — sempre lê via aqui pra cobrir ofertas legacy 1:1
+ *  que ainda só tinham `atletaOferecido`. */
+export function ofertaAtletasOferecidos(o: Oferta): number[] {
+  if (o.atletasOferecidos && o.atletasOferecidos.length > 0) {
+    return o.atletasOferecidos;
+  }
+  if (o.atletaOferecido) return [o.atletaOferecido];
+  return [];
 }
 
 export type TipoNotif =

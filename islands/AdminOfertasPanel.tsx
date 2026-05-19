@@ -16,8 +16,8 @@ export interface OfertaItem {
   deNomeTime: string;
   paraChave: string;
   paraNomeTime: string;
-  atletaOferecidoId: number;
-  atletaOferecidoApelido: string;
+  /** Lista de apelidos dos oferecidos (1-3). */
+  atletasOferecidosApelidos: string[];
   atletaPedidoId: number;
   atletaPedidoApelido: string;
   mensagem?: string;
@@ -166,8 +166,14 @@ export default function AdminOfertasPanel({ aVenda, ofertas }: Props) {
                     {o.paraNomeTime}
                   </div>
                   <div class="bf-admin-ofertas__sub">
-                    Oferece <strong>{o.atletaOferecidoApelido}</strong> por{" "}
-                    <strong>{o.atletaPedidoApelido}</strong>
+                    Oferece{" "}
+                    <strong>{o.atletasOferecidosApelidos.join(", ")}</strong>{" "}
+                    por <strong>{o.atletaPedidoApelido}</strong>
+                    {o.atletasOferecidosApelidos.length > 1 && (
+                      <span style="color:var(--bf-fg-3);font-size:10px">
+                        {" "}(+ {o.atletasOferecidosApelidos.length - 1} extra(s) escolhido(s) pelo destinatário)
+                      </span>
+                    )}
                   </div>
                   <div
                     class="bf-admin-ofertas__sub"

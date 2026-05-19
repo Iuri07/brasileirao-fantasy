@@ -5,6 +5,7 @@ import {
   marcarNotifLida,
   type Notif,
   type Oferta,
+  ofertaAtletasOferecidos,
 } from "../../lib/ofertas.ts";
 import { getAllElencos } from "../../lib/kv.ts";
 import type { State } from "../_middleware.ts";
@@ -13,9 +14,11 @@ const H = { "Content-Type": "application/json" };
 
 export interface NotifPayload extends Notif {
   oferta: Oferta | null;
-  /** Nomes resolvidos pra exibir na UI */
-  nomeOferecido: string | null;
+  /** Nomes resolvidos pra exibir na UI — agora plural (lista de oferecidos). */
+  nomesOferecidos: string[];
+  posicoesOferecidas: string[];
   nomePedido: string | null;
+  posicaoPedido: string | null;
 }
 
 export const handler: Handlers<unknown, State> = {
@@ -32,22 +35,25 @@ export const handler: Handlers<unknown, State> = {
       listarNotifs(kv, chave),
       getAllElencos(kv),
     ]);
-    // Resolve atleta_id → nome procurando em todos os elencos (jogador
-    // pode ter mudado de time entre a criação e a leitura)
-    const nomes: Record<number, string> = {};
+    // Resolve atleta_id → { apelido, posicao } procurando em todos os
+    // elencos (jogador pode ter mudado de time entre criação e leitura).
+    const info: Record<number, { apelido: string; posicao: string }> = {};
     for (const e of Object.values(elencos)) {
       for (const [id, j] of Object.entries(e.jogadores)) {
-        nomes[Number(id)] = j.apelido_api;
+        info[Number(id)] = { apelido: j.apelido_api, posicao: j.posicao };
       }
     }
     const payload: NotifPayload[] = await Promise.all(
       notifs.map(async (n) => {
         const oferta = await getOferta(kv, n.ofertaId);
+        const oferecidos = oferta ? ofertaAtletasOferecidos(oferta) : [];
         return {
           ...n,
           oferta,
-          nomeOferecido: oferta ? nomes[oferta.atletaOferecido] ?? null : null,
-          nomePedido: oferta ? nomes[oferta.atletaPedido] ?? null : null,
+          nomesOferecidos: oferecidos.map((id) => info[id]?.apelido ?? `#${id}`),
+          posicoesOferecidas: oferecidos.map((id) => info[id]?.posicao ?? "?"),
+          nomePedido: oferta ? info[oferta.atletaPedido]?.apelido ?? null : null,
+          posicaoPedido: oferta ? info[oferta.atletaPedido]?.posicao ?? null : null,
         };
       }),
     );

@@ -179,7 +179,7 @@ export default function MercadoBrowser(
 
   async function enviarOferta(
     pedido: AtletaMercado,
-    oferecido: AtletaMeuTime,
+    oferecidos: AtletaMeuTime[],
   ): Promise<{ ok: boolean; erro?: string }> {
     try {
       const r = await fetch("/api/ofertas", {
@@ -187,7 +187,7 @@ export default function MercadoBrowser(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           atleta_pedido: pedido.atleta_id,
-          atleta_oferecido: oferecido.atleta_id,
+          atletas_oferecidos: oferecidos.map((j) => j.atleta_id),
         }),
       });
       const d = await r.json();
@@ -596,9 +596,8 @@ export default function MercadoBrowser(
           pedido={modal.pedido}
           meuElenco={meu}
           onClose={() => setModal(null)}
-          onEnviar={modal.modo === "interesse"
-            ? registrarInteresse
-            : enviarOferta}
+          onEnviarOferta={enviarOferta}
+          onEnviarInteresse={registrarInteresse}
         />
       )}
 
@@ -653,32 +652,70 @@ function ModalConfirma(
 }
 
 function ModalOferta(
-  { modo, pedido, meuElenco, onClose, onEnviar }: {
+  { modo, pedido, meuElenco, onClose, onEnviarOferta, onEnviarInteresse }: {
     modo: "oferta" | "interesse";
     pedido: AtletaMercado;
     meuElenco: AtletaMeuTime[];
     onClose: () => void;
-    onEnviar: (
+    onEnviarOferta: (
+      pedido: AtletaMercado,
+      oferecidos: AtletaMeuTime[],
+    ) => Promise<{ ok: boolean; erro?: string }>;
+    onEnviarInteresse: (
       pedido: AtletaMercado,
       oferecido: AtletaMeuTime,
     ) => Promise<{ ok: boolean; erro?: string }>;
   },
 ) {
-  const [oferecido, setOferecido] = useState<AtletaMeuTime | null>(null);
+  // Modo oferta: até 3 jogadores selecionados (qualquer posição, mas pelo
+  // menos 1 da posição do pedido). Modo interesse: 1 só (mesma posição).
+  const [selecionados, setSelecionados] = useState<AtletaMeuTime[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [feito, setFeito] = useState<"ok" | string | null>(null);
 
-  // Só mesma posição — trocas requerem compatibilidade posicional
   const lista = useMemo(() => {
-    return meuElenco
-      .filter((j) => j.posicao === pedido.posicao)
-      .sort((a, b) => (b.mediaPontos ?? 0) - (a.mediaPontos ?? 0));
-  }, [meuElenco, pedido]);
+    if (modo === "interesse") {
+      // Interesse continua 1:1 com mesma posição
+      return meuElenco
+        .filter((j) => j.posicao === pedido.posicao)
+        .sort((a, b) => (b.mediaPontos ?? 0) - (a.mediaPontos ?? 0));
+    }
+    // Oferta: todos meus jogadores, ordenados por (mesma posição primeiro, depois média)
+    return [...meuElenco].sort((a, b) => {
+      const sameA = a.posicao === pedido.posicao ? 1 : 0;
+      const sameB = b.posicao === pedido.posicao ? 1 : 0;
+      if (sameA !== sameB) return sameB - sameA;
+      return (b.mediaPontos ?? 0) - (a.mediaPontos ?? 0);
+    });
+  }, [meuElenco, pedido, modo]);
+
+  function toggle(j: AtletaMeuTime) {
+    if (modo === "interesse") {
+      setSelecionados((cur) =>
+        cur[0]?.atleta_id === j.atleta_id ? [] : [j]
+      );
+      return;
+    }
+    setSelecionados((cur) => {
+      if (cur.some((x) => x.atleta_id === j.atleta_id)) {
+        return cur.filter((x) => x.atleta_id !== j.atleta_id);
+      }
+      if (cur.length >= 3) return cur; // máx 3
+      return [...cur, j];
+    });
+  }
+
+  const temPosDoPedido = selecionados.some((j) => j.posicao === pedido.posicao);
+  const podeEnviar = modo === "interesse"
+    ? selecionados.length === 1
+    : selecionados.length >= 1 && selecionados.length <= 3 && temPosDoPedido;
 
   async function submit() {
-    if (!oferecido) return;
+    if (!podeEnviar) return;
     setEnviando(true);
-    const r = await onEnviar(pedido, oferecido);
+    const r = modo === "interesse"
+      ? await onEnviarInteresse(pedido, selecionados[0])
+      : await onEnviarOferta(pedido, selecionados);
     setEnviando(false);
     if (r.ok) setFeito("ok");
     else setFeito(r.erro ?? "Erro desconhecido");
@@ -741,35 +778,70 @@ function ModalOferta(
             ? `Ofereça um jogador da mesma posição (${
               POS_ABREV[pedido.posicao]
             }). Se você ganhar o draft, ele entra no seu time e o oferecido vira free agent.`
-            : `Escolha um jogador do seu time da mesma posição (${
-              POS_ABREV[pedido.posicao]
-            }).`}
+            : (
+              <>
+                Selecione <strong>até 3 jogadores</strong>{" "}
+                do seu elenco. Pelo menos 1 precisa ser{" "}
+                <strong>{POS_ABREV[pedido.posicao]}</strong>{" "}
+                (posição do pedido). Se você oferecer 2 ou 3, o destinatário
+                escolhe quantos jogadores do próprio elenco vão completar a
+                troca.
+              </>
+            )}
         </p>
+        {modo === "oferta" && selecionados.length > 0 && (
+          <div class="bf-modal__resumo">
+            <span class="bf-modal__resumo-lbl">Selecionados</span>
+            <span class="bf-modal__resumo-val">
+              {selecionados.length}/3
+              {!temPosDoPedido && (
+                <span class="bf-modal__resumo-warn">
+                  · falta {POS_ABREV[pedido.posicao]}
+                </span>
+              )}
+            </span>
+          </div>
+        )}
         <div class="bf-modal__lista">
           {lista.length === 0 && (
             <div class="bf-empty-state" style="margin:8px 4px">
-              Você não tem nenhum {POS_ABREV[pedido.posicao]} no elenco
+              {modo === "interesse"
+                ? `Você não tem nenhum ${POS_ABREV[pedido.posicao]} no elenco`
+                : "Seu elenco está vazio"}
             </div>
           )}
-          {lista.map((j) => (
-            <button
-              type="button"
-              key={j.atleta_id}
-              class={`bf-modal__opt ${
-                oferecido?.atleta_id === j.atleta_id ? "bf-modal__opt--sel" : ""
-              }`}
-              onClick={() => setOferecido(j)}
-            >
-              <span class="bf-modal__opt-pos">{POS_ABREV[j.posicao]}</span>
-              <span class="bf-modal__opt-nome">{j.nome}</span>
-              <span class="bf-modal__opt-clube">{j.clubeNome}</span>
-              <span class="bf-modal__opt-media">
-                {j.mediaPontos != null
-                  ? j.mediaPontos.toFixed(1).replace(".", ",")
-                  : "—"}
-              </span>
-            </button>
-          ))}
+          {lista.map((j) => {
+            const sel = selecionados.some((s) => s.atleta_id === j.atleta_id);
+            const posMatch = j.posicao === pedido.posicao;
+            return (
+              <button
+                type="button"
+                key={j.atleta_id}
+                class={`bf-modal__opt ${sel ? "bf-modal__opt--sel" : ""} ${
+                  modo === "oferta" && !sel && selecionados.length >= 3
+                    ? "bf-modal__opt--blocked"
+                    : ""
+                }`}
+                onClick={() => toggle(j)}
+                disabled={modo === "oferta" && !sel && selecionados.length >= 3}
+              >
+                <span
+                  class={`bf-modal__opt-pos ${
+                    posMatch ? "bf-modal__opt-pos--match" : ""
+                  }`}
+                >
+                  {POS_ABREV[j.posicao]}
+                </span>
+                <span class="bf-modal__opt-nome">{j.nome}</span>
+                <span class="bf-modal__opt-clube">{j.clubeNome}</span>
+                <span class="bf-modal__opt-media">
+                  {j.mediaPontos != null
+                    ? j.mediaPontos.toFixed(1).replace(".", ",")
+                    : "—"}
+                </span>
+              </button>
+            );
+          })}
         </div>
         {feito && feito !== "ok" && <div class="bf-modal__erro">{feito}</div>}
         <div class="bf-modal__acoes">
@@ -785,13 +857,15 @@ function ModalOferta(
             type="button"
             class="bf-modal__btn bf-modal__btn--ok"
             onClick={submit}
-            disabled={!oferecido || enviando}
+            disabled={!podeEnviar || enviando}
           >
             {enviando
               ? "Enviando…"
               : modo === "interesse"
               ? "Confirmar interesse"
-              : "Enviar oferta"}
+              : `Enviar oferta${
+                selecionados.length > 1 ? ` (${selecionados.length} jogadores)` : ""
+              }`}
           </button>
         </div>
       </div>

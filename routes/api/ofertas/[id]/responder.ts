@@ -1,5 +1,10 @@
 import { Handlers } from "$fresh/server.ts";
-import { criarNotif, getOferta, setOferta } from "../../../../lib/ofertas.ts";
+import {
+  criarNotif,
+  getOferta,
+  ofertaAtletasOferecidos,
+  setOferta,
+} from "../../../../lib/ofertas.ts";
 import {
   getAVenda,
   getElenco,
@@ -23,7 +28,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
     const ofertaId = ctx.params.id;
-    let body: { decisao?: "aceita" | "negada" };
+    let body: { decisao?: "aceita" | "negada"; atletas_extra?: number[] };
     try {
       body = await req.json();
     } catch {
@@ -70,10 +75,38 @@ export const handler: Handlers<unknown, State> = {
     }
 
     if (body.decisao === "aceita") {
-      // Executa a troca: oferecido vai pro elenco do destinatário (paraChave)
-      // pedido vai pro elenco do ofertante (deChave).
-      // Mantém a categoria de escalação que cada um já tinha no respectivo elenco
-      // (o que entra herda a categoria do que sai).
+      const oferecidos = ofertaAtletasOferecidos(oferta);
+      const n = oferecidos.length;
+      const atletasExtra = Array.isArray(body.atletas_extra)
+        ? body.atletas_extra.map(Number).filter(Boolean)
+        : [];
+      // Pra N=1 (oferta clássica 1:1), atletasExtra pode ser vazio.
+      // Pra N>1, precisamos de N-1 extras.
+      if (n > 1 && atletasExtra.length !== n - 1) {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            erro: `Precisa escolher ${n - 1} atleta(s) extra(s) pra completar a troca`,
+          }),
+          { status: 400, headers: H },
+        );
+      }
+      if (new Set(atletasExtra).size !== atletasExtra.length) {
+        return new Response(
+          JSON.stringify({ ok: false, erro: "Atletas extra duplicados" }),
+          { status: 400, headers: H },
+        );
+      }
+      if (atletasExtra.includes(oferta.atletaPedido)) {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            erro: "Atleta pedido não pode estar nos extras",
+          }),
+          { status: 400, headers: H },
+        );
+      }
+
       const elencoDe = await getElenco(kv, oferta.deChave);
       const elencoPara = await getElenco(kv, oferta.paraChave);
       if (!elencoDe || !elencoPara) {
@@ -82,36 +115,104 @@ export const handler: Handlers<unknown, State> = {
           { status: 500, headers: H },
         );
       }
-      const idOf = String(oferta.atletaOferecido);
-      const idPd = String(oferta.atletaPedido);
-      const jogOferecido = elencoDe.jogadores[idOf];
-      const jogPedido = elencoPara.jogadores[idPd];
-      if (!jogOferecido || !jogPedido) {
+
+      // Resolve todos os jogadores envolvidos.
+      // Lado A → B (oferecidos vão pro destinatário):
+      const jogOferecidos = oferecidos.map((id) => elencoDe.jogadores[String(id)]);
+      if (jogOferecidos.some((j) => !j)) {
         return new Response(
-          JSON.stringify({ ok: false, erro: "Jogadores não bateram" }),
+          JSON.stringify({
+            ok: false,
+            erro: "Algum atleta oferecido sumiu do elenco do ofertante",
+          }),
           { status: 400, headers: H },
         );
       }
-      // Snapshot da escalação ANTES do swap — pra histórico/desfazer.
-      const escAOriginal = jogOferecido.escalacao;
-      const escBOriginal = jogPedido.escalacao;
+      // Lado B → A (pedido + extras vão pro ofertante):
+      const jogPedido = elencoPara.jogadores[String(oferta.atletaPedido)];
+      if (!jogPedido) {
+        return new Response(
+          JSON.stringify({ ok: false, erro: "Atleta pedido sumiu" }),
+          { status: 400, headers: H },
+        );
+      }
+      const jogExtras = atletasExtra.map((id) =>
+        elencoPara.jogadores[String(id)]
+      );
+      if (jogExtras.some((j) => !j)) {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            erro: "Algum atleta extra não está no seu elenco",
+          }),
+          { status: 400, headers: H },
+        );
+      }
+      const ladoB = [jogPedido, ...jogExtras]; // o que vai pro deChave
 
-      const movido1: JogadorKV = {
-        ...jogOferecido,
-        escalacao: jogPedido.escalacao,
-      };
-      const movido2: JogadorKV = {
-        ...jogPedido,
-        escalacao: jogOferecido.escalacao,
-      };
-      delete elencoDe.jogadores[idOf];
-      delete elencoPara.jogadores[idPd];
-      elencoPara.jogadores[idOf] = movido1;
-      elencoDe.jogadores[idPd] = movido2;
+      // Validação multiset de posições: o que sai do lado A precisa
+      // bater com o que sai do lado B (mesma combinação de posições).
+      const posA = jogOferecidos.map((j) => j!.posicao).sort();
+      const posB = ladoB.map((j) => j!.posicao).sort();
+      if (posA.length !== posB.length || posA.some((p, i) => p !== posB[i])) {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            erro:
+              `Posições não combinam: oferecidos=[${posA.join(",")}] vs contrapartida=[${posB.join(",")}]`,
+          }),
+          { status: 400, headers: H },
+        );
+      }
+
+      // Pareia 1:1 por posição. Cada jogador A casa com um do B na mesma
+      // posição, e o destinatário herda a escalação que o equivalente
+      // tinha (assim o "buraco" deixado é preenchido pela mesma função tática).
+      const usadosB = new Set<number>();
+      const pares: Array<{ a: JogadorKV; b: JogadorKV }> = [];
+      for (const a of jogOferecidos) {
+        const b = ladoB.find((j) => !usadosB.has(j!.atleta_id) && j!.posicao === a!.posicao);
+        if (!b) {
+          // não deve acontecer dado o multiset bate, mas defensivo
+          return new Response(
+            JSON.stringify({ ok: false, erro: "Falha ao parear posições" }),
+            { status: 500, headers: H },
+          );
+        }
+        usadosB.add(b.atleta_id);
+        pares.push({ a: a!, b });
+      }
+
+      // Aplica swaps + snapshots pra histórico (suporta desfazer).
+      const snapshots: Array<{
+        a: { atleta_id: number; apelido: string; escalacaoOriginal: typeof jogOferecidos[number]["escalacao"] };
+        b: { atleta_id: number; apelido: string; escalacaoOriginal: typeof ladoB[number]["escalacao"] };
+      }> = [];
+
+      for (const { a, b } of pares) {
+        const idA = String(a.atleta_id);
+        const idB = String(b.atleta_id);
+        const escAOrig = a.escalacao;
+        const escBOrig = b.escalacao;
+        // a (deChave) → paraChave herdando escalação do b
+        const movidoA: JogadorKV = { ...a, escalacao: b.escalacao };
+        // b (paraChave) → deChave herdando escalação do a
+        const movidoB: JogadorKV = { ...b, escalacao: a.escalacao };
+        delete elencoDe.jogadores[idA];
+        delete elencoPara.jogadores[idB];
+        elencoPara.jogadores[idA] = movidoA;
+        elencoDe.jogadores[idB] = movidoB;
+        snapshots.push({
+          a: { atleta_id: a.atleta_id, apelido: a.apelido_api, escalacaoOriginal: escAOrig },
+          b: { atleta_id: b.atleta_id, apelido: b.apelido_api, escalacaoOriginal: escBOrig },
+        });
+      }
+
       await setElenco(kv, oferta.deChave, elencoDe);
       await setElenco(kv, oferta.paraChave, elencoPara);
 
-      // Tira do "à venda" do dono original (paraChave)
+      // Tira o atletaPedido do "negociável" do dono original (paraChave).
+      // Extras não precisam tirar — eles não estavam negociáveis.
       const lista = await getAVenda(kv, oferta.paraChave);
       await setAVenda(
         kv,
@@ -119,22 +220,21 @@ export const handler: Handlers<unknown, State> = {
         lista.filter((id) => id !== oferta.atletaPedido),
       );
 
-      // Registra no histórico pra admin poder desfazer depois.
-      await registrarTroca(kv, {
-        ofertaId: oferta.id,
-        chaveA: oferta.deChave,
-        atletaA: {
-          atleta_id: jogOferecido.atleta_id,
-          apelido: jogOferecido.apelido_api,
-          escalacaoOriginal: escAOriginal,
-        },
-        chaveB: oferta.paraChave,
-        atletaB: {
-          atleta_id: jogPedido.atleta_id,
-          apelido: jogPedido.apelido_api,
-          escalacaoOriginal: escBOriginal,
-        },
-      });
+      // Histórico: registra UMA troca por par (mantém suporte do
+      // desfazer existente, que opera em pares). Admin pode desfazer
+      // jogador por jogador.
+      for (const s of snapshots) {
+        await registrarTroca(kv, {
+          ofertaId: oferta.id,
+          chaveA: oferta.deChave,
+          atletaA: s.a,
+          chaveB: oferta.paraChave,
+          atletaB: s.b,
+        });
+      }
+
+      // Persiste atletasExtra na oferta pra UI/admin saber o que foi escolhido
+      oferta.atletasExtra = atletasExtra;
     }
 
     const status = body.decisao;
