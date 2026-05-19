@@ -25,7 +25,11 @@ export function getDb(): Database {
     if (dir && dir !== path) Deno.mkdirSync(dir, { recursive: true });
   } catch (_) { /* já existe */ }
   _db = new Database(path);
-  _db.exec("PRAGMA journal_mode = WAL");
+  // Journal mode DELETE (default) em vez de WAL — pra essa escala
+  // (~9 users) write performance não importa, e WAL estava causando
+  // isolation issues onde writes em sessions não eram visíveis pra
+  // queries subsequentes no mesmo processo.
+  _db.exec("PRAGMA journal_mode = DELETE");
   _db.exec("PRAGMA synchronous = NORMAL");
   _db.exec("PRAGMA foreign_keys = ON");
   _db.exec("PRAGMA busy_timeout = 5000");
