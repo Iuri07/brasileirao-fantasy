@@ -269,7 +269,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=135" />
+        <link rel="stylesheet" href="/bf-styles.css?v=136" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -279,7 +279,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
           userPicture={data.userPicture}
         />
         <AoVivoLiga data={data} />
-        <BottomNav active="live" />
+        <BottomNav active="live" liveDisabled={!data.aoVivo} />
       </div>
     </>
   );

@@ -1675,6 +1675,16 @@ body {
 .bf-bottom-nav__item--active {
   color: var(--bf-lime);
 }
+/* "Ao Vivo" desabilitado fora da rodada — fica visível mas sem
+   estilo de link nem clique. */
+.bf-bottom-nav__item--disabled {
+  opacity: 0.35;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+.bf-bottom-nav__item--disabled:hover {
+  color: var(--bf-fg-disabled);
+}
 .bf-bottom-nav__item--active::before {
   content: "";
   position: absolute;

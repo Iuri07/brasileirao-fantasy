@@ -155,7 +155,7 @@ export default function TimeDetalhe({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>{displayName} · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=135" />
+        <link rel="stylesheet" href="/bf-styles.css?v=136" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -228,7 +228,7 @@ export default function TimeDetalhe({ data }: PageProps<Data>) {
           )
           : <div class="bf-empty-state">Sem escalação no elenco</div>}
 
-        <BottomNav active="liga" />
+        <BottomNav active="liga" liveDisabled={!data.aoVivo} />
       </div>
     </>
   );

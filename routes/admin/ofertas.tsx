@@ -95,8 +95,8 @@ export default function AdminOfertasPage({ data }: PageProps<Data>) {
   return (
     <>
       <Head>
-        <title>Admin · Vendas e Ofertas</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=135" />
+        <title>Admin · Negociáveis e Ofertas</title>
+        <link rel="stylesheet" href="/bf-styles.css?v=136" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -109,7 +109,7 @@ export default function AdminOfertasPage({ data }: PageProps<Data>) {
         <article class="bf-card bf-status-card">
           <div class="bf-status-card__top">
             <div class="bf-status-card__name">
-              <h3>Vendas e Ofertas</h3>
+              <h3>Negociáveis e Ofertas</h3>
               <span class="bf-status-card__sub">Admin</span>
             </div>
             <a
@@ -121,7 +121,7 @@ export default function AdminOfertasPage({ data }: PageProps<Data>) {
             </a>
           </div>
           <p class="bf-status-card__sub" style="margin-top:8px">
-            Tire jogadores da venda ou cancele ofertas pendentes. Útil quando
+            Tire jogadores dos negociáveis ou cancele ofertas pendentes. Útil quando
             alguém colocou por engano ou esqueceu de cancelar.
           </p>
         </article>

@@ -440,7 +440,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=135" />
+        <link rel="stylesheet" href="/bf-styles.css?v=136" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -476,7 +476,7 @@ export default function Home({ data }: PageProps<HomeData>) {
             <div class="bf-status-card__name">
               <h3>{displayName}</h3>
               <span class="bf-status-card__sub">
-                Liga Pro Club · {data.totalTimes} times
+                Liga Pro Clubs · {data.totalTimes} times
               </span>
             </div>
             <div class="bf-status-card__pills">
@@ -567,7 +567,10 @@ export default function Home({ data }: PageProps<HomeData>) {
           limit={5}
         />
 
-        <BottomNav active="home" />
+        <BottomNav
+          active="home"
+          liveDisabled={!isRodadaEmAndamento(data.status)}
+        />
       </div>
     </>
   );

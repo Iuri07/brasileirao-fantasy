@@ -99,7 +99,7 @@ export default function MeuTimeEditor(
       const d = await r.json();
       if (!d.ok) {
         setAVendaSet(prev);
-        setErro(d.erro ?? "Erro ao marcar à venda");
+        setErro(d.erro ?? "Erro ao alterar negociável");
       }
     } catch (e) {
       setAVendaSet(prev);
@@ -374,11 +374,11 @@ export default function MeuTimeEditor(
             }`}
             onClick={() => toggleAVenda(selecionado)}
             aria-label={aVendaSet.has(selecionado)
-              ? "Tirar da venda"
-              : "Pôr à venda"}
+              ? "Tornar exclusivo"
+              : "Tornar negociável"}
             title={aVendaSet.has(selecionado)
-              ? "Tirar da venda"
-              : "Pôr à venda"}
+              ? "Tornar exclusivo"
+              : "Tornar negociável"}
           >
             <svg
               width="16"

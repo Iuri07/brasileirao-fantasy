@@ -419,10 +419,10 @@ export default function MercadoBrowser(
           onClick={() =>
             setTipo(tipo === "minhas-venda" ? "todos" : "minhas-venda")}
           disabled={!minhaChave || qtdAVenda === 0}
-          title="Filtrar meus jogadores à venda"
+          title="Filtrar meus jogadores negociáveis"
         >
           <span class="bf-mercado__stat-val">{qtdAVenda}</span>
-          <span class="bf-mercado__stat-lbl">à venda</span>
+          <span class="bf-mercado__stat-lbl">negociáveis</span>
         </button>
         <div class="bf-mercado__stat-div" />
         <button
@@ -492,7 +492,7 @@ export default function MercadoBrowser(
             Free agents
           </Chip>
           <Chip ativo={tipo === "venda"} onClick={() => setTipo("venda")}>
-            À venda
+            Negociáveis
           </Chip>
           {minhaChave && meuElenco.length > 0 && (
             <Chip
@@ -985,10 +985,10 @@ function CardMeu(
         title={aoVivo
           ? "Mercado fechado"
           : j.aVenda
-          ? "Tirar da venda"
-          : "Pôr à venda"}
+          ? "Tornar exclusivo"
+          : "Tornar negociável"}
       >
-        {j.aVenda ? "À venda ✓" : "Pôr à venda"}
+        {j.aVenda ? "Negociável ✓" : "Tornar negociável"}
       </button>
     </article>
   );

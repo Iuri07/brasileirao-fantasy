@@ -1,6 +1,11 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
-import { getAllElencos, getFotos, getRodadaStatus } from "../lib/kv.ts";
+import {
+  getAllElencos,
+  getFotos,
+  getRodadaStatus,
+  isRodadaEmAndamento,
+} from "../lib/kv.ts";
 import { getHistorico, totalPontos } from "../lib/historico.ts";
 import TopBar from "../components/TopBar.tsx";
 import BottomNav from "../components/BottomNav.tsx";
@@ -50,6 +55,7 @@ interface TimeLinha {
 
 interface Data {
   rodada: number;
+  rodadaStatus: "aguardando" | "aguardando_inicio" | "ao_vivo";
   times: TimeLinha[];
   meuChave: string;
   userEmail: string | null;
@@ -163,6 +169,7 @@ export const handler: Handlers<Data, State> = {
     const Trender = performance.now();
     const resp = await ctx.render({
       rodada: rodada?.rodada ?? 0,
+      rodadaStatus: rodada?.status ?? "aguardando",
       times,
       meuChave: ctx.state.session?.chave ?? CHAVE_USUARIO,
       userEmail: ctx.state.session?.email ?? null,
@@ -182,7 +189,7 @@ export default function Liga({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=135" />
+        <link rel="stylesheet" href="/bf-styles.css?v=136" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -194,7 +201,7 @@ export default function Liga({ data }: PageProps<Data>) {
 
         <header class="bf-liga-hero">
           <span class="bf-label-micro">Liga</span>
-          <h1 class="bf-liga-hero__title">LIGA PRO CLUB</h1>
+          <h1 class="bf-liga-hero__title">LIGA PRO CLUBS</h1>
           <div class="bf-liga-hero__meta">
             <span class="bf-liga-hero__rodada">Rodada {data.rodada}</span>
             <span class="bf-liga-hero__sep">·</span>
@@ -274,7 +281,10 @@ export default function Liga({ data }: PageProps<Data>) {
           destaque={data.meuChave}
         />
 
-        <BottomNav active="liga" />
+        <BottomNav
+          active="liga"
+          liveDisabled={!isRodadaEmAndamento(data.rodadaStatus)}
+        />
       </div>
     </>
   );

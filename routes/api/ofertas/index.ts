@@ -103,7 +103,7 @@ export const handler: Handlers<unknown, State> = {
       return new Response(
         JSON.stringify({
           ok: false,
-          erro: "Jogador pedido não está à venda",
+          erro: "Jogador pedido não está negociável",
         }),
         { status: 400, headers: H },
       );

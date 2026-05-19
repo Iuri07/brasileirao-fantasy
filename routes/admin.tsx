@@ -140,7 +140,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=135" />
+        <link rel="stylesheet" href="/bf-styles.css?v=136" />
       </Head>
       <div class="bf-viewport bf-admin-viewport">
         <TopBar
@@ -226,7 +226,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
               <header class="bf-admin-section__header">
                 <h2>Ofertas pendentes</h2>
                 <span class="bf-admin-section__sub">
-                  {data.ofertasPendentesCount} pendente(s) · cancela ofertas esquecidas e remove da venda.
+                  {data.ofertasPendentesCount} pendente(s) · cancela ofertas esquecidas e remove dos negociáveis.
                 </span>
               </header>
               <a href="/admin/ofertas" class="bf-btn bf-btn--primary" style="display:inline-flex">
@@ -329,11 +329,11 @@ export default function AdminPage({ data }: PageProps<Data>) {
             </a>
           </article>
 
-          <SectionHeader>Vendas e Ofertas</SectionHeader>
+          <SectionHeader>Negociáveis e Ofertas</SectionHeader>
           <article class="bf-card">
             <p class="bf-status-card__sub" style="margin:0 0 12px">
-              Tirar jogador da venda (override do dono) e cancelar ofertas
-              pendentes esquecidas/incorretas.
+              Tirar jogador dos negociáveis (override do dono) e cancelar
+              ofertas pendentes esquecidas/incorretas.
             </p>
             <a href="/admin/ofertas" class="bf-btn" style="display:inline-flex">
               Gerenciar →

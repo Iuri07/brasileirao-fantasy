@@ -2,6 +2,9 @@ type NavId = "home" | "mercado" | "liga" | "live";
 
 interface Props {
   active?: NavId;
+  /** Quando true, "Ao Vivo" vira span não-clicável (mercado aberto = nada
+   *  ao vivo pra mostrar). */
+  liveDisabled?: boolean;
 }
 
 const ITEMS: Array<{ id: NavId; label: string; href: string; d: string }> = [
@@ -26,18 +29,17 @@ const ITEMS: Array<{ id: NavId; label: string; href: string; d: string }> = [
   },
 ];
 
-export default function BottomNav({ active = "home" }: Props) {
+export default function BottomNav(
+  { active = "home", liveDisabled = false }: Props,
+) {
   return (
     <nav class="bf-bottom-nav" aria-label="Navegação principal">
-      {ITEMS.map((it) => (
-        <a
-          key={it.id}
-          href={it.href}
-          data-nav={it.id}
-          class={`bf-bottom-nav__item ${
-            it.id === active ? "bf-bottom-nav__item--active" : ""
-          }`}
-        >
+      {ITEMS.map((it) => {
+        const disabled = liveDisabled && it.id === "live";
+        const cls = `bf-bottom-nav__item ${
+          it.id === active ? "bf-bottom-nav__item--active" : ""
+        } ${disabled ? "bf-bottom-nav__item--disabled" : ""}`;
+        const icon = (
           <svg
             class="bf-bottom-nav__icon"
             viewBox="0 0 24 24"
@@ -49,9 +51,28 @@ export default function BottomNav({ active = "home" }: Props) {
           >
             <path d={it.d} />
           </svg>
-          {it.label}
-        </a>
-      ))}
+        );
+        if (disabled) {
+          return (
+            <span
+              key={it.id}
+              data-nav={it.id}
+              class={cls}
+              aria-disabled="true"
+              title="Disponível só durante a rodada ao vivo"
+            >
+              {icon}
+              {it.label}
+            </span>
+          );
+        }
+        return (
+          <a key={it.id} href={it.href} data-nav={it.id} class={cls}>
+            {icon}
+            {it.label}
+          </a>
+        );
+      })}
     </nav>
   );
 }

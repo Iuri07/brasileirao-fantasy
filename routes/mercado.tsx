@@ -195,7 +195,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=135" />
+        <link rel="stylesheet" href="/bf-styles.css?v=136" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -224,7 +224,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
           draftMeta={data.draftMeta}
           meusInteresses={[]}
         />
-        <BottomNav active="mercado" />
+        <BottomNav active="mercado" liveDisabled={!data.aoVivo} />
       </div>
     </>
   );
