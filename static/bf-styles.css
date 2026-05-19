@@ -265,7 +265,8 @@ body {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 16px var(--bf-gutter) 8px;
+  /* padding-bottom 16px → títulos não ficam grudados nos cards. */
+  padding: 16px var(--bf-gutter);
   gap: 12px;
   flex-wrap: nowrap;
 }
@@ -1718,9 +1719,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   margin: 0 var(--bf-gutter);
   position: relative;
   overflow: hidden;
-  /* Fundo transparente — deixa o splatter + bg da página dominarem.
-     Mantém a borda neon + glow do accent do time. */
-  background: transparent;
+  /* Fundo semi-transparente — chassis com ~55% de opacidade pra dar
+     leve corpo ao card sem perder a leitura do bg da página. */
+  background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
   border-color: color-mix(
     in srgb,
     var(--user-accent, var(--bf-magenta)) 65%,
@@ -3133,7 +3134,7 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 .bf-merc-card--skeleton {
   position: relative;
   padding: 78px 12px 12px;
-  background: var(--bf-chassis);
+  background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
   border: 1px solid var(--bf-line);
   border-radius: var(--bf-radius-md);
   min-height: 180px;
@@ -3169,7 +3170,8 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 .bf-mercado__fechado {
   margin: 4px var(--bf-gutter) 12px;
   padding: 12px 14px;
-  background: color-mix(in srgb, var(--bf-red) 14%, var(--bf-chassis));
+  /* Mantém o tint vermelho do banner mas com semi-transparência. */
+  background: color-mix(in srgb, var(--bf-red) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--bf-red) 50%, transparent);
   border-radius: var(--bf-radius-md);
   font-family: var(--bf-font-body);
@@ -3219,7 +3221,8 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   padding: 10px 12px;
   margin-bottom: 10px;
   margin-top: 8px;
-  background: var(--bf-chassis);
+  /* Mesma transparência do bf-status-card (dashboard da home). */
+  background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
   border: 1px solid var(--bf-line);
   border-radius: var(--bf-radius-md);
 }
@@ -3645,7 +3648,8 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   display: flex;
   flex-direction: column;
   padding: 78px 12px 12px;
-  background: var(--bf-chassis);
+  /* Mesma transparência do bf-status-card (dashboard da home). */
+  background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
   border: 1px solid var(--bf-line);
   border-top: 2px solid color-mix(in srgb, var(--pos-color) 55%, transparent);
   border-radius: var(--bf-radius-md);
