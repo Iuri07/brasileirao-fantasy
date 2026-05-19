@@ -24,12 +24,12 @@ export function getDb(): Database {
     const dir = path.replace(/\/[^/]+$/, "");
     if (dir && dir !== path) Deno.mkdirSync(dir, { recursive: true });
   } catch (_) { /* já existe */ }
-  _db = new Database(path);
-  // Journal mode DELETE (default) em vez de WAL — pra essa escala
-  // (~9 users) write performance não importa, e WAL estava causando
-  // isolation issues onde writes em sessions não eram visíveis pra
-  // queries subsequentes no mesmo processo.
-  _db.exec("PRAGMA journal_mode = DELETE");
+  // int64: true — sem isso, o @db/sqlite trunca silenciosamente
+  // numbers > 2^31 (Date.now() = ~1.78e12) pra int32 ao fazer .run().
+  // O bug aparecia em createSession: expires_at virava negativo, e
+  // getSession imediatamente posterior retornava null (sempre expirado).
+  _db = new Database(path, { int64: true });
+  _db.exec("PRAGMA journal_mode = WAL");
   _db.exec("PRAGMA synchronous = NORMAL");
   _db.exec("PRAGMA foreign_keys = ON");
   _db.exec("PRAGMA busy_timeout = 5000");
