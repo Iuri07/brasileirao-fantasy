@@ -125,7 +125,18 @@ export default function CollapsibleTeamRow(
                 aria-label="Líder"
                 role="img"
               >
-                <path d="M7 4h10v2h3a2 2 0 0 1 2 2v3a4 4 0 0 1-4 4h-.42a5.99 5.99 0 0 1-3.58 3.83V19h2.5a1 1 0 0 1 0 2h-9a1 1 0 0 1 0-2H10v-.17A5.99 5.99 0 0 1 6.42 15H6a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h3V4Zm0 4H4v3a2 2 0 0 0 2 2h.5A6 6 0 0 1 7 8Zm10 5h.5a2 2 0 0 0 2-2V8H17a6 6 0 0 1 0 5Z" />
+                {/* Copa: retângulo top, curvas internas embaixo (formato U invertido) */}
+                <path d="M6 2h12v7a6 6 0 0 1-12 0V2Z" />
+                {/* Alça esquerda */}
+                <path d="M6 3.5H4a2.5 2.5 0 0 0 0 5h2V7H4.5a1 1 0 0 1 0-2H6V3.5Z" />
+                {/* Alça direita (espelho) */}
+                <path d="M18 3.5h2a2.5 2.5 0 0 1 0 5h-2V7h1.5a1 1 0 0 0 0-2H18V3.5Z" />
+                {/* Haste */}
+                <path d="M11 15h2v3h-2z" />
+                {/* Base estreita */}
+                <path d="M9 18h6v1.5H9z" />
+                {/* Base larga */}
+                <path d="M6 19.5h12v2H6z" />
               </svg>
             )
             : `#${pos}`}
