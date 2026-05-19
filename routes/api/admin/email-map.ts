@@ -21,10 +21,13 @@ export const handler: Handlers<unknown, State> = {
     try {
       body = await req.json();
     } catch {
-      return new Response(JSON.stringify({ ok: false, erro: "JSON inválido" }), {
-        status: 400,
-        headers: H,
-      });
+      return new Response(
+        JSON.stringify({ ok: false, erro: "JSON inválido" }),
+        {
+          status: 400,
+          headers: H,
+        },
+      );
     }
     const chave = String(body.chave ?? "").toLowerCase();
     const email = String(body.email ?? "").trim().toLowerCase();
@@ -36,7 +39,10 @@ export const handler: Handlers<unknown, State> = {
     }
     if (!email) {
       return new Response(
-        JSON.stringify({ ok: false, erro: "Email vazio — use DELETE pra limpar" }),
+        JSON.stringify({
+          ok: false,
+          erro: "Email vazio — use DELETE pra limpar",
+        }),
         { status: 400, headers: H },
       );
     }
@@ -47,8 +53,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
     try {
-      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-      await atribuirEmailATime(kv, email, chave);
+      await atribuirEmailATime(email, chave);
       return new Response(JSON.stringify({ ok: true }), { headers: H });
     } catch (e) {
       return new Response(
@@ -69,24 +74,24 @@ export const handler: Handlers<unknown, State> = {
     try {
       body = await req.json();
     } catch {
-      return new Response(JSON.stringify({ ok: false, erro: "JSON inválido" }), {
-        status: 400,
-        headers: H,
-      });
+      return new Response(
+        JSON.stringify({ ok: false, erro: "JSON inválido" }),
+        {
+          status: 400,
+          headers: H,
+        },
+      );
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     if (body.email) {
-      await removerEmail(kv, String(body.email));
+      await removerEmail(String(body.email));
       return new Response(JSON.stringify({ ok: true }), { headers: H });
     }
     if (body.chave) {
-      // Remove o email atribuído à chave (lookup inverso)
-      const r = await kv.get<Record<string, string>>(["auth", "email_map"]);
-      const map = r.value ?? {};
-      for (const [e, c] of Object.entries(map)) {
-        if (c === body.chave) delete map[e];
-      }
-      await kv.set(["auth", "email_map"], map);
+      // Remove o email atribuído à chave (lookup inverso) — DELETE direto
+      const { getDb } = await import("../../../lib/db.ts");
+      getDb().prepare("DELETE FROM email_map WHERE chave=?").run(
+        String(body.chave),
+      );
       return new Response(JSON.stringify({ ok: true }), { headers: H });
     }
     return new Response(

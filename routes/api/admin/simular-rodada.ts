@@ -6,6 +6,7 @@ import {
   setRodadaStatus,
 } from "../../../lib/kv.ts";
 import { fetchPartidas } from "../../../lib/cartola.ts";
+import { getDb } from "../../../lib/db.ts";
 import type { JogadorKV } from "../../../lib/types.ts";
 import type { State } from "../../_middleware.ts";
 
@@ -136,17 +137,17 @@ export const handler: Handlers<unknown, State> = {
     const encerrar = url.searchParams.get("encerrar") === "1";
     const zerar = url.searchParams.get("zerar") === "1";
 
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const status = await getRodadaStatus(kv);
+    const status = await getRodadaStatus();
     const rodadaAtual = status?.rodada ?? 1;
     const now = new Date().toISOString();
 
     if (encerrar) {
       // Libera o cron pra atualizar de novo a partir da Cartola real
-      await kv.delete(["simulando"]);
-      await kv.delete(["sim_scout"]);
-      await kv.delete(["sim_partidas"]);
-      await setRodadaStatus(kv, {
+      const db = getDb();
+      db.prepare("DELETE FROM simulando").run();
+      db.prepare("DELETE FROM sim_scout").run();
+      db.prepare("DELETE FROM sim_partidas").run();
+      await setRodadaStatus({
         status: "aguardando",
         rodada: rodadaAtual,
         atualizadoEm: now,
@@ -154,13 +155,13 @@ export const handler: Handlers<unknown, State> = {
       });
       let tocados = 0;
       if (zerar) {
-        const elencos = await getAllElencos(kv);
+        const elencos = await getAllElencos();
         for (const [chave, elenco] of Object.entries(elencos)) {
           for (const j of Object.values(elenco.jogadores)) {
             j.pontos = 0;
             j.entrou_em_campo = false;
           }
-          await setElenco(kv, chave, elenco);
+          await setElenco(chave, elenco);
           tocados++;
         }
       }
@@ -180,10 +181,12 @@ export const handler: Handlers<unknown, State> = {
     const entrouPct = Number.isFinite(body.entrouPct) ? body.entrouPct! : 70;
 
     // Trava o cron pra não sobrescrever a simulação a cada 5min
-    await kv.set(["simulando"], true);
+    getDb().prepare(
+      "INSERT INTO simulando (id, ativo) VALUES (1, 1) ON CONFLICT (id) DO UPDATE SET ativo=1",
+    ).run();
 
     // 1. Marca rodada ao vivo
-    await setRodadaStatus(kv, {
+    await setRodadaStatus({
       status: "ao_vivo",
       rodada: rodadaAtual,
       atualizadoEm: now,
@@ -191,7 +194,7 @@ export const handler: Handlers<unknown, State> = {
     });
 
     // 2. Gera scout + pontos derivados pra cada jogador
-    const elencos = await getAllElencos(kv);
+    const elencos = await getAllElencos();
     const scoutMap: Record<string, Record<string, number>> = {};
     let totalJogadores = 0;
     let totalEntraram = 0;
@@ -218,11 +221,13 @@ export const handler: Handlers<unknown, State> = {
           scoutMap[String(j.atleta_id)] = scout;
         }
       }
-      await setElenco(kv, chave, elenco);
+      await setElenco(chave, elenco);
     }
 
     // 3. Salva scout pro proxy /api/live retornar
-    await kv.set(["sim_scout"], scoutMap);
+    getDb().prepare(
+      "INSERT INTO sim_scout (id, data_json) VALUES (1, ?) ON CONFLICT (id) DO UPDATE SET data_json=excluded.data_json",
+    ).run(JSON.stringify(scoutMap));
 
     // 4. Gera placares simulados das partidas da rodada atual. Pega o
     //    schedule da Cartola e sorteia placares 0..3 com bias pra valores
@@ -244,7 +249,9 @@ export const handler: Handlers<unknown, State> = {
         placar_oficial_visitante: rand(),
         status_transmissao_tr: "EM ANDAMENTO",
       }));
-      await kv.set(["sim_partidas"], { ...real, partidas });
+      getDb().prepare(
+        "INSERT INTO sim_partidas (id, data_json) VALUES (1, ?) ON CONFLICT (id) DO UPDATE SET data_json=excluded.data_json",
+      ).run(JSON.stringify({ ...real, partidas }));
       comPartidas = partidas.length;
     } catch {
       // Sem Cartola disponível — pula partidas, o proxy cai no fallback

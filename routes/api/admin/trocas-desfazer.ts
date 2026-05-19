@@ -30,8 +30,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 400, headers: H },
       );
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const r = await desfazerTroca(kv, body.id);
+    const r = await desfazerTroca(body.id);
     if (!r.ok) {
       return new Response(
         JSON.stringify(r),

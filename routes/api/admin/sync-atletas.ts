@@ -9,6 +9,7 @@ import {
   getAllElencos,
   getAtletasCache,
   POSICAO_CHAVES_CACHE,
+  setAtletasCache,
   setElenco,
   setPartidasCache,
 } from "../../../lib/kv.ts";
@@ -20,7 +21,6 @@ const H = { "Content-Type": "application/json" };
 export const handler: Handlers = {
   async POST() {
     try {
-      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
       const [data, partidasData] = await Promise.all([
         fetchAtletasMercado(),
         fetchPartidas().catch(() => null),
@@ -31,7 +31,7 @@ export const handler: Handlers = {
       // com silhueta da Cartola.
       const cacheAtual = new Map<string, AtletaCacheEntry>();
       for (const pos of POSICAO_CHAVES_CACHE) {
-        const c = await getAtletasCache(kv, pos);
+        const c = await getAtletasCache(pos);
         if (!c) continue;
         for (const [id, e] of Object.entries(c.atletas)) cacheAtual.set(id, e);
       }
@@ -54,7 +54,9 @@ export const handler: Handlers = {
         const clubeNome = clube?.nome_fantasia ?? clube?.nome ?? "";
         const idStr = String(a.atleta_id);
         const fotoExistente = cacheAtual.get(idStr)?.foto;
-        const cartolaFoto = a.foto ? a.foto.replace("FORMATO", "220x220") : null;
+        const cartolaFoto = a.foto
+          ? a.foto.replace("FORMATO", "220x220")
+          : null;
         // Prioridade: cutout local → foto real preservada → Cartola (silhueta)
         const foto = CUTOUTS_DISPONIVEIS.has(idStr)
           ? `/atletas/${idStr}.png`
@@ -78,7 +80,7 @@ export const handler: Handlers = {
 
       for (const [chave, atletas] of Object.entries(grupos)) {
         const cache: AtletaCacheKV = { atualizadoEm: now, atletas };
-        await kv.set(["atletas_cache", chave], cache);
+        await setAtletasCache(chave, cache);
       }
 
       // Mapa clube_id → { casa, fora }
@@ -104,11 +106,11 @@ export const handler: Handlers = {
         const partidasRecord: Record<string, { casa: string; fora: string }> =
           {};
         for (const [id, m] of matchMap) partidasRecord[String(id)] = m;
-        await setPartidasCache(kv, partidasRecord);
+        await setPartidasCache(partidasRecord);
       }
 
       // Atualiza status_id, clube e partida nos elencos
-      const elencos = await getAllElencos(kv);
+      const elencos = await getAllElencos();
       let elencosTocados = 0;
       for (const [chave, elenco] of Object.entries(elencos)) {
         let alterado = false;
@@ -141,7 +143,7 @@ export const handler: Handlers = {
           alterado = true;
         }
         if (alterado) {
-          await setElenco(kv, chave, elenco);
+          await setElenco(chave, elenco);
           elencosTocados++;
         }
       }

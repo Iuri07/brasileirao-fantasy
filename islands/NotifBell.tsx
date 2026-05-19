@@ -58,10 +58,12 @@ export default function NotifBell(_props: Props) {
   const [notifs, setNotifs] = useState<NotifPayload[]>([]);
   const [open, setOpen] = useState(false);
   const [carregando, setCarregando] = useState(false);
-  const [aceitando, setAceitando] = useState<{
-    notif: NotifPayload;
-    posExtras: string[];
-  } | null>(null);
+  const [aceitando, setAceitando] = useState<
+    {
+      notif: NotifPayload;
+      posExtras: string[];
+    } | null
+  >(null);
   const ref = useRef<HTMLDivElement>(null);
 
   async function carregar() {
@@ -219,9 +221,7 @@ function NotifItem(
 ) {
   const [agindo, setAgindo] = useState(false);
   const o = n.oferta;
-  const nomesOferecidos = n.nomesOferecidos.length
-    ? n.nomesOferecidos
-    : ["?"];
+  const nomesOferecidos = n.nomesOferecidos.length ? n.nomesOferecidos : ["?"];
   const nomePedido = n.nomePedido ?? (o ? `#${o.atletaPedido}` : "?");
   const N = nomesOferecidos.length;
 
@@ -248,8 +248,16 @@ function NotifItem(
               </>
             )
             : n.tipo === "oferta_aceita"
-            ? <>Sua oferta por <strong>{nomePedido}</strong> foi aceita</>
-            : <>Sua oferta por <strong>{nomePedido}</strong> foi negada</>}
+            ? (
+              <>
+                Sua oferta por <strong>{nomePedido}</strong> foi aceita
+              </>
+            )
+            : (
+              <>
+                Sua oferta por <strong>{nomePedido}</strong> foi negada
+              </>
+            )}
         </div>
       )}
       {n.tipo === "oferta_recebida" && o?.status === "pendente" && (
@@ -406,9 +414,7 @@ function ModalAceitarMulti(
           <strong>{posExtras.length}</strong>{" "}
           jogador(es) do seu elenco pra completar (1 por posição requerida):
         </p>
-        {carregando && (
-          <div class="bf-notif__vazio">Carregando elenco…</div>
-        )}
+        {carregando && <div class="bf-notif__vazio">Carregando elenco…</div>}
         {!carregando && elenco.length > 0 && (
           <div class="bf-notif__slots">
             {slots.map((s) => {

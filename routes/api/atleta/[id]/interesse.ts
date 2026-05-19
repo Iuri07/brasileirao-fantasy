@@ -36,8 +36,7 @@ export const handler: Handlers<unknown, State> = {
       body = await req.json();
     } catch { /* permite body vazio */ }
 
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    if (await isAoVivo(kv)) {
+    if (await isAoVivo()) {
       return new Response(
         JSON.stringify({
           ok: false,
@@ -46,7 +45,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 423, headers: H },
       );
     }
-    const elencos = await getAllElencos(kv);
+    const elencos = await getAllElencos();
 
     // Bloqueia interesse em atletas que já pertencem a algum elenco
     for (const elenco of Object.values(elencos)) {
@@ -62,8 +61,8 @@ export const handler: Handlers<unknown, State> = {
     }
 
     if (body.remover) {
-      const r = await removeInteresse(kv, atletaId, session.chave);
-      await removePrioridade(kv, session.chave, atletaId);
+      const r = await removeInteresse(atletaId, session.chave);
+      await removePrioridade(session.chave, atletaId);
       return new Response(
         JSON.stringify({ ok: true, interessado: false, total: r.total }),
         { headers: H },
@@ -102,14 +101,13 @@ export const handler: Handlers<unknown, State> = {
     // já filtra antes de chamar, então aqui só guardamos a oferta.)
 
     const r = await setInteresse(
-      kv,
       atletaId,
       session.chave,
       oferecido,
     );
     // Adiciona no fim da minha lista de prioridade (idempotente: se já
     // tava na lista, fica na posição que estava)
-    await appendPrioridade(kv, session.chave, atletaId);
+    await appendPrioridade(session.chave, atletaId);
     return new Response(
       JSON.stringify({ ok: true, interessado: true, total: r.total }),
       { headers: H },

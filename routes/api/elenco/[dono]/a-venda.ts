@@ -43,8 +43,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 400, headers: H },
       );
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    if (await isAoVivo(kv)) {
+    if (await isAoVivo()) {
       return new Response(
         JSON.stringify({
           ok: false,
@@ -53,14 +52,14 @@ export const handler: Handlers<unknown, State> = {
         { status: 423, headers: H },
       );
     }
-    const elenco = await getElenco(kv, chave);
+    const elenco = await getElenco(chave);
     if (!elenco?.jogadores[String(body.atleta_id)]) {
       return new Response(
         JSON.stringify({ ok: false, erro: "Atleta não está no elenco" }),
         { status: 400, headers: H },
       );
     }
-    const r = await toggleAVenda(kv, chave, body.atleta_id);
+    const r = await toggleAVenda(chave, body.atleta_id);
     return new Response(JSON.stringify({ ok: true, ...r }), { headers: H });
   },
 };

@@ -82,7 +82,8 @@ const TIMES: Record<string, TimeLigaInfo> = {
  *  `applyVisualOverrides()` quando o middleware carrega o cache.
  *  Sync porque o consumo é em SSR e components — async espalharia
  *  refactor pelo app todo. */
-const OVERRIDES: Map<string, { logo?: string; displayName?: string }> = new Map();
+const OVERRIDES: Map<string, { logo?: string; displayName?: string }> =
+  new Map();
 
 /** Atualiza o cache de overrides. Chamado pelo middleware na primeira
  *  request de cada processo, e pelo endpoint POST/DELETE de visual. */

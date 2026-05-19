@@ -16,9 +16,8 @@ export const handler: Handlers = {
     const stateFromUrl = url.searchParams.get("state");
     const err = url.searchParams.get("error");
 
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const stateRecord = stateFromUrl
-      ? await consumeOAuthState(kv, stateFromUrl)
+      ? await consumeOAuthState(stateFromUrl)
       : null;
     const next = stateRecord?.next ?? "/";
 
@@ -56,14 +55,14 @@ export const handler: Handlers = {
     }
     if (!user) return fail("Falha ao trocar code por token (resposta vazia)");
 
-    const chave = await emailParaChave(kv, user.email);
+    const chave = await emailParaChave(user.email);
     if (!chave) {
       return fail(
         `${user.email} não está atribuído a nenhum time. Peça ao admin.`,
       );
     }
 
-    const sessionId = await createSession(kv, {
+    const sessionId = await createSession({
       role: "user",
       chave,
       email: user.email,

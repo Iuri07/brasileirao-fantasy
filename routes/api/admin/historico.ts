@@ -14,7 +14,10 @@ function exigirAdmin(ctx: { state: State }): boolean {
 }
 
 function jsonErr(status: number, erro: string): Response {
-  return new Response(JSON.stringify({ ok: false, erro }), { status, headers: H });
+  return new Response(JSON.stringify({ ok: false, erro }), {
+    status,
+    headers: H,
+  });
 }
 
 /**
@@ -26,14 +29,14 @@ function jsonErr(status: number, erro: string): Response {
 export const handler: Handlers<unknown, State> = {
   async GET(_req, ctx) {
     if (!exigirAdmin(ctx)) return jsonErr(403, "Apenas admin");
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const historicos = await getAllHistoricos(kv);
-    return new Response(JSON.stringify({ ok: true, historicos }), { headers: H });
+    const historicos = await getAllHistoricos();
+    return new Response(JSON.stringify({ ok: true, historicos }), {
+      headers: H,
+    });
   },
 
   async POST(req, ctx) {
     if (!exigirAdmin(ctx)) return jsonErr(403, "Apenas admin");
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
 
     let body: {
       chave?: string;
@@ -49,12 +52,18 @@ export const handler: Handlers<unknown, State> = {
 
     const updates = body.updates ??
       (body.chave !== undefined && body.rodada !== undefined
-        ? [{ chave: body.chave, rodada: body.rodada, pontos: body.pontos ?? null }]
+        ? [{
+          chave: body.chave,
+          rodada: body.rodada,
+          pontos: body.pontos ?? null,
+        }]
         : []);
 
     if (updates.length === 0) return jsonErr(400, "Sem updates");
 
-    const aplicados: Array<{ chave: string; rodada: number; pontos: number | null }> = [];
+    const aplicados: Array<
+      { chave: string; rodada: number; pontos: number | null }
+    > = [];
     for (const u of updates) {
       const chave = String(u.chave ?? "").toLowerCase();
       const rodada = Number(u.rodada);
@@ -65,7 +74,7 @@ export const handler: Handlers<unknown, State> = {
         return jsonErr(400, `rodada inválida: ${u.rodada}`);
       }
       if (u.pontos === null || u.pontos === undefined) {
-        await deleteHistoricoRodada(kv, chave, rodada);
+        await deleteHistoricoRodada(chave, rodada);
         aplicados.push({ chave, rodada, pontos: null });
       } else {
         const pontos = Number(u.pontos);
@@ -74,11 +83,13 @@ export const handler: Handlers<unknown, State> = {
         }
         // arredonda pra 1 casa pra evitar inflar com float garbage
         const arred = Math.round(pontos * 10) / 10;
-        await setHistoricoRodada(kv, chave, rodada, arred);
+        await setHistoricoRodada(chave, rodada, arred);
         aplicados.push({ chave, rodada, pontos: arred });
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, aplicados }), { headers: H });
+    return new Response(JSON.stringify({ ok: true, aplicados }), {
+      headers: H,
+    });
   },
 };

@@ -21,8 +21,7 @@ export const handler: Handlers = {
       return redirectLogin(next, "Usuário ou senha inválidos");
     }
 
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const sessionId = await createSession(kv, { role: "admin" });
+    const sessionId = await createSession({ role: "admin" });
     const secure = new URL(req.url).protocol === "https:";
     return new Response(null, {
       status: 302,

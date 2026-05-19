@@ -32,12 +32,11 @@ export const handler: Handlers<unknown, State> = {
         { status: 400, headers: H },
       );
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const rodadaStatus = await getRodadaStatus(kv);
+    const rodadaStatus = await getRodadaStatus();
     const rodadaAtual = rodadaStatus?.rodada ?? 1;
 
     if (body.reset) {
-      const r = await resetDraft(kv, rodadaAtual);
+      const r = await resetDraft(rodadaAtual);
       return new Response(
         JSON.stringify({ ok: true, resetou: true, ...r }),
         { headers: H },
@@ -63,7 +62,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    const r = await avancarRodadaDraft(kv, pickers, rodadaAtual);
+    const r = await avancarRodadaDraft(pickers, rodadaAtual);
     return new Response(JSON.stringify({ ok: true, ...r }), { headers: H });
   },
 };

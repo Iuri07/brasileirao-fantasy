@@ -11,10 +11,9 @@ export const handler: Handlers = {
   async GET(req) {
     const url = new URL(req.url);
     const rodadaParam = url.searchParams.get("rodada");
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     let rodada = rodadaParam ? Number(rodadaParam) : 0;
     if (!rodada) {
-      const status = await getRodadaStatus(kv);
+      const status = await getRodadaStatus();
       rodada = status?.rodada ?? 0;
     }
     if (!rodada) {
@@ -23,7 +22,7 @@ export const handler: Handlers = {
         { headers: H },
       );
     }
-    const eventos = await listarEventos(kv, rodada, 200);
+    const eventos = await listarEventos(rodada, 200);
     const resp = new Response(
       JSON.stringify({ ok: true, rodada, eventos }),
       { headers: H },

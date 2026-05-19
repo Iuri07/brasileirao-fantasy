@@ -74,114 +74,135 @@ export function fetchAtletasMercado(): Promise<{
 /** Versão slim do clube — só nome+abreviacao (resto não usamos). */
 type ClubeMin = { nome: string; abreviacao: string; nome_fantasia?: string };
 
-/** Cache em KV da resposta do Cartola /atletas/mercado. Resposta crua é
- *  ~350KB JSON; persistimos em chunks porque o limite por value em
- *  Deno KV é ~64KB. Retorna mesmo shape de fetchAtletasMercado(). */
-const MERCADO_CACHE_TTL_MS = 5 * 60 * 1000; // 5min
-const CHUNK_SIZE = 200; // ~16-20KB por chunk
+/** Cache da resposta do Cartola /atletas/mercado. Em SQLite num único
+ *  row (sem chunking — limite 64KB do KV não existe mais). TTL 5min. */
+const MERCADO_CACHE_TTL_MS = 5 * 60 * 1000;
 
-interface ChunkMeta {
-  rodada: number;
-  cachedAt: number;
-  clubes: Record<string, ClubeMin>;
-  chunkCount: number;
-}
-
-/** Cache em KV das partidas (placar + horário + status). Pequeno
- *  (10 partidas + ~22 clubes ≈ 5KB), cabe num único value. TTL 2min
- *  pra refletir placares durante a rodada. */
+/** Cache em SQLite das partidas. TTL 2min. */
 const PARTIDAS_CACHE_TTL_MS = 2 * 60 * 1000;
-const PARTIDAS_KEY = ["partidas_full_cache"];
 
 interface PartidasCache {
   data: Awaited<ReturnType<typeof fetchPartidas>>;
   cachedAt: number;
 }
 
-export async function fetchPartidasCacheado(
-  kv: Deno.Kv,
-): Promise<Awaited<ReturnType<typeof fetchPartidas>>> {
-  const r = await kv.get<PartidasCache>(PARTIDAS_KEY);
+export async function fetchPartidasCacheado(): Promise<
+  Awaited<ReturnType<typeof fetchPartidas>>
+> {
+  const { getDb } = await import("./db.ts");
+  const db = getDb();
+  const r = db.prepare(
+    "SELECT data_json, atualizado_em FROM mercado_status_cache WHERE id=2",
+  ).get<{ data_json: string; atualizado_em: string }>();
+  // Reusa a tabela mercado_status_cache com id=2 pra partidas
+  // (singleton expandido — id=1 status, id=2 partidas). Evita criar
+  // outra tabela só pra isso.
   const now = Date.now();
-  if (r.value && now - r.value.cachedAt < PARTIDAS_CACHE_TTL_MS) {
-    return r.value.data;
+  if (r) {
+    try {
+      const parsed = JSON.parse(r.data_json) as PartidasCache;
+      if (parsed.cachedAt && now - parsed.cachedAt < PARTIDAS_CACHE_TTL_MS) {
+        return parsed.data;
+      }
+    } catch { /* corrompido */ }
   }
   const fresh = await fetchPartidas();
-  void kv.set(
-    PARTIDAS_KEY,
-    { data: fresh, cachedAt: now } satisfies PartidasCache,
+  db.prepare(
+    "INSERT INTO mercado_status_cache (id, atualizado_em, data_json) VALUES (2, ?, ?) " +
+      "ON CONFLICT (id) DO UPDATE SET atualizado_em=excluded.atualizado_em, data_json=excluded.data_json",
+  ).run(
+    new Date(now).toISOString(),
+    JSON.stringify({ data: fresh, cachedAt: now }),
   );
   return fresh;
 }
 
-/** Cache em KV do mercado/status. Pequeno (~200 bytes). TTL 60s. */
+/** Cache em SQLite do mercado/status. TTL 60s. */
 const STATUS_CACHE_TTL_MS = 60 * 1000;
-const STATUS_KEY = ["mercado_status_cache"];
 
 interface StatusCache {
   data: CartolaMercadoStatus;
   cachedAt: number;
 }
 
-export async function fetchMercadoStatusCacheado(
-  kv: Deno.Kv,
-): Promise<CartolaMercadoStatus> {
-  const r = await kv.get<StatusCache>(STATUS_KEY);
+export async function fetchMercadoStatusCacheado(): Promise<
+  CartolaMercadoStatus
+> {
+  const { getDb } = await import("./db.ts");
+  const db = getDb();
+  const r = db.prepare(
+    "SELECT data_json FROM mercado_status_cache WHERE id=1",
+  ).get<{ data_json: string }>();
   const now = Date.now();
-  if (r.value && now - r.value.cachedAt < STATUS_CACHE_TTL_MS) {
-    return r.value.data;
+  if (r) {
+    try {
+      const parsed = JSON.parse(r.data_json) as StatusCache;
+      if (parsed.cachedAt && now - parsed.cachedAt < STATUS_CACHE_TTL_MS) {
+        return parsed.data;
+      }
+    } catch { /* corrompido */ }
   }
   const fresh = await fetchMercadoStatus();
-  void kv.set(STATUS_KEY, { data: fresh, cachedAt: now } satisfies StatusCache);
+  db.prepare(
+    "INSERT INTO mercado_status_cache (id, atualizado_em, data_json) VALUES (1, ?, ?) " +
+      "ON CONFLICT (id) DO UPDATE SET atualizado_em=excluded.atualizado_em, data_json=excluded.data_json",
+  ).run(
+    new Date(now).toISOString(),
+    JSON.stringify({ data: fresh, cachedAt: now }),
+  );
   return fresh;
 }
 
-export async function fetchAtletasMercadoCacheado(kv: Deno.Kv): Promise<{
+interface MercadoCachePayload {
+  atletas: CartolaAtleta[];
+  clubes: Record<string, ClubeMin>;
+  rodada_atual: number;
+  cachedAt: number;
+}
+
+export async function fetchAtletasMercadoCacheado(): Promise<{
   atletas: CartolaAtleta[];
   clubes: Record<string, ClubeMin>;
   rodada_atual: number;
 }> {
-  const META_KEY = ["mercado_cache", "meta"];
-  const metaRes = await kv.get<ChunkMeta>(META_KEY);
+  const { getDb } = await import("./db.ts");
+  const db = getDb();
+  const r = db.prepare(
+    "SELECT atletas_json FROM mercado_cache WHERE id=1",
+  ).get<{ atletas_json: string }>();
   const now = Date.now();
-  if (metaRes.value && now - metaRes.value.cachedAt < MERCADO_CACHE_TTL_MS) {
-    const meta = metaRes.value;
-    const chunkPromises: Promise<Deno.KvEntryMaybe<CartolaAtleta[]>>[] = [];
-    for (let i = 0; i < meta.chunkCount; i++) {
-      chunkPromises.push(kv.get<CartolaAtleta[]>(["mercado_cache", "c", i]));
-    }
-    const chunks = await Promise.all(chunkPromises);
-    const atletas: CartolaAtleta[] = [];
-    for (const ch of chunks) {
-      if (ch.value) atletas.push(...ch.value);
-    }
-    return { rodada_atual: meta.rodada, clubes: meta.clubes, atletas };
+  if (r) {
+    try {
+      const parsed = JSON.parse(r.atletas_json) as MercadoCachePayload;
+      if (parsed.cachedAt && now - parsed.cachedAt < MERCADO_CACHE_TTL_MS) {
+        return {
+          atletas: parsed.atletas,
+          clubes: parsed.clubes,
+          rodada_atual: parsed.rodada_atual,
+        };
+      }
+    } catch { /* corrompido */ }
   }
   const fresh = await fetchAtletasMercado();
-  // Persiste em chunks em background (não bloqueia o retorno)
-  void (async () => {
-    try {
-      const count = Math.ceil(fresh.atletas.length / CHUNK_SIZE);
-      // KV atomic permite múltiplos sets numa transação só
-      let tx = kv.atomic();
-      for (let i = 0; i < count; i++) {
-        const chunk = fresh.atletas.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-        tx = tx.set(["mercado_cache", "c", i], chunk);
-      }
-      tx = tx.set(
-        META_KEY,
+  // Sem limite de 64KB agora — JSON inteiro num row.
+  try {
+    db.prepare(
+      "INSERT INTO mercado_cache (id, atualizado_em, atletas_json) VALUES (1, ?, ?) " +
+        "ON CONFLICT (id) DO UPDATE SET atualizado_em=excluded.atualizado_em, atletas_json=excluded.atletas_json",
+    ).run(
+      new Date(now).toISOString(),
+      JSON.stringify(
         {
-          rodada: fresh.rodada_atual,
-          cachedAt: now,
+          atletas: fresh.atletas,
           clubes: fresh.clubes,
-          chunkCount: count,
-        } satisfies ChunkMeta,
-      );
-      await tx.commit();
-    } catch (e) {
-      console.warn("[mercado_cache] persist failed:", e);
-    }
-  })();
+          rodada_atual: fresh.rodada_atual,
+          cachedAt: now,
+        } satisfies MercadoCachePayload,
+      ),
+    );
+  } catch (e) {
+    console.warn("[mercado_cache] persist failed:", e);
+  }
   return {
     atletas: fresh.atletas,
     clubes: fresh.clubes,

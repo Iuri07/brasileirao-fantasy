@@ -12,8 +12,7 @@ const H = { "Content-Type": "application/json" };
  */
 export const handler: Handlers<unknown, State> = {
   async GET() {
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const ordem = await getDraftOrdem(kv);
+    const ordem = await getDraftOrdem();
     return new Response(JSON.stringify({ ok: true, ordem }), { headers: H });
   },
 
@@ -57,9 +56,8 @@ export const handler: Handlers<unknown, State> = {
         { status: 400, headers: H },
       );
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    await setDraftOrdem(kv, ordem);
-    const nova = await getDraftOrdem(kv);
+    await setDraftOrdem(ordem);
+    const nova = await getDraftOrdem();
     return new Response(JSON.stringify({ ok: true, ordem: nova }), {
       headers: H,
     });

@@ -32,11 +32,19 @@ export default function AdminHistoricoMatriz({
   historicosIniciais,
 }: Props) {
   // Mostra rodada atual + 2 a mais pra permitir edição antecipada (admin pode lançar antes do cron)
-  const maxRodada = Math.max(rodadaAtual, ...Object.values(historicosIniciais).flatMap((h) => Object.keys(h).map(Number)), 1);
+  const maxRodada = Math.max(
+    rodadaAtual,
+    ...Object.values(historicosIniciais).flatMap((h) =>
+      Object.keys(h).map(Number)
+    ),
+    1,
+  );
   const [rodadas] = useState<number[]>(
     Array.from({ length: maxRodada }, (_, i) => i + 1),
   );
-  const [historicos, setHistoricos] = useState<Record<string, Record<string, number>>>(historicosIniciais);
+  const [historicos, setHistoricos] = useState<
+    Record<string, Record<string, number>>
+  >(historicosIniciais);
   const [status, setStatus] = useState<Record<string, CellStatus>>({});
   const debounceRef = useRef<Record<string, number>>({});
 
@@ -61,7 +69,9 @@ export default function AdminHistoricoMatriz({
   async function salvar(edit: CellEdit) {
     const k = cellKey(edit.chave, edit.rodada);
     setCellStatus(k, "saving");
-    const pontos = edit.valor.trim() === "" ? null : Number(edit.valor.replace(",", "."));
+    const pontos = edit.valor.trim() === ""
+      ? null
+      : Number(edit.valor.replace(",", "."));
     if (pontos !== null && !Number.isFinite(pontos)) {
       setCellStatus(k, "error");
       return;
@@ -70,7 +80,11 @@ export default function AdminHistoricoMatriz({
       const r = await fetch("/api/admin/historico", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chave: edit.chave, rodada: edit.rodada, pontos }),
+        body: JSON.stringify({
+          chave: edit.chave,
+          rodada: edit.rodada,
+          pontos,
+        }),
       });
       const j = await r.json();
       if (!j.ok) throw new Error(j.erro || "erro");
@@ -177,27 +191,47 @@ export default function AdminHistoricoMatriz({
                 {rodadas.map((r) => {
                   const k = cellKey(t.chave, r);
                   const v = historicos[t.chave]?.[String(r)];
-                  const display = v === undefined || v === null ? "" : String(v);
+                  const display = v === undefined || v === null
+                    ? ""
+                    : String(v);
                   const st = status[k] ?? "idle";
                   return (
-                    <td key={r} class="bf-historico-matriz__td" data-status={st}>
+                    <td
+                      key={r}
+                      class="bf-historico-matriz__td"
+                      data-status={st}
+                    >
                       <input
                         type="text"
                         inputMode="decimal"
                         class="bf-historico-matriz__input"
                         value={display}
-                        onInput={(e) => onChange(t.chave, r, (e.target as HTMLInputElement).value)}
-                        onBlur={(e) => onBlur(t.chave, r, (e.target as HTMLInputElement).value)}
+                        onInput={(e) =>
+                          onChange(
+                            t.chave,
+                            r,
+                            (e.target as HTMLInputElement).value,
+                          )}
+                        onBlur={(e) =>
+                          onBlur(
+                            t.chave,
+                            r,
+                            (e.target as HTMLInputElement).value,
+                          )}
                         placeholder="—"
                       />
                       {st === "saving" && (
                         <span class="bf-historico-matriz__status bf-historico-matriz__status--saving" />
                       )}
                       {st === "saved" && (
-                        <span class="bf-historico-matriz__status bf-historico-matriz__status--saved">✓</span>
+                        <span class="bf-historico-matriz__status bf-historico-matriz__status--saved">
+                          ✓
+                        </span>
                       )}
                       {st === "error" && (
-                        <span class="bf-historico-matriz__status bf-historico-matriz__status--error">!</span>
+                        <span class="bf-historico-matriz__status bf-historico-matriz__status--error">
+                          !
+                        </span>
                       )}
                     </td>
                   );

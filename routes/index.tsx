@@ -168,15 +168,14 @@ export const handler: Handlers<HomeData, State> = {
     };
 
     const CHAVE_USUARIO = ctx.state.session?.chave ?? CHAVE_FALLBACK_DEV;
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     // Lê só do KV primeiro pra decidir se precisamos da Cartola.
     // Cartola só é necessária quando ao vivo (pontuados parciais) e/ou
     // quando o mercado tá aberto (fechamento countdown).
     const [elencos, rodada, fotos, historico] = await Promise.all([
-      getAllElencos(kv),
-      getRodadaStatus(kv),
-      getFotos(kv),
-      getHistorico(kv, CHAVE_USUARIO),
+      getAllElencos(),
+      getRodadaStatus(),
+      getFotos(),
+      getHistorico(CHAVE_USUARIO),
     ]);
     mark("kv", T0);
 
@@ -190,8 +189,8 @@ export const handler: Handlers<HomeData, State> = {
     const [mercado, partidasResp, pontuadosResp] = await Promise.all([
       temFechamentoKv
         ? Promise.resolve(null)
-        : fetchMercadoStatusCacheado(kv).catch(() => null),
-      fetchPartidasCacheado(kv).catch(() => null),
+        : fetchMercadoStatusCacheado().catch(() => null),
+      fetchPartidasCacheado().catch(() => null),
       aoVivoKv
         ? fetchAtletasPontuados().catch(() => null)
         : Promise.resolve(null),
@@ -223,7 +222,7 @@ export const handler: Handlers<HomeData, State> = {
     const totaisPorChave = new Map<string, number>();
     await Promise.all(
       Object.keys(elencos).map(async (chave) => {
-        const h = await getHistorico(kv, chave);
+        const h = await getHistorico(chave);
         totaisPorChave.set(chave, totalPontos(h));
       }),
     );
@@ -236,7 +235,7 @@ export const handler: Handlers<HomeData, State> = {
     >();
     await Promise.all(
       Object.entries(elencos).map(async ([chave, elenco]) => {
-        const r = await getMelhorTimeCached(kv, chave, elenco);
+        const r = await getMelhorTimeCached(chave, elenco);
         melhoresPorChave.set(chave, r);
       }),
     );
@@ -345,13 +344,13 @@ export const handler: Handlers<HomeData, State> = {
       ? formatCountdown(fechamentoTs)
       : null;
     const subsUsadas = aoVivoReal
-      ? await getSubsUsadas(kv, rodadaAtual, CHAVE_USUARIO)
+      ? await getSubsUsadas(rodadaAtual, CHAVE_USUARIO)
       : 0;
     // Contagem de auto-subs aplicadas pelo algoritmo (bench que rendeu
     // mais que titular). Usado pra exibir "X/3 subs" durante o ao vivo.
     const subsAuto = meuMelhor
       .filter((j) => j.escalacao === "Sim" && j.substituido).length;
-    const aVendaIds = await getAVenda(kv, CHAVE_USUARIO);
+    const aVendaIds = await getAVenda(CHAVE_USUARIO);
     const parcialLive = meuIdx >= 0 ? ranking[meuIdx].pontuacao : 0;
     const historicoAtual = historico[String(rodadaAtual)];
     const rodadasHistorico = Object.keys(historico)

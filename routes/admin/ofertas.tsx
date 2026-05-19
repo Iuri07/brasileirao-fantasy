@@ -28,11 +28,10 @@ function nomeTime(chave: string): string {
 
 export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const [elencos, aVendaGlobal, ofertas] = await Promise.all([
-      getAllElencos(kv),
-      getAVendaGlobal(kv),
-      listarTodasOfertas(kv, { status: "pendente" }),
+      getAllElencos(),
+      getAVendaGlobal(),
+      listarTodasOfertas({ status: "pendente" }),
     ]);
 
     // Lookup atleta_id → { apelido, clube } em qualquer elenco
@@ -78,7 +77,9 @@ export const handler: Handlers<Data, State> = {
         deNomeTime: nomeTime(o.deChave),
         paraChave: o.paraChave,
         paraNomeTime: nomeTime(o.paraChave),
-        atletasOferecidosApelidos: ofereciodosIds.map((id) => lookup(id).apelido),
+        atletasOferecidosApelidos: ofereciodosIds.map((id) =>
+          lookup(id).apelido
+        ),
         atletaPedidoId: o.atletaPedido,
         atletaPedidoApelido: pedido.apelido,
         mensagem: o.mensagem,
@@ -126,8 +127,8 @@ export default function AdminOfertasPage({ data }: PageProps<Data>) {
             </a>
           </div>
           <p class="bf-status-card__sub" style="margin-top:8px">
-            Tire jogadores dos negociáveis ou cancele ofertas pendentes. Útil quando
-            alguém colocou por engano ou esqueceu de cancelar.
+            Tire jogadores dos negociáveis ou cancele ofertas pendentes. Útil
+            quando alguém colocou por engano ou esqueceu de cancelar.
           </p>
         </article>
 

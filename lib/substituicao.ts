@@ -116,19 +116,27 @@ export function calcularMelhorTime(todos: JogadorKV[]): JogadorComSub[] {
   return resultado;
 }
 
-/** Cache do calcularMelhorTime em KV por chave. Invalidado automaticamente
- *  via setElencoComCacheInvalidado (que faz atomic delete). Custo de
- *  cache hit: 1 KV read; custo de miss: 1 KV read + recompute + 1 KV write
- *  (write em background, não bloqueia retorno). */
+/** Cache do calcularMelhorTime em SQLite por chave. Invalidado
+ *  automaticamente pelo setElenco. */
 export async function getMelhorTimeCached(
-  kv: Deno.Kv,
   chave: string,
   elenco: ElencoKV,
 ): Promise<JogadorComSub[]> {
-  const r = await kv.get<JogadorComSub[]>(["melhor_time", chave]);
-  if (r.value) return r.value;
+  const { getDb } = await import("./db.ts");
+  const db = getDb();
+  const r = db.prepare("SELECT computed_json FROM melhor_time WHERE chave=?")
+    .get<{ computed_json: string }>(chave);
+  if (r) {
+    try {
+      return JSON.parse(r.computed_json) as JogadorComSub[];
+    } catch {
+      // Cache corrompido — recomputa
+    }
+  }
   const computed = calcularMelhorTime(Object.values(elenco.jogadores));
-  // Write em background (não bloqueia)
-  void kv.set(["melhor_time", chave], computed);
+  db.prepare(
+    "INSERT INTO melhor_time (chave, computed_json) VALUES (?, ?) " +
+      "ON CONFLICT (chave) DO UPDATE SET computed_json=excluded.computed_json",
+  ).run(chave, JSON.stringify(computed));
   return computed;
 }

@@ -58,12 +58,11 @@ export const handler: Handlers<Data, State> = {
     const meta = CHAVES_TIMES[chave];
     if (!meta) return new Response("Not found", { status: 404 });
 
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const [elencos, rodada, fotos, historico] = await Promise.all([
-      getAllElencos(kv),
-      getRodadaStatus(kv),
-      getFotos(kv),
-      getHistorico(kv, chave),
+      getAllElencos(),
+      getRodadaStatus(),
+      getFotos(),
+      getHistorico(chave),
     ]);
 
     const elenco = elencos[chave];
@@ -76,7 +75,7 @@ export const handler: Handlers<Data, State> = {
     >();
     await Promise.all(
       Object.entries(elencos).map(async ([k, e]) => {
-        const r = await getMelhorTimeCached(kv, k, e);
+        const r = await getMelhorTimeCached(k, e);
         melhoresPorChave.set(k, r);
       }),
     );

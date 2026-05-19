@@ -12,6 +12,7 @@
 import type { TimeLigaInfo } from "./times-liga.ts";
 import { timeLigaInfo } from "./times-liga.ts";
 import { CHAVES_TIMES } from "./kv.ts";
+import { getDb } from "./db.ts";
 
 export interface TimeVisualOverride {
   nome_time?: string;
@@ -20,45 +21,72 @@ export interface TimeVisualOverride {
   updatedAt?: string;
 }
 
-export async function getTimeVisual(
-  kv: Deno.Kv,
+interface VisualRow {
+  chave: string;
+  nome_time: string | null;
+  display_name: string | null;
+  logo: string | null;
+  updated_at: string | null;
+}
+
+function rowToOverride(r: VisualRow): TimeVisualOverride {
+  const out: TimeVisualOverride = {};
+  if (r.nome_time) out.nome_time = r.nome_time;
+  if (r.display_name) out.displayName = r.display_name;
+  if (r.logo) out.logo = r.logo;
+  if (r.updated_at) out.updatedAt = r.updated_at;
+  return out;
+}
+
+export function getTimeVisual(
   chave: string,
 ): Promise<TimeVisualOverride | null> {
-  const r = await kv.get<TimeVisualOverride>(["time_visual", chave]);
-  return r.value;
+  const r = getDb().prepare(
+    "SELECT chave, nome_time, display_name, logo, updated_at FROM time_visual WHERE chave=?",
+  ).get<VisualRow>(chave);
+  return Promise.resolve(r ? rowToOverride(r) : null);
 }
 
 export async function setTimeVisual(
-  kv: Deno.Kv,
   chave: string,
   patch: TimeVisualOverride,
 ): Promise<TimeVisualOverride> {
-  const current = (await getTimeVisual(kv, chave)) ?? {};
+  const current = (await getTimeVisual(chave)) ?? {};
   const next: TimeVisualOverride = {
     ...current,
     ...patch,
     updatedAt: new Date().toISOString(),
   };
-  await kv.set(["time_visual", chave], next);
+  getDb().prepare(
+    "INSERT INTO time_visual (chave, nome_time, display_name, logo, updated_at) " +
+      "VALUES (?, ?, ?, ?, ?) " +
+      "ON CONFLICT (chave) DO UPDATE SET " +
+      "  nome_time=excluded.nome_time, display_name=excluded.display_name, " +
+      "  logo=excluded.logo, updated_at=excluded.updated_at",
+  ).run(
+    chave,
+    next.nome_time ?? null,
+    next.displayName ?? null,
+    next.logo ?? null,
+    next.updatedAt ?? null,
+  );
   return next;
 }
 
-export async function deleteTimeVisual(
-  kv: Deno.Kv,
-  chave: string,
-): Promise<void> {
-  await kv.delete(["time_visual", chave]);
+export function deleteTimeVisual(chave: string): Promise<void> {
+  getDb().prepare("DELETE FROM time_visual WHERE chave=?").run(chave);
+  return Promise.resolve();
 }
 
-export async function getAllTimeVisuais(
-  kv: Deno.Kv,
-): Promise<Record<string, TimeVisualOverride>> {
+export function getAllTimeVisuais(): Promise<
+  Record<string, TimeVisualOverride>
+> {
+  const rows = getDb().prepare(
+    "SELECT chave, nome_time, display_name, logo, updated_at FROM time_visual",
+  ).all<VisualRow>();
   const out: Record<string, TimeVisualOverride> = {};
-  for await (const e of kv.list<TimeVisualOverride>({ prefix: ["time_visual"] })) {
-    const chave = String(e.key[1]);
-    out[chave] = e.value;
-  }
-  return out;
+  for (const r of rows) out[r.chave] = rowToOverride(r);
+  return Promise.resolve(out);
 }
 
 /** Resolve a identidade visual final pra um time: merge dos defaults
@@ -88,8 +116,7 @@ export function resolveTimeVisual(
   const base = baseInfo ?? timeLigaInfo(chave);
   const meta = CHAVES_TIMES[chave];
   const nomeTime = override?.nome_time ?? meta?.nome_time ?? chave;
-  const displayName =
-    override?.displayName ?? base?.displayName ?? nomeTime;
+  const displayName = override?.displayName ?? base?.displayName ?? nomeTime;
   const logo = override?.logo ?? base?.logo ?? null;
   return {
     chave,
@@ -106,13 +133,12 @@ export function resolveTimeVisual(
   };
 }
 
-/** Versão async que lê KV e resolve. Útil em handlers que precisam
+/** Versão async que lê DB e resolve. Útil em handlers que precisam
  *  do visual final pra renderizar SSR. */
 export async function getTimeVisualResolved(
-  kv: Deno.Kv,
   chave: string,
 ): Promise<TimeVisualResolved> {
-  const override = await getTimeVisual(kv, chave);
+  const override = await getTimeVisual(chave);
   return resolveTimeVisual(chave, override);
 }
 

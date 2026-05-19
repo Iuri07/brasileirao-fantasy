@@ -43,8 +43,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 400, headers: H },
       );
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    if (body.decisao === "aceita" && await isAoVivo(kv)) {
+    if (body.decisao === "aceita" && await isAoVivo()) {
       return new Response(
         JSON.stringify({
           ok: false,
@@ -54,7 +53,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 423, headers: H },
       );
     }
-    const oferta = await getOferta(kv, ofertaId);
+    const oferta = await getOferta(ofertaId);
     if (!oferta) {
       return new Response(
         JSON.stringify({ ok: false, erro: "Oferta não encontrada" }),
@@ -86,7 +85,9 @@ export const handler: Handlers<unknown, State> = {
         return new Response(
           JSON.stringify({
             ok: false,
-            erro: `Precisa escolher ${n - 1} atleta(s) extra(s) pra completar a troca`,
+            erro: `Precisa escolher ${
+              n - 1
+            } atleta(s) extra(s) pra completar a troca`,
           }),
           { status: 400, headers: H },
         );
@@ -107,8 +108,8 @@ export const handler: Handlers<unknown, State> = {
         );
       }
 
-      const elencoDe = await getElenco(kv, oferta.deChave);
-      const elencoPara = await getElenco(kv, oferta.paraChave);
+      const elencoDe = await getElenco(oferta.deChave);
+      const elencoPara = await getElenco(oferta.paraChave);
       if (!elencoDe || !elencoPara) {
         return new Response(
           JSON.stringify({ ok: false, erro: "Elenco sumiu" }),
@@ -118,7 +119,9 @@ export const handler: Handlers<unknown, State> = {
 
       // Resolve todos os jogadores envolvidos.
       // Lado A → B (oferecidos vão pro destinatário):
-      const jogOferecidos = oferecidos.map((id) => elencoDe.jogadores[String(id)]);
+      const jogOferecidos = oferecidos.map((id) =>
+        elencoDe.jogadores[String(id)]
+      );
       if (jogOferecidos.some((j) => !j)) {
         return new Response(
           JSON.stringify({
@@ -158,8 +161,9 @@ export const handler: Handlers<unknown, State> = {
         return new Response(
           JSON.stringify({
             ok: false,
-            erro:
-              `Posições não combinam: oferecidos=[${posA.join(",")}] vs contrapartida=[${posB.join(",")}]`,
+            erro: `Posições não combinam: oferecidos=[${
+              posA.join(",")
+            }] vs contrapartida=[${posB.join(",")}]`,
           }),
           { status: 400, headers: H },
         );
@@ -171,7 +175,9 @@ export const handler: Handlers<unknown, State> = {
       const usadosB = new Set<number>();
       const pares: Array<{ a: JogadorKV; b: JogadorKV }> = [];
       for (const a of jogOferecidos) {
-        const b = ladoB.find((j) => !usadosB.has(j!.atleta_id) && j!.posicao === a!.posicao);
+        const b = ladoB.find((j) =>
+          !usadosB.has(j!.atleta_id) && j!.posicao === a!.posicao
+        );
         if (!b) {
           // não deve acontecer dado o multiset bate, mas defensivo
           return new Response(
@@ -185,8 +191,16 @@ export const handler: Handlers<unknown, State> = {
 
       // Aplica swaps + snapshots pra histórico (suporta desfazer).
       const snapshots: Array<{
-        a: { atleta_id: number; apelido: string; escalacaoOriginal: typeof jogOferecidos[number]["escalacao"] };
-        b: { atleta_id: number; apelido: string; escalacaoOriginal: typeof ladoB[number]["escalacao"] };
+        a: {
+          atleta_id: number;
+          apelido: string;
+          escalacaoOriginal: typeof jogOferecidos[number]["escalacao"];
+        };
+        b: {
+          atleta_id: number;
+          apelido: string;
+          escalacaoOriginal: typeof ladoB[number]["escalacao"];
+        };
       }> = [];
 
       for (const { a, b } of pares) {
@@ -203,19 +217,26 @@ export const handler: Handlers<unknown, State> = {
         elencoPara.jogadores[idA] = movidoA;
         elencoDe.jogadores[idB] = movidoB;
         snapshots.push({
-          a: { atleta_id: a.atleta_id, apelido: a.apelido_api, escalacaoOriginal: escAOrig },
-          b: { atleta_id: b.atleta_id, apelido: b.apelido_api, escalacaoOriginal: escBOrig },
+          a: {
+            atleta_id: a.atleta_id,
+            apelido: a.apelido_api,
+            escalacaoOriginal: escAOrig,
+          },
+          b: {
+            atleta_id: b.atleta_id,
+            apelido: b.apelido_api,
+            escalacaoOriginal: escBOrig,
+          },
         });
       }
 
-      await setElenco(kv, oferta.deChave, elencoDe);
-      await setElenco(kv, oferta.paraChave, elencoPara);
+      await setElenco(oferta.deChave, elencoDe);
+      await setElenco(oferta.paraChave, elencoPara);
 
       // Tira o atletaPedido do "negociável" do dono original (paraChave).
       // Extras não precisam tirar — eles não estavam negociáveis.
-      const lista = await getAVenda(kv, oferta.paraChave);
+      const lista = await getAVenda(oferta.paraChave);
       await setAVenda(
-        kv,
         oferta.paraChave,
         lista.filter((id) => id !== oferta.atletaPedido),
       );
@@ -224,7 +245,7 @@ export const handler: Handlers<unknown, State> = {
       // desfazer existente, que opera em pares). Admin pode desfazer
       // jogador por jogador.
       for (const s of snapshots) {
-        await registrarTroca(kv, {
+        await registrarTroca({
           ofertaId: oferta.id,
           chaveA: oferta.deChave,
           atletaA: s.a,
@@ -238,12 +259,12 @@ export const handler: Handlers<unknown, State> = {
     }
 
     const status = body.decisao;
-    await setOferta(kv, {
+    await setOferta({
       ...oferta,
       status,
       respondidoEm: Date.now(),
     });
-    await criarNotif(kv, {
+    await criarNotif({
       chave: oferta.deChave,
       tipo: status === "aceita" ? "oferta_aceita" : "oferta_negada",
       ofertaId: oferta.id,

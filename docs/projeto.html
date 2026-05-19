@@ -1,389 +1,519 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brasileirão Fantasy — arquitetura</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-<style>
-:root {
-  --bg-0: #0B0B0D;
-  --bg-1: #15161A;
-  --bg-2: #1C1D22;
-  --bg-3: #25262C;
-  --fg-0: #C7C7CC;
-  --fg-1: #7A7B82;
-  --fg-2: #4A4C54;
-  --fg-3: #2F3038;
-  --line-1: #2A2C33;
-  --line-2: #353740;
-  --accent: #9B7BFF;
-  --accent-soft: #6B5BB8;
-  --syn-red: #E5484D;
-  --syn-green: #4CC38A;
-  --syn-yellow: #E2B341;
-  --syn-cyan: #5BC8D7;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
-  --font-reading: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-}
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body {
-  background: var(--bg-0);
-  color: var(--fg-0);
-  font-family: var(--font-sans);
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
-}
-::selection { background: rgba(155,123,255,0.3); color: var(--fg-0); }
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brasileirão Fantasy — arquitetura</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    >
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+    ></script>
+    <style>
+      :root {
+        --bg-0: #0b0b0d;
+        --bg-1: #15161a;
+        --bg-2: #1c1d22;
+        --bg-3: #25262c;
+        --fg-0: #c7c7cc;
+        --fg-1: #7a7b82;
+        --fg-2: #4a4c54;
+        --fg-3: #2f3038;
+        --line-1: #2a2c33;
+        --line-2: #353740;
+        --accent: #9b7bff;
+        --accent-soft: #6b5bb8;
+        --syn-red: #e5484d;
+        --syn-green: #4cc38a;
+        --syn-yellow: #e2b341;
+        --syn-cyan: #5bc8d7;
+        --font-mono:
+          "JetBrains Mono",
+          ui-monospace,
+          "SF Mono",
+          Menlo,
+          Consolas,
+          monospace;
+        --font-sans: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+        --font-reading:
+          "IBM Plex Mono",
+          ui-monospace,
+          "SF Mono",
+          Menlo,
+          monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg-0);
+        color: var(--fg-0);
+        font-family: var(--font-sans);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      ::selection {
+        background: rgba(155, 123, 255, 0.3);
+        color: var(--fg-0);
+      }
 
-.wrap {
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 48px 24px 120px;
-}
-header.hero {
-  border-bottom: 1px solid var(--line-1);
-  padding-bottom: 28px;
-  margin-bottom: 40px;
-}
-header.hero .crumb {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 14px;
-}
-header.hero h1 {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 44px;
-  letter-spacing: -0.01em;
-  margin: 0 0 12px;
-  color: #fff;
-}
-header.hero .tagline {
-  font-size: 17px;
-  color: var(--fg-1);
-  max-width: 700px;
-}
-header.hero .meta {
-  display: flex;
-  gap: 16px;
-  margin-top: 20px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--fg-2);
-  flex-wrap: wrap;
-}
-header.hero .meta .pill {
-  padding: 4px 10px;
-  background: var(--bg-2);
-  border: 1px solid var(--line-1);
-  border-radius: 999px;
-  letter-spacing: 0.05em;
-  color: var(--fg-1);
-}
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 48px 24px 120px;
+      }
+      header.hero {
+        border-bottom: 1px solid var(--line-1);
+        padding-bottom: 28px;
+        margin-bottom: 40px;
+      }
+      header.hero .crumb {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 14px;
+      }
+      header.hero h1 {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        font-size: 44px;
+        letter-spacing: -0.01em;
+        margin: 0 0 12px;
+        color: #fff;
+      }
+      header.hero .tagline {
+        font-size: 17px;
+        color: var(--fg-1);
+        max-width: 700px;
+      }
+      header.hero .meta {
+        display: flex;
+        gap: 16px;
+        margin-top: 20px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--fg-2);
+        flex-wrap: wrap;
+      }
+      header.hero .meta .pill {
+        padding: 4px 10px;
+        background: var(--bg-2);
+        border: 1px solid var(--line-1);
+        border-radius: 999px;
+        letter-spacing: 0.05em;
+        color: var(--fg-1);
+      }
 
-h2 {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 22px;
-  letter-spacing: -0.01em;
-  margin: 56px 0 16px;
-  color: #fff;
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
-}
-h3 {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin: 32px 0 12px;
-  color: var(--accent);
-}
-p { margin: 0 0 14px; }
-ul, ol { padding-left: 22px; margin: 0 0 16px; }
-li { margin: 6px 0; }
-code, kbd {
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  background: var(--bg-2);
-  border: 1px solid var(--line-1);
-  padding: 1px 6px;
-  border-radius: 3px;
-  color: var(--fg-0);
-}
-a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent-soft); }
-a:hover { color: #fff; border-bottom-color: #fff; }
-strong { color: #fff; font-weight: 600; }
+      h2 {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        font-size: 22px;
+        letter-spacing: -0.01em;
+        margin: 56px 0 16px;
+        color: #fff;
+        border-left: 3px solid var(--accent);
+        padding-left: 12px;
+      }
+      h3 {
+        font-family: var(--font-mono);
+        font-weight: 600;
+        font-size: 15px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin: 32px 0 12px;
+        color: var(--accent);
+      }
+      p {
+        margin: 0 0 14px;
+      }
+      ul, ol {
+        padding-left: 22px;
+        margin: 0 0 16px;
+      }
+      li {
+        margin: 6px 0;
+      }
+      code, kbd {
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        background: var(--bg-2);
+        border: 1px solid var(--line-1);
+        padding: 1px 6px;
+        border-radius: 3px;
+        color: var(--fg-0);
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        border-bottom: 1px dotted var(--accent-soft);
+      }
+      a:hover {
+        color: #fff;
+        border-bottom-color: #fff;
+      }
+      strong {
+        color: #fff;
+        font-weight: 600;
+      }
 
-.card {
-  background: var(--bg-1);
-  border: 1px solid var(--line-1);
-  border-radius: 4px;
-  padding: 18px 22px;
-  margin: 14px 0;
-}
-.card.note {
-  border-left: 3px solid var(--syn-yellow);
-}
-.card.warn {
-  border-left: 3px solid var(--syn-red);
-}
+      .card {
+        background: var(--bg-1);
+        border: 1px solid var(--line-1);
+        border-radius: 4px;
+        padding: 18px 22px;
+        margin: 14px 0;
+      }
+      .card.note {
+        border-left: 3px solid var(--syn-yellow);
+      }
+      .card.warn {
+        border-left: 3px solid var(--syn-red);
+      }
 
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-@media (max-width: 700px) {
-  .grid-2 { grid-template-columns: 1fr; }
-}
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 700px) {
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+      }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  margin: 14px 0;
-}
-table th {
-  text-align: left;
-  border-bottom: 1px solid var(--line-2);
-  padding: 8px 10px;
-  color: var(--accent);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 11px;
-}
-table td {
-  border-bottom: 1px solid var(--line-1);
-  padding: 9px 10px;
-  vertical-align: top;
-  color: var(--fg-0);
-}
-table tr:last-child td { border-bottom: none; }
-table .verb {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  padding: 2px 6px;
-  border-radius: 3px;
-  margin-right: 6px;
-}
-table .verb.get { background: rgba(91,200,215,0.18); color: var(--syn-cyan); }
-table .verb.post { background: rgba(76,195,138,0.18); color: var(--syn-green); }
-table .verb.put { background: rgba(226,179,65,0.18); color: var(--syn-yellow); }
-table .verb.delete { background: rgba(229,72,77,0.18); color: var(--syn-red); }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        margin: 14px 0;
+      }
+      table th {
+        text-align: left;
+        border-bottom: 1px solid var(--line-2);
+        padding: 8px 10px;
+        color: var(--accent);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-size: 11px;
+      }
+      table td {
+        border-bottom: 1px solid var(--line-1);
+        padding: 9px 10px;
+        vertical-align: top;
+        color: var(--fg-0);
+      }
+      table tr:last-child td {
+        border-bottom: none;
+      }
+      table .verb {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        padding: 2px 6px;
+        border-radius: 3px;
+        margin-right: 6px;
+      }
+      table .verb.get {
+        background: rgba(91, 200, 215, 0.18);
+        color: var(--syn-cyan);
+      }
+      table .verb.post {
+        background: rgba(76, 195, 138, 0.18);
+        color: var(--syn-green);
+      }
+      table .verb.put {
+        background: rgba(226, 179, 65, 0.18);
+        color: var(--syn-yellow);
+      }
+      table .verb.delete {
+        background: rgba(229, 72, 77, 0.18);
+        color: var(--syn-red);
+      }
 
-pre.tree {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  background: var(--bg-1);
-  border: 1px solid var(--line-1);
-  border-radius: 4px;
-  padding: 16px 20px;
-  overflow-x: auto;
-  color: var(--fg-1);
-  line-height: 1.5;
-}
-pre.tree .dir { color: var(--accent); }
-pre.tree .file { color: var(--fg-0); }
-pre.tree .comment { color: var(--fg-2); }
+      pre.tree {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        background: var(--bg-1);
+        border: 1px solid var(--line-1);
+        border-radius: 4px;
+        padding: 16px 20px;
+        overflow-x: auto;
+        color: var(--fg-1);
+        line-height: 1.5;
+      }
+      pre.tree .dir {
+        color: var(--accent);
+      }
+      pre.tree .file {
+        color: var(--fg-0);
+      }
+      pre.tree .comment {
+        color: var(--fg-2);
+      }
 
-.diagram {
-  background: var(--bg-1);
-  border: 1px solid var(--line-1);
-  border-radius: 4px;
-  padding: 28px 18px;
-  margin: 14px 0 28px;
-  overflow-x: auto;
-  display: flex;
-  justify-content: center;
-}
-.diagram .mermaid { font-family: var(--font-mono) !important; }
+      .diagram {
+        background: var(--bg-1);
+        border: 1px solid var(--line-1);
+        border-radius: 4px;
+        padding: 28px 18px;
+        margin: 14px 0 28px;
+        overflow-x: auto;
+        display: flex;
+        justify-content: center;
+      }
+      .diagram .mermaid {
+        font-family: var(--font-mono) !important;
+      }
 
-.toc {
-  position: sticky;
-  top: 24px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-}
-.toc-wrap {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 40px;
-}
-@media (max-width: 900px) {
-  .toc-wrap { grid-template-columns: 1fr; }
-  .toc { position: static; }
-}
-.toc h4 {
-  margin: 0 0 8px;
-  color: var(--accent);
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-.toc ul { list-style: none; padding: 0; }
-.toc li { margin: 4px 0; }
-.toc a {
-  color: var(--fg-1);
-  border-bottom: none;
-  display: block;
-  padding: 2px 0;
-}
-.toc a:hover { color: #fff; }
+      .toc {
+        position: sticky;
+        top: 24px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+      }
+      .toc-wrap {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 40px;
+      }
+      @media (max-width: 900px) {
+        .toc-wrap {
+          grid-template-columns: 1fr;
+        }
+        .toc {
+          position: static;
+        }
+      }
+      .toc h4 {
+        margin: 0 0 8px;
+        color: var(--accent);
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .toc ul {
+        list-style: none;
+        padding: 0;
+      }
+      .toc li {
+        margin: 4px 0;
+      }
+      .toc a {
+        color: var(--fg-1);
+        border-bottom: none;
+        display: block;
+        padding: 2px 0;
+      }
+      .toc a:hover {
+        color: #fff;
+      }
 
-.kv-key {
-  font-family: var(--font-mono);
-  background: var(--bg-2);
-  color: var(--syn-cyan);
-  padding: 1px 6px;
-  border-radius: 3px;
-  border: 1px solid var(--line-1);
-  font-size: 12px;
-}
-.legend {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: var(--fg-2);
-  text-transform: uppercase;
-  margin: 4px 0 12px;
-}
-</style>
-</head>
-<body>
-<div class="wrap">
+      .kv-key {
+        font-family: var(--font-mono);
+        background: var(--bg-2);
+        color: var(--syn-cyan);
+        padding: 1px 6px;
+        border-radius: 3px;
+        border: 1px solid var(--line-1);
+        font-size: 12px;
+      }
+      .legend {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        color: var(--fg-2);
+        text-transform: uppercase;
+        margin: 4px 0 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <div class="crumb">/ docs · arquitetura</div>
+        <h1>Brasileirão Fantasy</h1>
+        <p class="tagline">
+          Liga fantasy privada do Brasileirão pra um grupo de 9 amigos. Cada um
+          tem um time fixo (~26 jogadores) e pontua semanalmente. Tem mercado
+          interno (trocas + free agents), draft com prioridades, e rodada ao
+          vivo com substituições automáticas.
+        </p>
+        <div class="meta">
+          <span class="pill">Deno Fresh</span>
+          <span class="pill">Deno KV</span>
+          <span class="pill">TypeScript + Preact</span>
+          <span class="pill">jsDelivr CDN</span>
+          <span class="pill">Cartola API</span>
+          <span class="pill">Google OAuth</span>
+        </div>
+      </header>
 
-<header class="hero">
-  <div class="crumb">/ docs · arquitetura</div>
-  <h1>Brasileirão Fantasy</h1>
-  <p class="tagline">
-    Liga fantasy privada do Brasileirão pra um grupo de 9 amigos.
-    Cada um tem um time fixo (~26 jogadores) e pontua semanalmente. Tem
-    mercado interno (trocas + free agents), draft com prioridades, e
-    rodada ao vivo com substituições automáticas.
-  </p>
-  <div class="meta">
-    <span class="pill">Deno Fresh</span>
-    <span class="pill">Deno KV</span>
-    <span class="pill">TypeScript + Preact</span>
-    <span class="pill">jsDelivr CDN</span>
-    <span class="pill">Cartola API</span>
-    <span class="pill">Google OAuth</span>
-  </div>
-</header>
+      <div class="toc-wrap">
+        <aside class="toc">
+          <h4>Conteúdo</h4>
+          <ul>
+            <li><a href="#stack">Stack</a></li>
+            <li><a href="#arquitetura">Arquitetura</a></li>
+            <li><a href="#estrutura">Estrutura</a></li>
+            <li><a href="#dados">Modelo de dados</a></li>
+            <li><a href="#fluxos">Fluxos do usuário</a></li>
+            <li><a href="#login">↳ Login</a></li>
+            <li><a href="#home">↳ Home</a></li>
+            <li><a href="#mercado">↳ Mercado</a></li>
+            <li><a href="#draft">↳ Draft</a></li>
+            <li><a href="#aovivo">↳ Ao vivo</a></li>
+            <li><a href="#endpoints">Endpoints</a></li>
+            <li><a href="#crons">Crons</a></li>
+            <li><a href="#perf">Performance</a></li>
+          </ul>
+        </aside>
 
-<div class="toc-wrap">
-<aside class="toc">
-  <h4>Conteúdo</h4>
-  <ul>
-    <li><a href="#stack">Stack</a></li>
-    <li><a href="#arquitetura">Arquitetura</a></li>
-    <li><a href="#estrutura">Estrutura</a></li>
-    <li><a href="#dados">Modelo de dados</a></li>
-    <li><a href="#fluxos">Fluxos do usuário</a></li>
-    <li><a href="#login">↳ Login</a></li>
-    <li><a href="#home">↳ Home</a></li>
-    <li><a href="#mercado">↳ Mercado</a></li>
-    <li><a href="#draft">↳ Draft</a></li>
-    <li><a href="#aovivo">↳ Ao vivo</a></li>
-    <li><a href="#endpoints">Endpoints</a></li>
-    <li><a href="#crons">Crons</a></li>
-    <li><a href="#perf">Performance</a></li>
-  </ul>
-</aside>
+        <main>
+          <h2 id="stack">Stack</h2>
+          <div class="grid-2">
+            <div class="card">
+              <h3>Frontend</h3>
+              <ul>
+                <li>
+                  <strong>Fresh</strong> (framework SSR-first do Deno) —
+                  server-rendered HTML com ilhas Preact pra interatividade
+                  pontual
+                </li>
+                <li>
+                  <strong>Preact</strong> nas <em>islands</em> (formulários,
+                  modais, swap de jogador, mercado, etc)
+                </li>
+                <li>
+                  <strong>CSS custom</strong> em <code
+                  >static/bf-styles.css</code> — sem framework
+                </li>
+                <li>
+                  Design system próprio (dark mono, JetBrains Mono + IBM Plex
+                  Sans, accent lime)
+                </li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Backend</h3>
+              <ul>
+                <li>
+                  <strong>Deno Deploy</strong> (edge runtime serverless)
+                  hospedando o Fresh
+                </li>
+                <li>
+                  <strong>Deno KV</strong> pra estado persistente (elencos,
+                  mercado, sessions, draft, simulação)
+                </li>
+                <li>
+                  <strong>Cartola API</strong> (pública) pra catálogo de
+                  atletas, pontuação ao vivo e partidas
+                </li>
+                <li>
+                  <strong>Google OAuth</strong> pra SSO + login admin via senha
+                </li>
+                <li>
+                  <strong>Crons do Deno</strong>: sync diário do catálogo +
+                  atualização de 5min na rodada
+                </li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Imagens e CDN</h3>
+              <ul>
+                <li>
+                  Imagens (cutouts de jogadores, escudos, logos) em <strong>repo
+                    público separado</strong> <code
+                  >Iuri07/brasileirao-fantasy-assets</code>
+                </li>
+                <li>
+                  Servidas via <strong>jsDelivr</strong> (cache global
+                  multi-PoP)
+                </li>
+                <li>
+                  Helper <code>lib/cdn.ts</code> reescreve URLs em prod; em dev
+                  usa symlink local
+                </li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Geração de assets</h3>
+              <ul>
+                <li>
+                  <strong>ogol.com.br</strong> scraping pra fotos dos jogadores
+                </li>
+                <li>
+                  <strong>rembg</strong> (Python CLI) pra remover fundo das
+                  fotos (gera cutout PNG transparente)
+                </li>
+                <li>
+                  Roda local (rembg não funciona em Deno Deploy); resultado é
+                  committado no repo de assets
+                </li>
+              </ul>
+            </div>
+          </div>
 
-<main>
+          <h2 id="arquitetura">Arquitetura</h2>
+          <p>
+            Camadas e por onde os dados fluem em uma request típica de página:
+          </p>
 
-<h2 id="stack">Stack</h2>
-<div class="grid-2">
-  <div class="card">
-    <h3>Frontend</h3>
-    <ul>
-      <li><strong>Fresh</strong> (framework SSR-first do Deno) — server-rendered HTML com ilhas Preact pra interatividade pontual</li>
-      <li><strong>Preact</strong> nas <em>islands</em> (formulários, modais, swap de jogador, mercado, etc)</li>
-      <li><strong>CSS custom</strong> em <code>static/bf-styles.css</code> — sem framework</li>
-      <li>Design system próprio (dark mono, JetBrains Mono + IBM Plex Sans, accent lime)</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3>Backend</h3>
-    <ul>
-      <li><strong>Deno Deploy</strong> (edge runtime serverless) hospedando o Fresh</li>
-      <li><strong>Deno KV</strong> pra estado persistente (elencos, mercado, sessions, draft, simulação)</li>
-      <li><strong>Cartola API</strong> (pública) pra catálogo de atletas, pontuação ao vivo e partidas</li>
-      <li><strong>Google OAuth</strong> pra SSO + login admin via senha</li>
-      <li><strong>Crons do Deno</strong>: sync diário do catálogo + atualização de 5min na rodada</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3>Imagens e CDN</h3>
-    <ul>
-      <li>Imagens (cutouts de jogadores, escudos, logos) em <strong>repo público separado</strong> <code>Iuri07/brasileirao-fantasy-assets</code></li>
-      <li>Servidas via <strong>jsDelivr</strong> (cache global multi-PoP)</li>
-      <li>Helper <code>lib/cdn.ts</code> reescreve URLs em prod; em dev usa symlink local</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3>Geração de assets</h3>
-    <ul>
-      <li><strong>ogol.com.br</strong> scraping pra fotos dos jogadores</li>
-      <li><strong>rembg</strong> (Python CLI) pra remover fundo das fotos (gera cutout PNG transparente)</li>
-      <li>Roda local (rembg não funciona em Deno Deploy); resultado é committado no repo de assets</li>
-    </ul>
-  </div>
-</div>
+          <div class="diagram">
+            <div class="mermaid">
+              flowchart LR U[Usuário Browser] -->|HTTPS| DD[Deno Deploy edge] DD
+              -->|middleware auth| KV[(Deno KV)] DD -->|handler render| KV DD
+              -->|fetch quando<br />cache stale| C[Cartola API] DD -->|HTML SSR|
+              U U -->|imagens| JS[jsDelivr CDN] JS -->|gh proxy|
+              GH[GitHub<br />fantasy-assets] CR[Crons Deno] -.->|9h
+              UTC<br />sync atletas| KV CR -.->|cada 5min<br />pontuação| KV CR
+              -.->|fetch| C style U fill:#15161A,stroke:#9B7BFF style DD
+              fill:#1C1D22,stroke:#9B7BFF style KV fill:#1C1D22,stroke:#5BC8D7
+              style C fill:#1C1D22,stroke:#E2B341 style JS
+              fill:#1C1D22,stroke:#4CC38A style GH fill:#1C1D22,stroke:#7A7B82
+              style CR fill:#15161A,stroke:#7A7B82,stroke-dasharray: 5 5
+            </div>
+          </div>
 
-<h2 id="arquitetura">Arquitetura</h2>
-<p>Camadas e por onde os dados fluem em uma request típica de página:</p>
+          <p class="legend">
+            — linhas tracejadas = fora do hot path (jobs em background)
+          </p>
 
-<div class="diagram">
-<div class="mermaid">
-flowchart LR
-    U[Usuário Browser] -->|HTTPS| DD[Deno Deploy edge]
-    DD -->|middleware auth| KV[(Deno KV)]
-    DD -->|handler render| KV
-    DD -->|fetch quando<br/>cache stale| C[Cartola API]
-    DD -->|HTML SSR| U
-    U -->|imagens| JS[jsDelivr CDN]
-    JS -->|gh proxy| GH[GitHub<br/>fantasy-assets]
-    CR[Crons Deno] -.->|9h UTC<br/>sync atletas| KV
-    CR -.->|cada 5min<br/>pontuação| KV
-    CR -.->|fetch| C
-    style U fill:#15161A,stroke:#9B7BFF
-    style DD fill:#1C1D22,stroke:#9B7BFF
-    style KV fill:#1C1D22,stroke:#5BC8D7
-    style C fill:#1C1D22,stroke:#E2B341
-    style JS fill:#1C1D22,stroke:#4CC38A
-    style GH fill:#1C1D22,stroke:#7A7B82
-    style CR fill:#15161A,stroke:#7A7B82,stroke-dasharray: 5 5
-</div>
-</div>
+          <h3>Por que essa stack?</h3>
+          <ul>
+            <li>
+              <strong>Deno Fresh + KV</strong>: SSR completo (rápido pra cargas
+              leves), KV embutido (sem provisionar DB separado), deploy global
+              em 1 click. Ideal pra app de 9 usuários.
+            </li>
+            <li>
+              <strong>Cartola API pública</strong>: já tem todo o catálogo de
+              jogadores brasileiros, pontuação oficial, partidas. Tirou da
+              equação ter que manter esses dados.
+            </li>
+            <li>
+              <strong>jsDelivr CDN</strong>: imagens são as request mais
+              numerosas; Deno Deploy edge soma TTFB acumulado. Off-load pra CDN
+              específico = páginas 14× mais rápidas em assets.
+            </li>
+          </ul>
 
-<p class="legend">— linhas tracejadas = fora do hot path (jobs em background)</p>
-
-<h3>Por que essa stack?</h3>
-<ul>
-  <li><strong>Deno Fresh + KV</strong>: SSR completo (rápido pra cargas leves), KV embutido (sem provisionar DB separado), deploy global em 1 click. Ideal pra app de 9 usuários.</li>
-  <li><strong>Cartola API pública</strong>: já tem todo o catálogo de jogadores brasileiros, pontuação oficial, partidas. Tirou da equação ter que manter esses dados.</li>
-  <li><strong>jsDelivr CDN</strong>: imagens são as request mais numerosas; Deno Deploy edge soma TTFB acumulado. Off-load pra CDN específico = páginas 14× mais rápidas em assets.</li>
-</ul>
-
-<h2 id="estrutura">Estrutura</h2>
-<pre class="tree">
+          <h2 id="estrutura">Estrutura</h2>
+          <pre
+            class="tree"
+          >
 <span class="dir">brasileirao-fantasy/</span>
 ├─ <span class="dir">routes/</span>          <span class="comment"># SSR + APIs (Fresh file-based router)</span>
 │  ├─ _app.tsx          <span class="comment"># shell HTML (preconnect, link prefetch)</span>
@@ -436,328 +566,630 @@ flowchart LR
    └─ sync-assets.sh               <span class="comment"># commit+push repo de assets</span>
 </pre>
 
-<h2 id="dados">Modelo de dados (Deno KV)</h2>
-<p>Cada linha abaixo é uma chave do KV. Convenção de nomenclatura usa tuplas hierárquicas <code>["namespace", id, ...]</code>:</p>
+          <h2 id="dados">Modelo de dados (Deno KV)</h2>
+          <p>
+            Cada linha abaixo é uma chave do KV. Convenção de nomenclatura usa
+            tuplas hierárquicas <code>["namespace", id, ...]</code>:
+          </p>
 
-<table>
-<thead><tr><th style="width:38%">Chave</th><th>Valor</th><th>Atualizado por</th></tr></thead>
-<tbody>
-<tr><td><span class="kv-key">["session", sessionId]</span></td><td>SessionKV (role, chave, email, expiresAt)</td><td>Login (TTL 30 dias)</td></tr>
-<tr><td><span class="kv-key">["email_map"]</span></td><td>email → chave (admin atribui)</td><td>Admin via UI</td></tr>
-<tr><td><span class="kv-key">["elenco", chave]</span></td><td>ElencoKV (26 jogadores fixos + escalação)</td><td>Swap, oferta aceita, cron sync</td></tr>
-<tr><td><span class="kv-key">["atletas_cache", pos]</span></td><td>Cache do catálogo Cartola por posição</td><td>Cron sync-atletas (9h UTC)</td></tr>
-<tr><td><span class="kv-key">["partidas_cache"]</span></td><td>clube_id → {casa, fora} abreviações</td><td>Cron sync-atletas</td></tr>
-<tr><td><span class="kv-key">["mercado_cache", "meta" | "c", n]</span></td><td>Cache do /atletas/mercado em chunks (TTL 5min)</td><td>Lazy no primeiro acesso</td></tr>
-<tr><td><span class="kv-key">["rodada_atual"]</span></td><td>{ status, rodada, fechamento, atualizadoEm }</td><td>Cron atualizar (cada 5min)</td></tr>
-<tr><td><span class="kv-key">["a_venda", chave]</span></td><td>Lista de atleta_ids que o dono pôs à venda</td><td>Toggle do usuário</td></tr>
-<tr><td><span class="kv-key">["interessados", atletaId]</span></td><td>[{ chave, oferecido }] — quem demonstrou interesse + jogador empenhado</td><td>POST /api/atleta/[id]/interesse</td></tr>
-<tr><td><span class="kv-key">["minha_prioridade", chave]</span></td><td>atleta_ids em ordem de prioridade pessoal</td><td>POST /api/me/prioridade</td></tr>
-<tr><td><span class="kv-key">["draft_ordem"]</span></td><td>chaves em ordem (index 0 = 1º pick)</td><td>Admin / shift automático</td></tr>
-<tr><td><span class="kv-key">["draft_meta"]</span></td><td>{ ciclo, rodadaCiclo, rodadaBase }</td><td>Admin endpoint</td></tr>
-<tr><td><span class="kv-key">["draft_dias_resolucao"]</span></td><td>Dias da semana (0=dom..6=sáb) em que resolvem</td><td>Admin UI</td></tr>
-<tr><td><span class="kv-key">["oferta", id] / ["ofertas_recebidas",chave,id] / ["ofertas_enviadas",chave,id]</span></td><td>Ofertas de troca entre times</td><td>POST /api/ofertas</td></tr>
-<tr><td><span class="kv-key">["notif", chave, id]</span></td><td>Notificações pro usuário (oferta nova/respondida)</td><td>Backend ao criar oferta</td></tr>
-<tr><td><span class="kv-key">["historico", chave]</span></td><td>{ rodada → pontos } por elenco</td><td>Cron atualizar (após rodada)</td></tr>
-<tr><td><span class="kv-key">["subs", rodada, chave]</span></td><td>Contagem de subs manuais do usuário</td><td>swap-escalacao</td></tr>
-<tr><td><span class="kv-key">["simulando"]</span></td><td>Flag boolean (admin testando rodada ao vivo)</td><td>POST /api/admin/simular-rodada</td></tr>
-<tr><td><span class="kv-key">["sim_scout"]</span></td><td>atleta_id → scout object (durante simulação)</td><td>simular-rodada</td></tr>
-<tr><td><span class="kv-key">["sim_partidas"]</span></td><td>Placares simulados (durante simulação)</td><td>simular-rodada</td></tr>
-<tr><td><span class="kv-key">["oauth_state", state]</span></td><td>CSRF state do OAuth (TTL 10min)</td><td>auth/google/start</td></tr>
-</tbody>
-</table>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 38%">Chave</th>
+                <th>Valor</th>
+                <th>Atualizado por</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="kv-key">["session", sessionId]</span></td>
+                <td>SessionKV (role, chave, email, expiresAt)</td>
+                <td>Login (TTL 30 dias)</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["email_map"]</span></td>
+                <td>email → chave (admin atribui)</td>
+                <td>Admin via UI</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["elenco", chave]</span></td>
+                <td>ElencoKV (26 jogadores fixos + escalação)</td>
+                <td>Swap, oferta aceita, cron sync</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["atletas_cache", pos]</span></td>
+                <td>Cache do catálogo Cartola por posição</td>
+                <td>Cron sync-atletas (9h UTC)</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["partidas_cache"]</span></td>
+                <td>clube_id → {casa, fora} abreviações</td>
+                <td>Cron sync-atletas</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="kv-key">["mercado_cache", "meta" | "c", n]</span>
+                </td>
+                <td>Cache do /atletas/mercado em chunks (TTL 5min)</td>
+                <td>Lazy no primeiro acesso</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["rodada_atual"]</span></td>
+                <td>{ status, rodada, fechamento, atualizadoEm }</td>
+                <td>Cron atualizar (cada 5min)</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["a_venda", chave]</span></td>
+                <td>Lista de atleta_ids que o dono pôs à venda</td>
+                <td>Toggle do usuário</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["interessados", atletaId]</span></td>
+                <td>
+                  [{ chave, oferecido }] — quem demonstrou interesse + jogador
+                  empenhado
+                </td>
+                <td>POST /api/atleta/[id]/interesse</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["minha_prioridade", chave]</span></td>
+                <td>atleta_ids em ordem de prioridade pessoal</td>
+                <td>POST /api/me/prioridade</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["draft_ordem"]</span></td>
+                <td>chaves em ordem (index 0 = 1º pick)</td>
+                <td>Admin / shift automático</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["draft_meta"]</span></td>
+                <td>{ ciclo, rodadaCiclo, rodadaBase }</td>
+                <td>Admin endpoint</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["draft_dias_resolucao"]</span></td>
+                <td>Dias da semana (0=dom..6=sáb) em que resolvem</td>
+                <td>Admin UI</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="kv-key"
+                  >["oferta", id] / ["ofertas_recebidas",chave,id] /
+                    ["ofertas_enviadas",chave,id]</span>
+                </td>
+                <td>Ofertas de troca entre times</td>
+                <td>POST /api/ofertas</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["notif", chave, id]</span></td>
+                <td>Notificações pro usuário (oferta nova/respondida)</td>
+                <td>Backend ao criar oferta</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["historico", chave]</span></td>
+                <td>{ rodada → pontos } por elenco</td>
+                <td>Cron atualizar (após rodada)</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["subs", rodada, chave]</span></td>
+                <td>Contagem de subs manuais do usuário</td>
+                <td>swap-escalacao</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["simulando"]</span></td>
+                <td>Flag boolean (admin testando rodada ao vivo)</td>
+                <td>POST /api/admin/simular-rodada</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["sim_scout"]</span></td>
+                <td>atleta_id → scout object (durante simulação)</td>
+                <td>simular-rodada</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["sim_partidas"]</span></td>
+                <td>Placares simulados (durante simulação)</td>
+                <td>simular-rodada</td>
+              </tr>
+              <tr>
+                <td><span class="kv-key">["oauth_state", state]</span></td>
+                <td>CSRF state do OAuth (TTL 10min)</td>
+                <td>auth/google/start</td>
+              </tr>
+            </tbody>
+          </table>
 
-<h2 id="fluxos">Fluxos do usuário</h2>
+          <h2 id="fluxos">Fluxos do usuário</h2>
 
-<h3 id="login">Login</h3>
-<p>2 caminhos: <strong>Google OAuth</strong> (usuário comum) e <strong>senha admin</strong> (apenas o admin do grupo).</p>
-<div class="diagram">
-<div class="mermaid">
-sequenceDiagram
-    autonumber
-    participant U as Usuário
-    participant S as Server (Fresh)
-    participant G as Google OAuth
-    participant K as Deno KV
+          <h3 id="login">Login</h3>
+          <p>
+            2 caminhos: <strong>Google OAuth</strong> (usuário comum) e <strong
+            >senha admin</strong> (apenas o admin do grupo).
+          </p>
+          <div class="diagram">
+            <div class="mermaid">
+              sequenceDiagram autonumber participant U as Usuário participant S
+              as Server (Fresh) participant G as Google OAuth participant K as
+              Deno KV Note over U,K: Caminho Google U->>S: GET
+              /api/auth/google/start S->>K: salva state (CSRF) S->>U: 302 →
+              accounts.google.com?state=... U->>G: autoriza G->>S: GET
+              /api/auth/google/callback?code&state S->>K: lê email_map
+              (email→chave) S->>K: cria session S->>U: 302 → / (cookie
+              bf_session set) Note over U,K: Caminho Admin U->>S: POST
+              /api/auth/login (user, pass) S->>S: bcrypt hash check S->>K: cria
+              session (role=admin) S->>U: 302 → / (cookie set)
+            </div>
+          </div>
 
-    Note over U,K: Caminho Google
-    U->>S: GET /api/auth/google/start
-    S->>K: salva state (CSRF)
-    S->>U: 302 → accounts.google.com?state=...
-    U->>G: autoriza
-    G->>S: GET /api/auth/google/callback?code&state
-    S->>K: lê email_map (email→chave)
-    S->>K: cria session
-    S->>U: 302 → / (cookie bf_session set)
+          <h3 id="home">Home — visualizar e editar elenco</h3>
+          <div class="diagram">
+            <div class="mermaid">
+              sequenceDiagram autonumber participant U as Usuário participant S
+              as Server participant K as Deno KV participant C as Cartola
+              participant CDN as jsDelivr U->>S: GET / S->>K: lê elencos,
+              rodada, fotos, historico (paralelo) alt rodada não está ao vivo
+              S->>C: GET /partidas (placares + horários) else ao vivo S->>C: GET
+              /atletas/pontuados (parcial) S->>C: GET /partidas end S->>U: HTML
+              SSR (escalação + ranking) U->>CDN: GET /atletas/{id}.png (cutouts)
+              U->>CDN: GET /escudos/{clube}.jpg Note over U: Hidrata island
+              MeuTimeEditor U->>S: POST /api/elenco/[dono]/swap-escalacao S->>K:
+              valida posição + limite subs S->>K: aplica swap (Sim ↔ Banco)
+              S->>U: { ok, subsRestantes }
+            </div>
+          </div>
 
-    Note over U,K: Caminho Admin
-    U->>S: POST /api/auth/login (user, pass)
-    S->>S: bcrypt hash check
-    S->>K: cria session (role=admin)
-    S->>U: 302 → / (cookie set)
-</div>
-</div>
+          <h3 id="mercado">Mercado — interesses, à venda, oferta</h3>
+          <div class="diagram">
+            <div class="mermaid">
+              flowchart TB UV[Usuário no /mercado] --> Q{O que faço?} Q
+              -->|Quero esse free agent| INT Q -->|Pôr meu jogador à venda| AV Q
+              -->|Comprar jogador à venda<br />de outro time| OF Q -->|Ordenar
+              minha lista<br />de interesses| PRI INT[Modal: escolho
+              jogador<br />da mesma posição pra oferecer] --> INT2 INT2[/POST
+              /api/atleta/id/interesse<br />body: atleta_oferecido/] -->
+              KV1[(KV: interessados[id] += me<br />minha_prioridade += atleta)]
+              AV[Click toggle 'À venda'] --> AV2[/POST
+              /api/elenco/dono/a-venda/] AV2 --> KV2[(KV: a_venda[chave] toggle
+              id)] OF[Modal: ofereço<br />jogador meu da mesma posição] -->
+              OF2[/POST /api/ofertas<br />body: pedido + oferecido/] OF2 -->
+              KV3[(KV: oferta criada<br />+ notif pro dono)] PRI[↑↓ na lista do
+              modal] --> PRI2[/POST /api/me/prioridade<br />body: ordem nova/]
+              PRI2 --> KV4[(KV: minha_prioridade<br />= nova ordem)] style INT
+              fill:#15161A,stroke:#9B7BFF style AV fill:#15161A,stroke:#E2B341
+              style OF fill:#15161A,stroke:#4CC38A style PRI
+              fill:#15161A,stroke:#5BC8D7
+            </div>
+          </div>
 
-<h3 id="home">Home — visualizar e editar elenco</h3>
-<div class="diagram">
-<div class="mermaid">
-sequenceDiagram
-    autonumber
-    participant U as Usuário
-    participant S as Server
-    participant K as Deno KV
-    participant C as Cartola
-    participant CDN as jsDelivr
+          <div class="card note">
+            <strong>Bloqueio durante ao vivo:</strong> quando <code
+            >rodada.status === "ao_vivo"</code>, todas as APIs de mutação no
+            mercado retornam <code>423 Locked</code>. A UI mostra banner
+            vermelho e desabilita botões.
+          </div>
 
-    U->>S: GET /
-    S->>K: lê elencos, rodada, fotos, historico (paralelo)
-    alt rodada não está ao vivo
-        S->>C: GET /partidas (placares + horários)
-    else ao vivo
-        S->>C: GET /atletas/pontuados (parcial)
-        S->>C: GET /partidas
-    end
-    S->>U: HTML SSR (escalação + ranking)
-    U->>CDN: GET /atletas/{id}.png (cutouts)
-    U->>CDN: GET /escudos/{clube}.jpg
-    Note over U: Hidrata island MeuTimeEditor
+          <h3 id="draft">Draft — resolução de conflitos sobre free agents</h3>
+          <p>
+            Quando vários times demonstram interesse no mesmo free agent, o
+            draft decide quem leva.
+          </p>
+          <div class="diagram">
+            <div class="mermaid">
+              flowchart LR A[Ordem inicial:<br />inverso da
+              classificação<br />pior time = 1º pick] --> B B[Rodada N do
+              Brasileirão termina] --> C{quem usou pick?} C -->|usaram| D[vão
+              pro fim da fila<br />preservando ordem relativa] C -->|não usaram|
+              E[sobem posições] D --> F E --> F[ordem nova<br />rodadaCiclo +=
+              1] F --> G{rodadaCiclo > 5?} G -->|sim| H[Reset:<br />nova ordem =
+              inverso<br />da classificação atual<br />ciclo += 1] G -->|não|
+              I[próxima rodada] H --> I style A fill:#15161A,stroke:#9B7BFF
+              style F fill:#15161A,stroke:#4CC38A style H
+              fill:#15161A,stroke:#E5484D
+            </div>
+          </div>
 
-    U->>S: POST /api/elenco/[dono]/swap-escalacao
-    S->>K: valida posição + limite subs
-    S->>K: aplica swap (Sim ↔ Banco)
-    S->>U: { ok, subsRestantes }
-</div>
-</div>
+          <div class="card note">
+            <strong>Conflito de mesmo time:</strong> se o user tem interesse em
+            A e B, e o draft permite só 1, vence o que ele colocou primeiro na
+            sua <em>prioridade pessoal</em>. Reordenável pelo modal "Meus
+            interesses".
+          </div>
 
-<h3 id="mercado">Mercado — interesses, à venda, oferta</h3>
-<div class="diagram">
-<div class="mermaid">
-flowchart TB
-    UV[Usuário no /mercado] --> Q{O que faço?}
+          <h3 id="aovivo">Ao vivo — rodada rolando</h3>
+          <div class="diagram">
+            <div class="mermaid">
+              sequenceDiagram autonumber participant U as Usuário participant SI
+              as Island AoVivoLive participant Px as /api/live proxy participant
+              K as Deno KV participant C as Cartola U->>SI: abre /ao-vivo loop
+              polling 60s SI->>Px: GET /api/live/atletas/pontuados alt
+              simulando=true em KV Px->>K: lê elencos + sim_scout Px-->>SI:
+              resposta sintetizada else produção real Px->>C: GET
+              /atletas/pontuados (cacheado 15s) Px-->>SI: resposta Cartola end
+              SI->>SI: recomputa parcial e<br />ranking, mostra subs end Note
+              over U: Substituições são automáticas<br />(calcularMelhorTime
+              escolhe<br />os top 3 bench → escala)
+            </div>
+          </div>
 
-    Q -->|Quero esse free agent| INT
-    Q -->|Pôr meu jogador à venda| AV
-    Q -->|Comprar jogador à venda<br/>de outro time| OF
-    Q -->|Ordenar minha lista<br/>de interesses| PRI
+          <h3>Auto-substituição: como o algoritmo decide</h3>
+          <div class="diagram">
+            <div class="mermaid">
+              flowchart TB S[26 jogadores do elenco] --> T1 T1[Pra cada posição
+              GOL LAT ZAG MEI ATA:<br />compara soma titulares vs bench top-N]
+              --> T2 T2[diff = bench.pontos − titulares.pontos] T2 --> T3[Ordena
+              posições por diff desc] T3 --> T4[Pega top 3 posições com diff >
+              0] T4 --> T5[Aplica sub nessas posições<br />bench vira
+              escala<br />titulares deslocados vão pro banco] T5 -->
+              T6[Renderiza ↑ no pino que entrou<br />↓ no que saiu] style T1
+              fill:#15161A,stroke:#9B7BFF style T4 fill:#15161A,stroke:#4CC38A
+              style T6 fill:#15161A,stroke:#E2B341
+            </div>
+          </div>
 
-    INT[Modal: escolho jogador<br/>da mesma posição pra oferecer] --> INT2
-    INT2[/POST /api/atleta/id/interesse<br/>body: atleta_oferecido/] --> KV1[(KV: interessados[id] += me<br/>minha_prioridade += atleta)]
+          <h2 id="endpoints">Endpoints HTTP</h2>
 
-    AV[Click toggle 'À venda'] --> AV2[/POST /api/elenco/dono/a-venda/]
-    AV2 --> KV2[(KV: a_venda[chave] toggle id)]
+          <h3>Páginas (SSR)</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Rota</th>
+                <th>Função</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>GET /</code></td>
+                <td>Home — escalação do usuário + ranking</td>
+              </tr>
+              <tr>
+                <td><code>GET /mercado</code></td>
+                <td>Browser de free agents + jogadores à venda</td>
+              </tr>
+              <tr>
+                <td><code>GET /liga</code></td>
+                <td>Ranking + evolução por rodada (Sparkline)</td>
+              </tr>
+              <tr>
+                <td><code>GET /time/[chave]</code></td>
+                <td>Elenco de qualquer time</td>
+              </tr>
+              <tr>
+                <td><code>GET /ao-vivo</code></td>
+                <td>Rodada ao vivo com parciais</td>
+              </tr>
+              <tr>
+                <td><code>GET /admin</code></td>
+                <td>Painel admin (atribuições, draft, simulação)</td>
+              </tr>
+              <tr>
+                <td><code>GET /login</code></td>
+                <td>Tela de login</td>
+              </tr>
+            </tbody>
+          </table>
 
-    OF[Modal: ofereço<br/>jogador meu da mesma posição] --> OF2[/POST /api/ofertas<br/>body: pedido + oferecido/]
-    OF2 --> KV3[(KV: oferta criada<br/>+ notif pro dono)]
+          <h3>API JSON — usuário</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Método/Rota</th>
+                <th>Body</th>
+                <th>Função</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/atleta/[id]/interesse</code>
+                </td>
+                <td>
+                  <code>{ atleta_oferecido }</code> ou <code>{ remover: true
+                    }</code>
+                </td>
+                <td>Marca/desmarca interesse em free agent</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/elenco/[dono]/a-venda</code>
+                </td>
+                <td><code>{ atleta_id }</code></td>
+                <td>Toggle "à venda" de um jogador meu</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/elenco/[dono]/swap-escalacao</code>
+                </td>
+                <td><code>{ atleta_id_sai, atleta_id_entra }</code></td>
+                <td>Reorganiza titular ↔ banco (respeita limite 3 ao vivo)</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code>/api/ofertas</code>
+                </td>
+                <td><code>{ atleta_pedido, atleta_oferecido }</code></td>
+                <td>Cria oferta de troca entre times</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb get">GET</span><code>/api/ofertas</code>
+                </td>
+                <td>—</td>
+                <td>Lista ofertas recebidas pelo user</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/ofertas/[id]/responder</code>
+                </td>
+                <td><code>{ decisao: "aceita" | "negada" }</code></td>
+                <td>Aceita ou nega oferta</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb get">GET</span><code
+                  >/api/me/prioridade</code>
+                </td>
+                <td>—</td>
+                <td>Lista atletas em ordem de prioridade própria</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/me/prioridade</code>
+                </td>
+                <td><code>{ ordem: atleta_id[] }</code></td>
+                <td>Reordena prioridade</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb get">GET</span><code
+                  >/api/notificacoes</code>
+                </td>
+                <td>—</td>
+                <td>Lista notificações (ofertas recebidas/respondidas)</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb get">GET</span><code
+                  >/api/live/[...path]</code>
+                </td>
+                <td>—</td>
+                <td>Proxy Cartola com cache (30s) + intercept simulação</td>
+              </tr>
+            </tbody>
+          </table>
 
-    PRI[↑↓ na lista do modal] --> PRI2[/POST /api/me/prioridade<br/>body: ordem nova/]
-    PRI2 --> KV4[(KV: minha_prioridade<br/>= nova ordem)]
+          <h3>API — admin</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Método/Rota</th>
+                <th>Body</th>
+                <th>Função</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/admin/email-map</code>
+                </td>
+                <td><code>{ chave, email }</code></td>
+                <td>Atribui email Google a um time</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/admin/sync-atletas</code>
+                </td>
+                <td>—</td>
+                <td>Refresh catálogo Cartola → atletas_cache</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/admin/atualizar</code>
+                </td>
+                <td>—</td>
+                <td>Refresh status + pontuação ao vivo</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/admin/seed</code>
+                </td>
+                <td>—</td>
+                <td>Cria os 9 elencos seed iniciais</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/admin/simular-rodada</code>
+                </td>
+                <td><code>{ entrouPct? }</code></td>
+                <td>Gera scout + pontos aleatórios + placares</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/admin/simular-rodada?encerrar=1[&zerar=1]</code>
+                </td>
+                <td>—</td>
+                <td>Encerra simulação</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/admin/draft-ordem</code>
+                </td>
+                <td><code>{ ordem: chave[] }</code></td>
+                <td>Reordena draft manualmente</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/admin/draft-fechar</code>
+                </td>
+                <td>
+                  <code>{ pickers: chave[] }</code> ou <code>{ reset: true
+                    }</code>
+                </td>
+                <td>Avança rodada do ciclo / reseta</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb get">GET</span><code
+                  >/api/admin/draft-dias</code>
+                </td>
+                <td>—</td>
+                <td>Lê dias da semana de resolução</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/admin/draft-dias</code>
+                </td>
+                <td><code>{ dias: number[] }</code></td>
+                <td>Define dias (0=dom..6=sáb)</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="verb post">POST</span><code
+                  >/api/admin/sync-fotos-ogol</code>
+                </td>
+                <td>—</td>
+                <td>Scrape ogol + rembg pra cutouts (só local)</td>
+              </tr>
+            </tbody>
+          </table>
 
-    style INT fill:#15161A,stroke:#9B7BFF
-    style AV fill:#15161A,stroke:#E2B341
-    style OF fill:#15161A,stroke:#4CC38A
-    style PRI fill:#15161A,stroke:#5BC8D7
-</div>
-</div>
+          <h2 id="crons">Crons (Deno Cron)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Schedule</th>
+                <th>Função</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>0 9 * * *</code> (1×/dia)</td>
+                <td>
+                  <strong>sync-atletas</strong>: atualiza atletas_cache
+                  (catálogo da Cartola por posição) e fotos preservadas
+                </td>
+              </tr>
+              <tr>
+                <td><code>*/5 * * * *</code> (cada 5min)</td>
+                <td>
+                  <strong>atualizar</strong>: atualiza rodada_atual + pontuação
+                  ao vivo nos elencos. Skipa durante simulação.
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-<div class="card note">
-<strong>Bloqueio durante ao vivo:</strong> quando <code>rodada.status === "ao_vivo"</code>, todas as APIs de mutação no mercado retornam <code>423 Locked</code>. A UI mostra banner vermelho e desabilita botões.
-</div>
+          <h2 id="perf">Performance e otimizações</h2>
+          <div class="grid-2">
+            <div class="card">
+              <h3>Resposta SSR</h3>
+              <ul>
+                <li>
+                  KV reads em <code>Promise.all</code> agressivo (1 round-trip
+                  por block)
+                </li>
+                <li>
+                  Cartola <code>/atletas/mercado</code> chunked em KV (TTL 5min,
+                  fits no limite de 64KB/value via chunks de ~200 atletas)
+                </li>
+                <li>
+                  <code>getInteressadosBatch</code> via <code>kv.list</code> (1
+                  trip) em vez de N gets
+                </li>
+                <li>
+                  <code>Server-Timing</code> em routes/* pra rastrear regressões
+                </li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Browser</h3>
+              <ul>
+                <li>
+                  <code>Cache-Control: max-age=1y, immutable</code> em
+                  CSS/JS/imagens (URLs versionadas via <code>?v=N</code>)
+                </li>
+                <li>
+                  <code>&lt;link rel="prefetch"&gt;</code> ao hover/touch de
+                  links internos
+                </li>
+                <li>
+                  <code>&lt;link rel="preconnect"&gt;</code> pro CDN do jsDelivr
+                  (TLS antecipado)
+                </li>
+                <li>
+                  Fade-out de navegação CSS-only (sem <code>setTimeout</code>)
+                </li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Imagens</h3>
+              <ul>
+                <li>
+                  <strong>jsDelivr</strong> servindo do repo <code
+                  >Iuri07/brasileirao-fantasy-assets</code> (público)
+                </li>
+                <li>
+                  Helper <code>lib/cdn.ts</code> reescreve URLs em prod; dev usa
+                  symlink local
+                </li>
+                <li>
+                  TTFB médio: ~45ms (vs ~600ms do Deno Deploy serve estático)
+                </li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Build / repo</h3>
+              <ul>
+                <li>Imagens fora do repo de código (~72MB)</li>
+                <li>
+                  Manifests TS auto-gerados (<code
+                  >lib/cutouts-manifest.ts</code>, <code
+                  >lib/players-manifest.ts</code>) pra evitar <code
+                  >Deno.readDirSync</code> em runtime
+                </li>
+                <li>
+                  Cache in-process do client Cartola por path (TTL específico)
+                </li>
+              </ul>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
 
-<h3 id="draft">Draft — resolução de conflitos sobre free agents</h3>
-<p>Quando vários times demonstram interesse no mesmo free agent, o draft decide quem leva.</p>
-<div class="diagram">
-<div class="mermaid">
-flowchart LR
-    A[Ordem inicial:<br/>inverso da classificação<br/>pior time = 1º pick] --> B
-    B[Rodada N do Brasileirão termina] --> C{quem usou pick?}
-    C -->|usaram| D[vão pro fim da fila<br/>preservando ordem relativa]
-    C -->|não usaram| E[sobem posições]
-    D --> F
-    E --> F[ordem nova<br/>rodadaCiclo += 1]
-    F --> G{rodadaCiclo > 5?}
-    G -->|sim| H[Reset:<br/>nova ordem = inverso<br/>da classificação atual<br/>ciclo += 1]
-    G -->|não| I[próxima rodada]
-    H --> I
-
-    style A fill:#15161A,stroke:#9B7BFF
-    style F fill:#15161A,stroke:#4CC38A
-    style H fill:#15161A,stroke:#E5484D
-</div>
-</div>
-
-<div class="card note">
-<strong>Conflito de mesmo time:</strong> se o user tem interesse em A e B, e o draft permite só 1, vence o que ele colocou primeiro na sua <em>prioridade pessoal</em>. Reordenável pelo modal "Meus interesses".
-</div>
-
-<h3 id="aovivo">Ao vivo — rodada rolando</h3>
-<div class="diagram">
-<div class="mermaid">
-sequenceDiagram
-    autonumber
-    participant U as Usuário
-    participant SI as Island AoVivoLive
-    participant Px as /api/live proxy
-    participant K as Deno KV
-    participant C as Cartola
-
-    U->>SI: abre /ao-vivo
-    loop polling 60s
-        SI->>Px: GET /api/live/atletas/pontuados
-        alt simulando=true em KV
-            Px->>K: lê elencos + sim_scout
-            Px-->>SI: resposta sintetizada
-        else produção real
-            Px->>C: GET /atletas/pontuados (cacheado 15s)
-            Px-->>SI: resposta Cartola
-        end
-        SI->>SI: recomputa parcial e<br/>ranking, mostra subs
-    end
-
-    Note over U: Substituições são automáticas<br/>(calcularMelhorTime escolhe<br/>os top 3 bench → escala)
-</div>
-</div>
-
-<h3>Auto-substituição: como o algoritmo decide</h3>
-<div class="diagram">
-<div class="mermaid">
-flowchart TB
-    S[26 jogadores do elenco] --> T1
-    T1[Pra cada posição GOL LAT ZAG MEI ATA:<br/>compara soma titulares vs bench top-N] --> T2
-    T2[diff = bench.pontos − titulares.pontos]
-    T2 --> T3[Ordena posições por diff desc]
-    T3 --> T4[Pega top 3 posições com diff > 0]
-    T4 --> T5[Aplica sub nessas posições<br/>bench vira escala<br/>titulares deslocados vão pro banco]
-    T5 --> T6[Renderiza ↑ no pino que entrou<br/>↓ no que saiu]
-
-    style T1 fill:#15161A,stroke:#9B7BFF
-    style T4 fill:#15161A,stroke:#4CC38A
-    style T6 fill:#15161A,stroke:#E2B341
-</div>
-</div>
-
-<h2 id="endpoints">Endpoints HTTP</h2>
-
-<h3>Páginas (SSR)</h3>
-<table>
-<thead><tr><th>Rota</th><th>Função</th></tr></thead>
-<tbody>
-<tr><td><code>GET /</code></td><td>Home — escalação do usuário + ranking</td></tr>
-<tr><td><code>GET /mercado</code></td><td>Browser de free agents + jogadores à venda</td></tr>
-<tr><td><code>GET /liga</code></td><td>Ranking + evolução por rodada (Sparkline)</td></tr>
-<tr><td><code>GET /time/[chave]</code></td><td>Elenco de qualquer time</td></tr>
-<tr><td><code>GET /ao-vivo</code></td><td>Rodada ao vivo com parciais</td></tr>
-<tr><td><code>GET /admin</code></td><td>Painel admin (atribuições, draft, simulação)</td></tr>
-<tr><td><code>GET /login</code></td><td>Tela de login</td></tr>
-</tbody>
-</table>
-
-<h3>API JSON — usuário</h3>
-<table>
-<thead><tr><th>Método/Rota</th><th>Body</th><th>Função</th></tr></thead>
-<tbody>
-<tr><td><span class="verb post">POST</span><code>/api/atleta/[id]/interesse</code></td><td><code>{ atleta_oferecido }</code> ou <code>{ remover: true }</code></td><td>Marca/desmarca interesse em free agent</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/elenco/[dono]/a-venda</code></td><td><code>{ atleta_id }</code></td><td>Toggle "à venda" de um jogador meu</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/elenco/[dono]/swap-escalacao</code></td><td><code>{ atleta_id_sai, atleta_id_entra }</code></td><td>Reorganiza titular ↔ banco (respeita limite 3 ao vivo)</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/ofertas</code></td><td><code>{ atleta_pedido, atleta_oferecido }</code></td><td>Cria oferta de troca entre times</td></tr>
-<tr><td><span class="verb get">GET</span><code>/api/ofertas</code></td><td>—</td><td>Lista ofertas recebidas pelo user</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/ofertas/[id]/responder</code></td><td><code>{ decisao: "aceita" | "negada" }</code></td><td>Aceita ou nega oferta</td></tr>
-<tr><td><span class="verb get">GET</span><code>/api/me/prioridade</code></td><td>—</td><td>Lista atletas em ordem de prioridade própria</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/me/prioridade</code></td><td><code>{ ordem: atleta_id[] }</code></td><td>Reordena prioridade</td></tr>
-<tr><td><span class="verb get">GET</span><code>/api/notificacoes</code></td><td>—</td><td>Lista notificações (ofertas recebidas/respondidas)</td></tr>
-<tr><td><span class="verb get">GET</span><code>/api/live/[...path]</code></td><td>—</td><td>Proxy Cartola com cache (30s) + intercept simulação</td></tr>
-</tbody>
-</table>
-
-<h3>API — admin</h3>
-<table>
-<thead><tr><th>Método/Rota</th><th>Body</th><th>Função</th></tr></thead>
-<tbody>
-<tr><td><span class="verb post">POST</span><code>/api/admin/email-map</code></td><td><code>{ chave, email }</code></td><td>Atribui email Google a um time</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/admin/sync-atletas</code></td><td>—</td><td>Refresh catálogo Cartola → atletas_cache</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/admin/atualizar</code></td><td>—</td><td>Refresh status + pontuação ao vivo</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/admin/seed</code></td><td>—</td><td>Cria os 9 elencos seed iniciais</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/admin/simular-rodada</code></td><td><code>{ entrouPct? }</code></td><td>Gera scout + pontos aleatórios + placares</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/admin/simular-rodada?encerrar=1[&zerar=1]</code></td><td>—</td><td>Encerra simulação</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/admin/draft-ordem</code></td><td><code>{ ordem: chave[] }</code></td><td>Reordena draft manualmente</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/admin/draft-fechar</code></td><td><code>{ pickers: chave[] }</code> ou <code>{ reset: true }</code></td><td>Avança rodada do ciclo / reseta</td></tr>
-<tr><td><span class="verb get">GET</span><code>/api/admin/draft-dias</code></td><td>—</td><td>Lê dias da semana de resolução</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/admin/draft-dias</code></td><td><code>{ dias: number[] }</code></td><td>Define dias (0=dom..6=sáb)</td></tr>
-<tr><td><span class="verb post">POST</span><code>/api/admin/sync-fotos-ogol</code></td><td>—</td><td>Scrape ogol + rembg pra cutouts (só local)</td></tr>
-</tbody>
-</table>
-
-<h2 id="crons">Crons (Deno Cron)</h2>
-<table>
-<thead><tr><th>Schedule</th><th>Função</th></tr></thead>
-<tbody>
-<tr><td><code>0 9 * * *</code> (1×/dia)</td><td><strong>sync-atletas</strong>: atualiza atletas_cache (catálogo da Cartola por posição) e fotos preservadas</td></tr>
-<tr><td><code>*/5 * * * *</code> (cada 5min)</td><td><strong>atualizar</strong>: atualiza rodada_atual + pontuação ao vivo nos elencos. Skipa durante simulação.</td></tr>
-</tbody>
-</table>
-
-<h2 id="perf">Performance e otimizações</h2>
-<div class="grid-2">
-  <div class="card">
-    <h3>Resposta SSR</h3>
-    <ul>
-      <li>KV reads em <code>Promise.all</code> agressivo (1 round-trip por block)</li>
-      <li>Cartola <code>/atletas/mercado</code> chunked em KV (TTL 5min, fits no limite de 64KB/value via chunks de ~200 atletas)</li>
-      <li><code>getInteressadosBatch</code> via <code>kv.list</code> (1 trip) em vez de N gets</li>
-      <li><code>Server-Timing</code> em routes/* pra rastrear regressões</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3>Browser</h3>
-    <ul>
-      <li><code>Cache-Control: max-age=1y, immutable</code> em CSS/JS/imagens (URLs versionadas via <code>?v=N</code>)</li>
-      <li><code>&lt;link rel="prefetch"&gt;</code> ao hover/touch de links internos</li>
-      <li><code>&lt;link rel="preconnect"&gt;</code> pro CDN do jsDelivr (TLS antecipado)</li>
-      <li>Fade-out de navegação CSS-only (sem <code>setTimeout</code>)</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3>Imagens</h3>
-    <ul>
-      <li><strong>jsDelivr</strong> servindo do repo <code>Iuri07/brasileirao-fantasy-assets</code> (público)</li>
-      <li>Helper <code>lib/cdn.ts</code> reescreve URLs em prod; dev usa symlink local</li>
-      <li>TTFB médio: ~45ms (vs ~600ms do Deno Deploy serve estático)</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3>Build / repo</h3>
-    <ul>
-      <li>Imagens fora do repo de código (~72MB)</li>
-      <li>Manifests TS auto-gerados (<code>lib/cutouts-manifest.ts</code>, <code>lib/players-manifest.ts</code>) pra evitar <code>Deno.readDirSync</code> em runtime</li>
-      <li>Cache in-process do client Cartola por path (TTL específico)</li>
-    </ul>
-  </div>
-</div>
-
-</main>
-</div>
-
-</div>
-
-<script>
-mermaid.initialize({
-  startOnLoad: true,
-  theme: 'dark',
-  themeVariables: {
-    'primaryColor': '#15161A',
-    'primaryTextColor': '#C7C7CC',
-    'primaryBorderColor': '#9B7BFF',
-    'lineColor': '#7A7B82',
-    'secondaryColor': '#1C1D22',
-    'tertiaryColor': '#25262C',
-    'background': '#0B0B0D',
-    'mainBkg': '#15161A',
-    'secondBkg': '#1C1D22',
-    'tertiaryBkg': '#25262C',
-    'fontFamily': 'JetBrains Mono, ui-monospace, monospace',
-    'fontSize': '13px',
-  },
-  flowchart: { curve: 'basis', padding: 20 },
-  sequence: { actorMargin: 80, messageMargin: 45 },
-});
-</script>
-</body>
+    <script>
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "dark",
+        themeVariables: {
+          "primaryColor": "#15161A",
+          "primaryTextColor": "#C7C7CC",
+          "primaryBorderColor": "#9B7BFF",
+          "lineColor": "#7A7B82",
+          "secondaryColor": "#1C1D22",
+          "tertiaryColor": "#25262C",
+          "background": "#0B0B0D",
+          "mainBkg": "#15161A",
+          "secondBkg": "#1C1D22",
+          "tertiaryBkg": "#25262C",
+          "fontFamily": "JetBrains Mono, ui-monospace, monospace",
+          "fontSize": "13px",
+        },
+        flowchart: { curve: "basis", padding: 20 },
+        sequence: { actorMargin: 80, messageMargin: 45 },
+      });
+    </script>
+  </body>
 </html>

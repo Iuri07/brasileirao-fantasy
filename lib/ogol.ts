@@ -151,7 +151,9 @@ export async function rembg(inputBytes: Uint8Array): Promise<Uint8Array> {
       args: ["i", tmpIn, tmpOut],
       stdout: "piped",
       stderr: "piped",
-      env: { PATH: `${Deno.env.get("HOME")}/.local/bin:${Deno.env.get("PATH")}` },
+      env: {
+        PATH: `${Deno.env.get("HOME")}/.local/bin:${Deno.env.get("PATH")}`,
+      },
     });
     const { code, stderr } = await cmd.output();
     if (code !== 0) {

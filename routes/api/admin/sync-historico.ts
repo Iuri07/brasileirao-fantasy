@@ -1,5 +1,6 @@
 import { Handlers } from "$fresh/server.ts";
 import { fetchHistoricoFromSheet } from "../../../lib/sheets-sync.ts";
+import { setHistoricoRodada } from "../../../lib/historico.ts";
 
 const H = { "Content-Type": "application/json" };
 
@@ -12,11 +13,12 @@ export const handler: Handlers = {
   async POST() {
     try {
       const { historico, donosNaoMapeados } = await fetchHistoricoFromSheet();
-      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
       let timesAtualizados = 0;
       let totalRodadas = 0;
       for (const [chave, rodadas] of Object.entries(historico)) {
-        await kv.set(["historico", chave], rodadas);
+        for (const [rodadaStr, pontos] of Object.entries(rodadas)) {
+          await setHistoricoRodada(chave, Number(rodadaStr), pontos);
+        }
         timesAtualizados++;
         totalRodadas += Object.keys(rodadas).length;
       }

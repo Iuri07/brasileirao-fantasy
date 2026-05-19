@@ -52,7 +52,6 @@ export const handler: Handlers<Data, State> = {
       timings.push(`${label};dur=${(performance.now() - since).toFixed(1)}`);
     };
 
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const chaveLogadaAux = ctx.state.session?.chave;
 
     // SSR enxuto: lê SÓ dados leves (KV pequenos). A grade de
@@ -67,13 +66,13 @@ export const handler: Handlers<Data, State> = {
       minhaAVendaArr,
       draftInit,
     ] = await Promise.all([
-      getRodadaStatus(kv),
-      getDraftOrdem(kv),
-      getDiasResolucao(kv),
+      getRodadaStatus(),
+      getDraftOrdem(),
+      getDiasResolucao(),
       chaveLogadaAux
-        ? getAVenda(kv, chaveLogadaAux)
+        ? getAVenda(chaveLogadaAux)
         : Promise.resolve([] as number[]),
-      inicializarDraftSeNecessario(kv, 1),
+      inicializarDraftSeNecessario(1),
     ]);
     mark("kv", T0);
     const qtdAVenda = minhaAVendaArr.length;

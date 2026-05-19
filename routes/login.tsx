@@ -31,9 +31,7 @@ export default function LoginPage({ data }: PageProps<Data>) {
             alt="Brasileirão Fantasy"
           />
           <h1 class="bf-login__title">Entrar</h1>
-          {data.erro && (
-            <p class="bf-login__erro">{data.erro}</p>
-          )}
+          {data.erro && <p class="bf-login__erro">{data.erro}</p>}
           <form
             class="bf-login__form"
             method="POST"
@@ -69,7 +67,9 @@ export default function LoginPage({ data }: PageProps<Data>) {
 
           <a
             class="bf-login__google"
-            href={`/api/auth/google/start?next=${encodeURIComponent(data.next)}`}
+            href={`/api/auth/google/start?next=${
+              encodeURIComponent(data.next)
+            }`}
           >
             <svg width="18" height="18" viewBox="0 0 48 48">
               <path

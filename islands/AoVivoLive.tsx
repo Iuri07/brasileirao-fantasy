@@ -233,7 +233,12 @@ export default function AoVivoLive(
       </div>
 
       <SectionHeader>Campo</SectionHeader>
-      <Field jogadores={escalacao} showPoints accent={accent} banco={bancoPinos} />
+      <Field
+        jogadores={escalacao}
+        showPoints
+        accent={accent}
+        banco={bancoPinos}
+      />
 
       <SectionHeader>Eventos da rodada</SectionHeader>
       {comEventos.length === 0

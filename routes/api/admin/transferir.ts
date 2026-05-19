@@ -77,10 +77,9 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const [from, to] = await Promise.all([
-      getElenco(kv, fromChave),
-      getElenco(kv, toChave),
+      getElenco(fromChave),
+      getElenco(toChave),
     ]);
     if (!from || !to) {
       return new Response(
@@ -117,8 +116,8 @@ export const handler: Handlers<unknown, State> = {
       ...jogador,
       escalacao: body.escalacao_destino ?? "Banco",
     };
-    await setElenco(kv, fromChave, from);
-    await setElenco(kv, toChave, to);
+    await setElenco(fromChave, from);
+    await setElenco(toChave, to);
 
     return new Response(
       JSON.stringify({

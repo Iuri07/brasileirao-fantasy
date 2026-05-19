@@ -14,8 +14,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 403, headers: H },
       );
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const recebidas = await listarOfertasRecebidas(kv, chave);
+    const recebidas = await listarOfertasRecebidas(chave);
     return new Response(JSON.stringify({ ok: true, recebidas }), {
       headers: H,
     });
@@ -74,8 +73,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    if (await isAoVivo(kv)) {
+    if (await isAoVivo()) {
       return new Response(
         JSON.stringify({
           ok: false,
@@ -84,7 +82,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 423, headers: H },
       );
     }
-    const elencos = await getAllElencos(kv);
+    const elencos = await getAllElencos();
 
     // Valida: todos os oferecidos estão no meu elenco
     const meuElenco = elencos[chave]?.jogadores ?? {};
@@ -119,7 +117,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 400, headers: H },
       );
     }
-    const aVendaGlobal = await getAVendaGlobal(kv);
+    const aVendaGlobal = await getAVendaGlobal();
     if (aVendaGlobal[pedido] !== paraChave) {
       return new Response(
         JSON.stringify({
@@ -132,7 +130,9 @@ export const handler: Handlers<unknown, State> = {
 
     // Pelo menos UM oferecido tem que estar na mesma posição do pedido
     // (senão o destinatário não consegue devolver — multiset não fecha).
-    const possuiPosPedido = jogOferecidos.some((j) => j!.posicao === jogPedido!.posicao);
+    const possuiPosPedido = jogOferecidos.some((j) =>
+      j!.posicao === jogPedido!.posicao
+    );
     if (!possuiPosPedido) {
       return new Response(
         JSON.stringify({
@@ -180,7 +180,7 @@ export const handler: Handlers<unknown, State> = {
       }
     }
 
-    const oferta = await criarOferta(kv, {
+    const oferta = await criarOferta({
       deChave: chave,
       paraChave,
       atletasOferecidos: oferecidos,

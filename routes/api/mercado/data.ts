@@ -35,7 +35,6 @@ const POSICAO: Record<
  */
 export const handler: Handlers<unknown, State> = {
   async GET(_req, ctx) {
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const chaveLogadaAux = ctx.state.session?.chave;
 
     const [
@@ -46,15 +45,15 @@ export const handler: Handlers<unknown, State> = {
       minhaPrioridade,
       minhaAVendaArr,
     ] = await Promise.all([
-      getAllElencos(kv),
-      getFotos(kv),
-      fetchAtletasMercadoCacheado(kv).catch(() => null),
-      getAVendaGlobal(kv),
+      getAllElencos(),
+      getFotos(),
+      fetchAtletasMercadoCacheado().catch(() => null),
+      getAVendaGlobal(),
       chaveLogadaAux
-        ? getMinhaPrioridade(kv, chaveLogadaAux)
+        ? getMinhaPrioridade(chaveLogadaAux)
         : Promise.resolve([] as number[]),
       chaveLogadaAux
-        ? getAVenda(kv, chaveLogadaAux)
+        ? getAVenda(chaveLogadaAux)
         : Promise.resolve([] as number[]),
     ]);
     const minhaAVenda = new Set(minhaAVendaArr);
@@ -77,7 +76,7 @@ export const handler: Handlers<unknown, State> = {
       const naVenda = owner && aVenda[a.atleta_id] === owner;
       if (!owner || naVenda) idsDisponiveis.push(a.atleta_id);
     }
-    const interessadosMap = await getInteressadosBatch(kv, idsDisponiveis);
+    const interessadosMap = await getInteressadosBatch(idsDisponiveis);
 
     const jogadores: unknown[] = [];
     for (const a of mercadoResp?.atletas ?? []) {
@@ -109,7 +108,9 @@ export const handler: Handlers<unknown, State> = {
         // deno-lint-ignore no-explicit-any
         mediaPontos: (a as any).media_num ?? null,
         donoChave: owner ?? null,
-        donoTime: owner ? getNomeTimeDisplay(owner, CHAVES_TIMES[owner]?.nome_time) : null,
+        donoTime: owner
+          ? getNomeTimeDisplay(owner, CHAVES_TIMES[owner]?.nome_time)
+          : null,
         interessados: regs.map((r) => r.chave),
         meuOferecido: meuReg?.oferecido ?? null,
       });
@@ -143,7 +144,10 @@ export const handler: Handlers<unknown, State> = {
           // deno-lint-ignore no-explicit-any
           mediaPontos: (cartola as any)?.media_num ?? null,
           donoChave: chaveLogada,
-          donoTime: getNomeTimeDisplay(chaveLogada, CHAVES_TIMES[chaveLogada]?.nome_time),
+          donoTime: getNomeTimeDisplay(
+            chaveLogada,
+            CHAVES_TIMES[chaveLogada]?.nome_time,
+          ),
           interessados: [],
           aVenda: minhaAVenda.has(j.atleta_id),
         });

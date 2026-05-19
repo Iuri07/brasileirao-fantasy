@@ -1,9 +1,10 @@
-// Auth foundation: sessões em KV, cookies signed, mapeamento email→time.
+// Auth foundation: sessões em SQLite, cookies signed, mapeamento email→time.
 //
 // Não usa JWT — o cookie só carrega um session_id; o conteúdo (role, chave)
-// fica no KV. Mais simples e seguro pra revogação.
+// fica no banco. Mais simples e seguro pra revogação.
 
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
+import { getDb } from "./db.ts";
 
 export type Role = "admin" | "user";
 
@@ -38,31 +39,58 @@ export async function sha256Hex(s: string): Promise<string> {
   return encodeHex(new Uint8Array(buf));
 }
 
-export async function getSession(
-  kv: Deno.Kv,
-  sessionId: string,
-): Promise<SessionKV | null> {
-  const r = await kv.get<SessionKV>(["session", sessionId]);
-  if (!r.value) return null;
-  if (r.value.expiresAt < Date.now()) {
-    await kv.delete(["session", sessionId]);
-    return null;
+export function getSession(sessionId: string): Promise<SessionKV | null> {
+  const db = getDb();
+  const r = db.prepare(
+    "SELECT role, chave, email, name, picture, expires_at FROM sessions WHERE id=?",
+  ).get<{
+    role: Role;
+    chave: string | null;
+    email: string | null;
+    name: string | null;
+    picture: string | null;
+    expires_at: number;
+  }>(sessionId);
+  if (!r) return Promise.resolve(null);
+  if (r.expires_at < Date.now()) {
+    db.prepare("DELETE FROM sessions WHERE id=?").run(sessionId);
+    return Promise.resolve(null);
   }
-  return r.value;
+  return Promise.resolve({
+    role: r.role,
+    chave: r.chave ?? undefined,
+    email: r.email ?? undefined,
+    name: r.name ?? undefined,
+    picture: r.picture ?? undefined,
+    expiresAt: r.expires_at,
+  });
 }
 
-export async function createSession(
-  kv: Deno.Kv,
+export function createSession(
   session: Omit<SessionKV, "expiresAt">,
 ): Promise<string> {
   const sessionId = genSessionId();
-  const full: SessionKV = { ...session, expiresAt: Date.now() + SESSION_TTL_MS };
-  await kv.set(["session", sessionId], full, { expireIn: SESSION_TTL_MS });
-  return sessionId;
+  const now = Date.now();
+  const exp = now + SESSION_TTL_MS;
+  getDb().prepare(
+    "INSERT INTO sessions (id, role, chave, email, name, picture, created_at, expires_at) " +
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+  ).run(
+    sessionId,
+    session.role,
+    session.chave ?? null,
+    session.email ?? null,
+    session.name ?? null,
+    session.picture ?? null,
+    now,
+    exp,
+  );
+  return Promise.resolve(sessionId);
 }
 
-export async function deleteSession(kv: Deno.Kv, sessionId: string) {
-  await kv.delete(["session", sessionId]);
+export function deleteSession(sessionId: string): Promise<void> {
+  getDb().prepare("DELETE FROM sessions WHERE id=?").run(sessionId);
+  return Promise.resolve();
 }
 
 /** Lê o sessionId do cookie da request. */
@@ -102,57 +130,64 @@ export function buildClearCookie(secure: boolean): string {
 /* --- Email → chave de time --------------------------------------------- */
 
 /** Lê o map email→chave mantido pelo admin. */
-export async function getEmailMap(
-  kv: Deno.Kv,
-): Promise<Record<string, string>> {
-  const r = await kv.get<Record<string, string>>(["auth", "email_map"]);
-  return r.value ?? {};
+export function getEmailMap(): Promise<Record<string, string>> {
+  const rows = getDb().prepare("SELECT email, chave FROM email_map")
+    .all<{ email: string; chave: string }>();
+  const out: Record<string, string> = {};
+  for (const r of rows) out[r.email] = r.chave;
+  return Promise.resolve(out);
 }
 
-export async function setEmailMap(
-  kv: Deno.Kv,
-  map: Record<string, string>,
-): Promise<void> {
-  await kv.set(["auth", "email_map"], map);
+export function setEmailMap(map: Record<string, string>): Promise<void> {
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare("DELETE FROM email_map").run();
+    const ins = db.prepare(
+      "INSERT INTO email_map (email, chave) VALUES (?, ?)",
+    );
+    for (const [email, chave] of Object.entries(map)) ins.run(email, chave);
+  })();
+  return Promise.resolve();
 }
 
 /** Atribui um email a um time (1:1). Joga erro se conflito. */
-export async function atribuirEmailATime(
-  kv: Deno.Kv,
+export function atribuirEmailATime(
   email: string,
   chave: string,
 ): Promise<void> {
   const normalizado = email.trim().toLowerCase();
   if (!normalizado) throw new Error("Email vazio");
-  const map = await getEmailMap(kv);
-  // Remove qualquer email anterior atribuído a essa chave
-  for (const [e, c] of Object.entries(map)) {
-    if (c === chave && e !== normalizado) delete map[e];
-  }
-  // Email já está em outra chave?
-  const chaveAtual = map[normalizado];
-  if (chaveAtual && chaveAtual !== chave) {
+  const db = getDb();
+  const existente = db.prepare("SELECT chave FROM email_map WHERE email=?")
+    .get<{ chave: string }>(normalizado);
+  if (existente && existente.chave !== chave) {
     throw new Error(
-      `Email ${normalizado} já está atribuído ao time ${chaveAtual}`,
+      `Email ${normalizado} já está atribuído ao time ${existente.chave}`,
     );
   }
-  map[normalizado] = chave;
-  await setEmailMap(kv, map);
+  db.transaction(() => {
+    // 1:1 — remove qualquer email anterior atribuído a essa chave
+    db.prepare("DELETE FROM email_map WHERE chave=? AND email != ?")
+      .run(chave, normalizado);
+    db.prepare(
+      "INSERT INTO email_map (email, chave) VALUES (?, ?) " +
+        "ON CONFLICT (email) DO UPDATE SET chave=excluded.chave",
+    ).run(normalizado, chave);
+  })();
+  return Promise.resolve();
 }
 
-export async function removerEmail(kv: Deno.Kv, email: string): Promise<void> {
-  const map = await getEmailMap(kv);
-  delete map[email.trim().toLowerCase()];
-  await setEmailMap(kv, map);
+export function removerEmail(email: string): Promise<void> {
+  getDb().prepare("DELETE FROM email_map WHERE email=?")
+    .run(email.trim().toLowerCase());
+  return Promise.resolve();
 }
 
-/** Resolve um email → chave (consulta o map). */
-export async function emailParaChave(
-  kv: Deno.Kv,
-  email: string,
-): Promise<string | null> {
-  const map = await getEmailMap(kv);
-  return map[email.trim().toLowerCase()] ?? null;
+/** Resolve um email → chave. */
+export function emailParaChave(email: string): Promise<string | null> {
+  const r = getDb().prepare("SELECT chave FROM email_map WHERE email=?")
+    .get<{ chave: string }>(email.trim().toLowerCase());
+  return Promise.resolve(r?.chave ?? null);
 }
 
 /* --- Admin user via env ------------------------------------------------ */
@@ -198,33 +233,32 @@ export function genOAuthState(): string {
   return encodeHex(buf);
 }
 
-/** Guarda o state em KV (com TTL curto). Independe de cookies — funciona
-    mesmo quando o usuário muda de host entre start e callback (ex: LAN
-    IP → localhost via redirect URI). */
-export async function saveOAuthState(
-  kv: Deno.Kv,
-  state: string,
-  next: string,
-): Promise<void> {
-  await kv.set(["oauth_state", state], { next, exp: Date.now() + OAUTH_STATE_TTL_MS }, {
-    expireIn: OAUTH_STATE_TTL_MS,
-  });
+/** Guarda o state em DB (com TTL curto). Independe de cookies. */
+export function saveOAuthState(state: string, next: string): Promise<void> {
+  getDb().prepare(
+    "INSERT INTO oauth_state (state, next, exp) VALUES (?, ?, ?)",
+  ).run(state, next, Date.now() + OAUTH_STATE_TTL_MS);
+  return Promise.resolve();
 }
 
-export async function consumeOAuthState(
-  kv: Deno.Kv,
+export function consumeOAuthState(
   state: string,
 ): Promise<{ next: string } | null> {
-  const r = await kv.get<{ next: string; exp: number }>(["oauth_state", state]);
-  if (!r.value) return null;
-  // Consume (single-use)
-  await kv.delete(["oauth_state", state]);
-  if (r.value.exp < Date.now()) return null;
-  return { next: r.value.next };
+  const db = getDb();
+  const r = db.prepare("SELECT next, exp FROM oauth_state WHERE state=?")
+    .get<{ next: string; exp: number }>(state);
+  if (!r) return Promise.resolve(null);
+  // Consume (single-use) + purge stale
+  db.prepare("DELETE FROM oauth_state WHERE state=?").run(state);
+  if (r.exp < Date.now()) return Promise.resolve(null);
+  return Promise.resolve({ next: r.next });
 }
 
 /** Constrói a URL pra redirecionar ao consentimento do Google. */
-export function buildGoogleAuthUrl(cfg: GoogleOAuthConfig, state: string): string {
+export function buildGoogleAuthUrl(
+  cfg: GoogleOAuthConfig,
+  state: string,
+): string {
   const params = new URLSearchParams({
     client_id: cfg.clientId,
     redirect_uri: cfg.redirectUri,

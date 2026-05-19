@@ -1,3 +1,4 @@
+/// <reference lib="deno.unstable" />
 import {
   fetchAtletasMercado,
   fetchAtletasMercadoCacheado,
@@ -12,13 +13,13 @@ import {
 import {
   getAllElencos,
   getAtletasCache,
-  getRodadaStatus,
   POSICAO_CHAVES_CACHE,
+  setAtletasCache,
   setElenco,
   setPartidasCache,
   setRodadaStatus,
 } from "./kv.ts";
-import { fetchPlayerPhoto, sleep } from "./sportsdb.ts";
+import { getDb } from "./db.ts";
 import { setHistoricoRodada } from "./historico.ts";
 import { calcularMelhorTime } from "./substituicao.ts";
 import {
@@ -31,25 +32,21 @@ import { SCOUT } from "./scout.ts";
 import { CUTOUTS_DISPONIVEIS } from "./cutouts-manifest.ts";
 import type { AtletaCacheEntry, AtletaCacheKV } from "./types.ts";
 
-async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
+async function sincronizarAtletas(): Promise<void> {
   const [data, partidasData] = await Promise.all([
     fetchAtletasMercado(),
     fetchPartidas().catch(() => null),
   ]);
   const now = new Date().toISOString();
 
-  // Carrega cache atual pra preservar fotos REAIS já encontradas
-  // (TheSportsDB) e não sobrescrever com silhueta da Cartola
+  // Carrega cache atual pra preservar fotos REAIS (TheSportsDB etc)
   const cacheAtual = new Map<string, AtletaCacheEntry>();
   for (const pos of POSICAO_CHAVES_CACHE) {
-    const c = await getAtletasCache(kv, pos);
+    const c = await getAtletasCache(pos);
     if (!c) continue;
     for (const [id, e] of Object.entries(c.atletas)) cacheAtual.set(id, e);
   }
 
-  // Cutouts locais bundled (static/atletas/{id}.png) — geração é local +
-  // commit (rembg não roda em Deno Deploy). Manifesto estático em
-  // lib/cutouts-manifest.ts (Deno Deploy não suporta Deno.readDir em static/).
   const cutoutsLocais = CUTOUTS_DISPONIVEIS;
 
   // Cache de atletas por posição (para busca/troca)
@@ -68,10 +65,6 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
     const clubeNome = clube?.nome_fantasia ?? clube?.nome ?? "";
     const idStr = String(a.atleta_id);
     const fotoExistente = cacheAtual.get(idStr)?.foto;
-    // Prioridade:
-    // 1. Cutout local (gerado via ogol+rembg e commitado em static/atletas/)
-    // 2. Foto real preservada do cache (TheSportsDB ou /atletas/)
-    // 3. Foto da Cartola (silhueta — "FORMATO" é placeholder de tamanho)
     const cartolaFoto = a.foto ? a.foto.replace("FORMATO", "220x220") : null;
     const foto = cutoutsLocais.has(idStr)
       ? `/atletas/${idStr}.png`
@@ -93,7 +86,7 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
 
   for (const [chave, atletas] of Object.entries(grupos)) {
     const cache: AtletaCacheKV = { atualizadoEm: now, atletas };
-    await kv.set(["atletas_cache", chave], cache);
+    await setAtletasCache(chave, cache);
   }
 
   // Mapa clube_id → { casa, fora } com abreviações
@@ -109,14 +102,13 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
       matchMap.set(p.clube_casa_id, { casa: casaAbrev, fora: foraAbrev });
       matchMap.set(p.clube_visitante_id, { casa: casaAbrev, fora: foraAbrev });
     }
-    // Persiste o matchMap no KV para uso por add/swap sem nova chamada à API
     const partidasRecord: Record<string, { casa: string; fora: string }> = {};
     for (const [id, m] of matchMap) partidasRecord[String(id)] = m;
-    await setPartidasCache(kv, partidasRecord);
+    await setPartidasCache(partidasRecord);
   }
 
   // Atualiza status_id, clube e partida nos elencos
-  const elencos = await getAllElencos(kv);
+  const elencos = await getAllElencos();
   for (const [chave, elenco] of Object.entries(elencos)) {
     let alterado = false;
     for (const [id, jogador] of Object.entries(elenco.jogadores)) {
@@ -146,28 +138,25 @@ async function sincronizarAtletas(kv: Deno.Kv): Promise<void> {
       };
       alterado = true;
     }
-    if (alterado) await setElenco(kv, chave, elenco);
+    if (alterado) await setElenco(chave, elenco);
   }
 
   console.log(`[cron] atletas sincronizados: ${data.atletas.length}`);
 }
 
-export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
-  // Flag de simulação: admin botou a app em modo "rodada simulada"
-  // (testar UI ao vivo sem mexer no Cartola). Pula o cron até desativar.
-  const simulando = await kv.get<boolean>(["simulando"]);
-  if (simulando.value) {
+export async function atualizarTudo(): Promise<void> {
+  // Flag de simulação
+  const db = getDb();
+  const sim = db.prepare("SELECT ativo FROM simulando WHERE id=1")
+    .get<{ ativo: number }>();
+  if (sim?.ativo === 1) {
     console.log("[cron] simulação ativa — skip atualizarTudo");
     return;
   }
 
   const now = new Date().toISOString();
-
-  // Sempre busca status do mercado e tenta pontuados
   const mercado = await fetchMercadoStatus();
 
-  // Status derivado SOMENTE do mercado real (não do KV anterior).
-  // status_mercado: 1=aberto, 2=fechado (rodada). bola_rolando=true→ao_vivo
   const statusReal: "ao_vivo" | "aguardando_inicio" | "aguardando" =
     mercado.bola_rolando
       ? "ao_vivo"
@@ -179,7 +168,7 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
   try {
     pontuados = await fetchAtletasPontuados();
   } catch {
-    await setRodadaStatus(kv, {
+    await setRodadaStatus({
       status: statusReal,
       rodada: mercado.rodada_atual,
       fechamento: mercado.bola_rolando ? undefined : mercado.fechamento,
@@ -189,7 +178,7 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
   }
 
   if (!pontuados?.atletas || Object.keys(pontuados.atletas).length === 0) {
-    await setRodadaStatus(kv, {
+    await setRodadaStatus({
       status: statusReal,
       rodada: mercado.rodada_atual,
       fechamento: mercado.bola_rolando ? undefined : mercado.fechamento,
@@ -198,23 +187,18 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
     return;
   }
 
-  // === Detecta eventos chave (diff de scout) pra histórico persistido ===
-  // Pra cada atleta com scout novo, compara com último estado salvo;
-  // pra cada código incrementado, registra um EventoHist. Histórico
-  // sobrevive reload (vs timeline client que era só da sessão).
+  // Detecta eventos chave (diff de scout) pra histórico persistido
   const rodadaPontuados = pontuados.rodada_id ?? mercado.rodada_atual;
   const agoraMs = Date.now();
   for (const [idStr, p] of Object.entries(pontuados.atletas)) {
     const scoutNovo = p?.scout ?? {};
     if (Object.keys(scoutNovo).length === 0) continue;
     const atletaId = Number(idStr);
-    const scoutAntigo = await getEstadoScout(kv, rodadaPontuados, atletaId);
+    const scoutAntigo = await getEstadoScout(rodadaPontuados, atletaId);
     let mudou = false;
     for (const [codigo, qtd] of Object.entries(scoutNovo)) {
       const antigo = scoutAntigo[codigo] ?? 0;
       if (qtd <= antigo) continue;
-      // Filtra só códigos "chave" (gol, cartão, defesa, etc.) — scouts
-      // ruidosos (passe errado, falta cometida etc) ficam fora.
       const info = SCOUT[codigo];
       if (!info?.chave) continue;
       const evento: EventoHist = {
@@ -224,16 +208,16 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
         codigo,
         qtd: qtd - antigo,
       };
-      await appendEvento(kv, evento);
+      await appendEvento(evento);
       mudou = true;
     }
     if (mudou) {
-      await setEstadoScout(kv, rodadaPontuados, atletaId, scoutNovo);
+      await setEstadoScout(rodadaPontuados, atletaId, scoutNovo);
     }
   }
 
   // Atualiza pontos + entrou_em_campo nos elencos
-  const elencos = await getAllElencos(kv);
+  const elencos = await getAllElencos();
   for (const [chave, elenco] of Object.entries(elencos)) {
     let alterado = false;
     for (const [id, jogador] of Object.entries(elenco.jogadores)) {
@@ -251,13 +235,10 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
       };
       alterado = true;
     }
-    if (alterado) await setElenco(kv, chave, elenco);
+    if (alterado) await setElenco(chave, elenco);
   }
 
-  // Salva snapshot da pontuação por elenco no histórico (idempotente —
-  // sobrescreve mesma rodada). Só registra quando há pontos > 0 e a
-  // bola não tá rolando (ou seja, rodada já encerrou) pra evitar
-  // gravar parciais que mudam ao longo do dia.
+  // Salva snapshot da pontuação por elenco no histórico
   const rodadaId = pontuados.rodada_id ?? mercado.rodada_atual;
   if (rodadaId > 0 && !mercado.bola_rolando) {
     for (const [chave, elenco] of Object.entries(elencos)) {
@@ -266,34 +247,33 @@ export async function atualizarTudo(kv: Deno.Kv): Promise<void> {
       const pts = Math.round(
         escalados.reduce((s, j) => s + (j.pontos ?? 0), 0) * 100,
       ) / 100;
-      if (pts > 0) await setHistoricoRodada(kv, chave, rodadaId, pts);
+      if (pts > 0) await setHistoricoRodada(chave, rodadaId, pts);
     }
   }
 
-  await setRodadaStatus(kv, {
+  await setRodadaStatus({
     status: statusReal,
     rodada: rodadaId,
     fechamento: mercado.bola_rolando ? undefined : mercado.fechamento,
     atualizadoEm: now,
   });
 
-  // Pre-warm dos caches Cartola em KV pra que page loads não paguem
-  // cold start. Roda em paralelo, todos com TTL >5min de margem.
+  // Pre-warm dos caches Cartola
   await Promise.all([
-    fetchAtletasMercadoCacheado(kv).catch(() => {}),
-    fetchPartidasCacheado(kv).catch(() => {}),
-    fetchMercadoStatusCacheado(kv).catch(() => {}),
+    fetchAtletasMercadoCacheado().catch(() => {}),
+    fetchPartidasCacheado().catch(() => {}),
+    fetchMercadoStatusCacheado().catch(() => {}),
   ]);
 
-  // Pre-computa melhor_time pra cada elenco (cache em KV). Como o
-  // setElenco que rolou acima invalidou todos os caches, aqui repopula.
-  const elencosAtualizados = await getAllElencos(kv);
-  await Promise.all(
-    Object.entries(elencosAtualizados).map(([chave, elenco]) => {
-      const computed = calcularMelhorTime(Object.values(elenco.jogadores));
-      return kv.set(["melhor_time", chave], computed);
-    }),
-  );
+  // Pre-computa melhor_time pra cada elenco
+  const elencosAtualizados = await getAllElencos();
+  for (const [chave, elenco] of Object.entries(elencosAtualizados)) {
+    const computed = calcularMelhorTime(Object.values(elenco.jogadores));
+    db.prepare(
+      "INSERT INTO melhor_time (chave, computed_json) VALUES (?, ?) " +
+        "ON CONFLICT (chave) DO UPDATE SET computed_json=excluded.computed_json",
+    ).run(chave, JSON.stringify(computed));
+  }
 
   console.log(`[cron] pontuação atualizada: rodada ${pontuados.rodada_id}`);
 }
@@ -302,22 +282,16 @@ export function registrarCrons(): void {
   // Sync do catálogo de atletas: 1× por dia às 9h UTC (= 6h BRT)
   Deno.cron("sync-atletas", "0 9 * * *", async () => {
     try {
-      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-      await sincronizarAtletas(kv);
+      await sincronizarAtletas();
     } catch (e) {
       console.error("[cron] sync-atletas erro:", e);
     }
   });
 
-  // Status + pontuação ao vivo: a cada 5 minutos
-  // 1min de cadência — granularidade fina pros timestamps da timeline
-  // (Cartola só dá scout acumulado, sem timestamp por lance). 5min era
-  // demais: todos os gols/cartões num período de 5min ficavam com o
-  // mesmo horário.
+  // Status + pontuação ao vivo: 1min de cadência
   Deno.cron("atualizar", "* * * * *", async () => {
     try {
-      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-      await atualizarTudo(kv);
+      await atualizarTudo();
     } catch (e) {
       console.error("[cron] atualizar erro:", e);
     }

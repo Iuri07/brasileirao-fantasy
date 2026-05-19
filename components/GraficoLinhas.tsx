@@ -13,14 +13,14 @@ interface Props {
 
 // Nomes alternativos → cor (cobre nomes que vêm do Excel com display names)
 const CORES_EXTRAS: Record<string, string> = {
-  "ILHA DE PAQUETÁ":      "#F8FAA9",
-  "ILHA DE PAQUETÁ FC":   "#F8FAA9",
-  "CREFILHO DA GAMA":     "#D1FA9E",
-  "CREFILHO DA GAMA FC":  "#D1FA9E",
-  "MOLEICESTER CITY":     "#BEF3F6",
-  "MOLEICESTER CITY FC":  "#BEF3F6",
-  "PAPAI CHEGOU FC":      "#9FC5E8",
-  "PAPAI CHEGOU":         "#9FC5E8",
+  "ILHA DE PAQUETÁ": "#F8FAA9",
+  "ILHA DE PAQUETÁ FC": "#F8FAA9",
+  "CREFILHO DA GAMA": "#D1FA9E",
+  "CREFILHO DA GAMA FC": "#D1FA9E",
+  "MOLEICESTER CITY": "#BEF3F6",
+  "MOLEICESTER CITY FC": "#BEF3F6",
+  "PAPAI CHEGOU FC": "#9FC5E8",
+  "PAPAI CHEGOU": "#9FC5E8",
   "PEDRO ÁLVARES PARDAL": "#E3C0F3",
 };
 
@@ -31,7 +31,9 @@ export function GraficoLinhas({ dados, coresTimes }: Props) {
   const cores = { ...coresTimes, ...CORES_EXTRAS };
   // Apenas rodadas que têm pelo menos um time com pontuação
   const rodadas = TODAS_RODADAS.filter((r) =>
-    dados.some((t) => t[r] !== "" && t[r] !== null && t[r] !== undefined && Number(t[r]) > 0)
+    dados.some((t) =>
+      t[r] !== "" && t[r] !== null && t[r] !== undefined && Number(t[r]) > 0
+    )
   );
 
   if (rodadas.length === 0) {
@@ -97,8 +99,10 @@ export function GraficoLinhas({ dados, coresTimes }: Props) {
         {gridYs.map((t) => (
           <line
             key={t}
-            x1={ML} y1={MT + t * plotH}
-            x2={ML + plotW} y2={MT + t * plotH}
+            x1={ML}
+            y1={MT + t * plotH}
+            x2={ML + plotW}
+            y2={MT + t * plotH}
             stroke="rgba(255,255,255,0.06)"
             stroke-width="1"
           />
@@ -108,8 +112,10 @@ export function GraficoLinhas({ dados, coresTimes }: Props) {
         {rodadas.map((_, i) => (
           <line
             key={i}
-            x1={xPos(i)} y1={MT}
-            x2={xPos(i)} y2={MT + plotH}
+            x1={xPos(i)}
+            y1={MT}
+            x2={xPos(i)}
+            y2={MT + plotH}
             stroke="rgba(255,255,255,0.04)"
             stroke-width="1"
           />
@@ -127,7 +133,9 @@ export function GraficoLinhas({ dados, coresTimes }: Props) {
             r,
           }));
 
-          const polyPts = pontos.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+          const polyPts = pontos.map((p) =>
+            `${p.x.toFixed(1)},${p.y.toFixed(1)}`
+          ).join(" ");
 
           return (
             <g key={time.TIME}>
@@ -142,7 +150,10 @@ export function GraficoLinhas({ dados, coresTimes }: Props) {
               />
               {pontos.map((p) => (
                 <circle key={p.r} cx={p.x} cy={p.y} r="3.5" fill={cor}>
-                  <title>{time.TIME} — R{p.r}: {p.acum.toFixed(1)} pts ({p.v === 0 ? "líder" : `${p.v.toFixed(1)} do líder`})</title>
+                  <title>
+                    {time.TIME} — R{p.r}: {p.acum.toFixed(1)}{" "}
+                    pts ({p.v === 0 ? "líder" : `${p.v.toFixed(1)} do líder`})
+                  </title>
                 </circle>
               ))}
             </g>
@@ -153,7 +164,8 @@ export function GraficoLinhas({ dados, coresTimes }: Props) {
         {rodadas.map((r, i) => (
           <text
             key={r}
-            x={xPos(i)} y={H - 10}
+            x={xPos(i)}
+            y={H - 10}
             text-anchor="middle"
             font-size="9"
             fill="rgba(255,255,255,0.35)"
@@ -189,7 +201,9 @@ export function GraficoLinhas({ dados, coresTimes }: Props) {
               style={`background:${cores[time.TIME] ?? "#888"}`}
             />
             <span class="legenda-nome">{time.TIME}</span>
-            <span class="legenda-total">{(time["PONTOS TOTAL"] as number).toFixed(1)}</span>
+            <span class="legenda-total">
+              {(time["PONTOS TOTAL"] as number).toFixed(1)}
+            </span>
           </div>
         ))}
       </div>

@@ -26,8 +26,7 @@ interface Data {
 
 export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const elencos = await getAllElencos(kv);
+    const elencos = await getAllElencos();
     const times: TimeItem[] = TODAS_CHAVES.map((chave) => {
       const meta = CHAVES_TIMES[chave];
       const visual = timeLigaInfo(chave);

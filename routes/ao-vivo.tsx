@@ -87,7 +87,6 @@ export const handler: Handlers<Data, State> = {
     const mark = (label: string, since: number) => {
       timings.push(`${label};dur=${(performance.now() - since).toFixed(1)}`);
     };
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const meuChave = ctx.state.session?.chave ?? CHAVE_FALLBACK_DEV;
 
     const userInfo: UserInfo = {
@@ -98,9 +97,9 @@ export const handler: Handlers<Data, State> = {
     };
 
     const [elencos, fotos, rodadaStatus] = await Promise.all([
-      getAllElencos(kv),
-      getFotos(kv),
-      getRodadaStatus(kv),
+      getAllElencos(),
+      getFotos(),
+      getRodadaStatus(),
     ]);
     mark("kv1", T0);
 
@@ -113,7 +112,7 @@ export const handler: Handlers<Data, State> = {
     const chavesArr = Object.keys(elencos);
     const Thist = performance.now();
     const historicos = await Promise.all(
-      chavesArr.map((c) => getHistorico(kv, c)),
+      chavesArr.map((c) => getHistorico(c)),
     );
     const historicoPorChave = new Map<string, Record<string, number>>();
     chavesArr.forEach((c, i) => historicoPorChave.set(c, historicos[i]));
@@ -126,7 +125,7 @@ export const handler: Handlers<Data, State> = {
     >();
     await Promise.all(
       Object.entries(elencos).map(async ([chave, elenco]) => {
-        const r = await getMelhorTimeCached(kv, chave, elenco);
+        const r = await getMelhorTimeCached(chave, elenco);
         melhoresPorChave.set(chave, r);
       }),
     );

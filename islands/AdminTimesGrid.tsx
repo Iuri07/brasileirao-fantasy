@@ -80,11 +80,13 @@ export default function AdminTimesGrid({ times }: Props) {
     if (!r) return;
     update(t.chave, { status: "saving", msg: undefined });
 
-    const mudouEmail = r.email.trim().toLowerCase() !== (cur.email ?? "").toLowerCase();
+    const mudouEmail =
+      r.email.trim().toLowerCase() !== (cur.email ?? "").toLowerCase();
     const mudouNome = r.nome.trim() !== cur.nomeTime;
     const mudouDisplay = r.displayName.trim() !== cur.displayName;
     const mudouLogoUrl = r.logoUrl.trim() &&
-      r.logoUrl.trim() !== (cur.logo && !cur.logo.startsWith("/uploads/") ? cur.logo : "");
+      r.logoUrl.trim() !==
+        (cur.logo && !cur.logo.startsWith("/uploads/") ? cur.logo : "");
     const mudouVisual = mudouNome || mudouDisplay || mudouLogoUrl || r.logoFile;
 
     if (!mudouEmail && !mudouVisual) {
@@ -158,7 +160,9 @@ export default function AdminTimesGrid({ times }: Props) {
         logoPreview: novoSnap.logo,
         nome: novoSnap.nomeTime,
         displayName: novoSnap.displayName,
-        logoUrl: novoSnap.logo && !novoSnap.logo.startsWith("/uploads/") ? novoSnap.logo : "",
+        logoUrl: novoSnap.logo && !novoSnap.logo.startsWith("/uploads/")
+          ? novoSnap.logo
+          : "",
         email: novoSnap.email ?? "",
       });
       const inp = fileInputs.current[t.chave];
@@ -191,7 +195,9 @@ export default function AdminTimesGrid({ times }: Props) {
       update(t.chave, {
         nome: novoSnap.nomeTime,
         displayName: novoSnap.displayName,
-        logoUrl: novoSnap.logo && !novoSnap.logo.startsWith("/uploads/") ? novoSnap.logo : "",
+        logoUrl: novoSnap.logo && !novoSnap.logo.startsWith("/uploads/")
+          ? novoSnap.logo
+          : "",
         logoFile: null,
         logoPreview: novoSnap.logo,
         status: "saved",
@@ -219,16 +225,17 @@ export default function AdminTimesGrid({ times }: Props) {
           >
             <header class="bf-times-grid__header">
               <div class="bf-times-grid__preview">
-                {previewSrc ? (
-                  <img src={previewSrc} alt={cur.displayName} />
-                ) : (
-                  <div class="bf-times-grid__sigla">{cur.sigla}</div>
-                )}
+                {previewSrc
+                  ? <img src={previewSrc} alt={cur.displayName} />
+                  : <div class="bf-times-grid__sigla">{cur.sigla}</div>}
               </div>
               <div class="bf-times-grid__heading">
-                <div class="bf-times-grid__name">{r.displayName || cur.displayName}</div>
+                <div class="bf-times-grid__name">
+                  {r.displayName || cur.displayName}
+                </div>
                 <div class="bf-times-grid__dono">
-                  {cur.dono} · <span class="bf-times-grid__chave">{cur.chave}</span>
+                  {cur.dono} ·{" "}
+                  <span class="bf-times-grid__chave">{cur.chave}</span>
                 </div>
                 {cur.customizado && (
                   <span class="bf-times-grid__badge">customizado</span>
@@ -243,7 +250,10 @@ export default function AdminTimesGrid({ times }: Props) {
                   type="email"
                   placeholder="email@gmail.com"
                   value={r.email}
-                  onInput={(e) => update(t.chave, { email: (e.target as HTMLInputElement).value })}
+                  onInput={(e) =>
+                    update(t.chave, {
+                      email: (e.target as HTMLInputElement).value,
+                    })}
                 />
               </label>
               <label class="bf-times-grid__label">
@@ -251,7 +261,10 @@ export default function AdminTimesGrid({ times }: Props) {
                 <input
                   type="text"
                   value={r.nome}
-                  onInput={(e) => update(t.chave, { nome: (e.target as HTMLInputElement).value })}
+                  onInput={(e) =>
+                    update(t.chave, {
+                      nome: (e.target as HTMLInputElement).value,
+                    })}
                 />
               </label>
               <label class="bf-times-grid__label">
@@ -259,7 +272,10 @@ export default function AdminTimesGrid({ times }: Props) {
                 <input
                   type="text"
                   value={r.displayName}
-                  onInput={(e) => update(t.chave, { displayName: (e.target as HTMLInputElement).value })}
+                  onInput={(e) =>
+                    update(t.chave, {
+                      displayName: (e.target as HTMLInputElement).value,
+                    })}
                 />
               </label>
               <label class="bf-times-grid__label">
@@ -284,7 +300,11 @@ export default function AdminTimesGrid({ times }: Props) {
                   ref={(el) => {
                     fileInputs.current[t.chave] = el;
                   }}
-                  onChange={(e) => onFileChange(t.chave, (e.target as HTMLInputElement).files?.[0] ?? null)}
+                  onChange={(e) =>
+                    onFileChange(
+                      t.chave,
+                      (e.target as HTMLInputElement).files?.[0] ?? null,
+                    )}
                 />
               </label>
             </div>
@@ -310,7 +330,9 @@ export default function AdminTimesGrid({ times }: Props) {
                 </button>
               )}
               <div class="bf-times-grid__status">
-                {r.status === "saved" && <span class="bf-times-grid__ok">✓ Salvo</span>}
+                {r.status === "saved" && (
+                  <span class="bf-times-grid__ok">✓ Salvo</span>
+                )}
                 {r.status === "error" && (
                   <span class="bf-times-grid__err">{r.msg ?? "Erro"}</span>
                 )}

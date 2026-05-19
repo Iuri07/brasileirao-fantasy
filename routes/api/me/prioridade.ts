@@ -27,8 +27,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 403, headers: H },
       );
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const ordem = await getMinhaPrioridade(kv, chave);
+    const ordem = await getMinhaPrioridade(chave);
     return new Response(JSON.stringify({ ok: true, ordem }), { headers: H });
   },
 
@@ -63,8 +62,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const atual = await getMinhaPrioridade(kv, chave);
+    const atual = await getMinhaPrioridade(chave);
     const atualSet = new Set(atual);
     const novaSet = new Set(ordemNova);
     // Diferença simétrica deve ser vazia: nenhum atleta novo, nenhum sumido.
@@ -72,7 +70,7 @@ export const handler: Handlers<unknown, State> = {
       if (!atualSet.has(id)) {
         // Pode acontecer se o cliente tá fora de sincronia. Aceita,
         // mas valida que pelo menos é um interesse meu real.
-        const interesses = await getInteressados(kv, id);
+        const interesses = await getInteressados(id);
         if (!interesses.some((i) => i.chave === chave)) {
           return new Response(
             JSON.stringify({
@@ -88,7 +86,7 @@ export const handler: Handlers<unknown, State> = {
     // interesses (cliente pode mandar lista parcial). Adiciona no fim.
     const sobrando = atual.filter((id) => !novaSet.has(id));
     const final = [...ordemNova, ...sobrando];
-    await setMinhaPrioridade(kv, chave, final);
+    await setMinhaPrioridade(chave, final);
     return new Response(JSON.stringify({ ok: true, ordem: final }), {
       headers: H,
     });

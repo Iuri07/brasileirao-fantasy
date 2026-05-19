@@ -1,76 +1,64 @@
 // Estado e mecânica do draft de free agents.
-//
-// Regra:
-// 1. Ordem inicial = inverso da classificação acumulada (pior time → 1º pick)
-// 2. A cada rodada do Brasileirão, quem não usou o pick sobe no ranking;
-//    quem usou vai pro fim da fila (preservando ordem relativa entre si).
-// 3. A cada 5 rodadas (rodadaCiclo > 5) o draft reseta pro inverso da
-//    classificação atual e um novo ciclo começa.
 
 import { setDraftOrdem, TODAS_CHAVES } from "./kv.ts";
 import { getHistorico, totalPontos } from "./historico.ts";
+import { getDb } from "./db.ts";
 
 export interface DraftMeta {
-  /** Quantos ciclos de 5 rodadas já passaram (incrementa a cada reset). */
   ciclo: number;
-  /** Rodada dentro do ciclo (1..5). Quando passa de 5, reseta. */
   rodadaCiclo: number;
-  /** Rodada do Brasileirão em que o ciclo atual começou. */
   rodadaBase: number;
 }
 
-const META_KEY = ["draft_meta"];
-
-export async function getDraftMeta(kv: Deno.Kv): Promise<DraftMeta | null> {
-  const r = await kv.get<DraftMeta>(META_KEY);
-  return r.value;
+export function getDraftMeta(): Promise<DraftMeta | null> {
+  const r = getDb().prepare(
+    "SELECT ciclo, rodada_ciclo, rodada_base FROM draft_meta WHERE id=1",
+  ).get<{ ciclo: number; rodada_ciclo: number; rodada_base: number }>();
+  if (!r) return Promise.resolve(null);
+  return Promise.resolve({
+    ciclo: r.ciclo,
+    rodadaCiclo: r.rodada_ciclo,
+    rodadaBase: r.rodada_base,
+  });
 }
 
-export async function setDraftMeta(
-  kv: Deno.Kv,
-  meta: DraftMeta,
-): Promise<void> {
-  await kv.set(META_KEY, meta);
+export function setDraftMeta(meta: DraftMeta): Promise<void> {
+  getDb().prepare(
+    "INSERT INTO draft_meta (id, ciclo, rodada_ciclo, rodada_base) VALUES (1, ?, ?, ?) " +
+      "ON CONFLICT (id) DO UPDATE SET " +
+      "  ciclo=excluded.ciclo, rodada_ciclo=excluded.rodada_ciclo, rodada_base=excluded.rodada_base",
+  ).run(meta.ciclo, meta.rodadaCiclo, meta.rodadaBase);
+  return Promise.resolve();
 }
 
-/** Inverso da classificação acumulada (pior pontuação total → 1º pick).
- *  Times sem histórico ficam no início (pegam pick primeiro, faz sentido
- *  pra um time que tá pior). Empate: usa ordem dos seeds como tiebreaker. */
-export async function inverseRankingOrdem(kv: Deno.Kv): Promise<string[]> {
+export async function inverseRankingOrdem(): Promise<string[]> {
   const totals: Record<string, number> = {};
-  await Promise.all(
-    TODAS_CHAVES.map(async (chave) => {
-      const h = await getHistorico(kv, chave);
-      totals[chave] = totalPontos(h);
-    }),
-  );
+  for (const chave of TODAS_CHAVES) {
+    const h = await getHistorico(chave);
+    totals[chave] = totalPontos(h);
+  }
   return [...TODAS_CHAVES].sort((a, b) => {
     const diff = totals[a] - totals[b];
     if (diff !== 0) return diff;
-    // tiebreaker estável: ordem dos seeds
     return TODAS_CHAVES.indexOf(a) - TODAS_CHAVES.indexOf(b);
   });
 }
 
-/** Reset completo: ordem = inverso da classificação, ciclo+=1, rodadaCiclo=1. */
 export async function resetDraft(
-  kv: Deno.Kv,
   rodadaBase: number,
 ): Promise<{ ordem: string[]; meta: DraftMeta }> {
-  const ordem = await inverseRankingOrdem(kv);
-  const anterior = await getDraftMeta(kv);
+  const ordem = await inverseRankingOrdem();
+  const anterior = await getDraftMeta();
   const meta: DraftMeta = {
     ciclo: (anterior?.ciclo ?? 0) + 1,
     rodadaCiclo: 1,
     rodadaBase,
   };
-  await setDraftOrdem(kv, ordem);
-  await setDraftMeta(kv, meta);
+  await setDraftOrdem(ordem);
+  await setDraftMeta(meta);
   return { ordem, meta };
 }
 
-/** Aplica shift: os `pickers` (chaves que usaram pick essa rodada) vão pro
- *  fim da fila preservando ordem relativa entre si. Os outros sobem. */
 export function aplicarShift(ordem: string[], pickers: string[]): string[] {
   const set = new Set(pickers);
   const naoUsaram = ordem.filter((c) => !set.has(c));
@@ -78,65 +66,61 @@ export function aplicarShift(ordem: string[], pickers: string[]): string[] {
   return [...naoUsaram, ...usaram];
 }
 
-/** Avança 1 rodada do draft. Se passa de 5, reseta automaticamente. */
 export async function avancarRodadaDraft(
-  kv: Deno.Kv,
   pickers: string[],
   rodadaAtualBR: number,
-): Promise<
-  { ordem: string[]; meta: DraftMeta; resetou: boolean }
-> {
-  const metaAtual = (await getDraftMeta(kv)) ?? {
+): Promise<{ ordem: string[]; meta: DraftMeta; resetou: boolean }> {
+  const metaAtual = (await getDraftMeta()) ?? {
     ciclo: 1,
     rodadaCiclo: 1,
     rodadaBase: rodadaAtualBR,
   };
   const proxRodadaCiclo = metaAtual.rodadaCiclo + 1;
   if (proxRodadaCiclo > 5) {
-    const r = await resetDraft(kv, rodadaAtualBR);
+    const r = await resetDraft(rodadaAtualBR);
     return { ...r, resetou: true };
   }
-  // Lê ordem atual (sem usar getDraftOrdem pra evitar dep circular)
-  const r = await kv.get<string[]>(["draft_ordem"]);
-  const ordemAtual = r.value ?? (await inverseRankingOrdem(kv));
+  // Lê ordem atual via getDraftOrdem
+  const { getDraftOrdem } = await import("./kv.ts");
+  const ordemAtual = await getDraftOrdem();
   const novaOrdem = aplicarShift(ordemAtual, pickers);
   const novaMeta: DraftMeta = {
     ...metaAtual,
     rodadaCiclo: proxRodadaCiclo,
   };
-  await setDraftOrdem(kv, novaOrdem);
-  await setDraftMeta(kv, novaMeta);
+  await setDraftOrdem(novaOrdem);
+  await setDraftMeta(novaMeta);
   return { ordem: novaOrdem, meta: novaMeta, resetou: false };
 }
 
-/* --- Dias da semana em que conflitos do draft são resolvidos --------- */
+// ============================================================
+// Dias da semana em que conflitos do draft são resolvidos
+// ============================================================
 
-const DIAS_KEY = ["draft_dias_resolucao"];
-/** Default: quarta-feira. Admin pode alterar. */
-const DIAS_DEFAULT = [3];
+const DIAS_DEFAULT = [3]; // quarta-feira
 
-/** Lê os dias da semana (0=domingo, 6=sábado) em que o admin resolve
- *  conflitos do draft. */
-export async function getDiasResolucao(kv: Deno.Kv): Promise<number[]> {
-  const r = await kv.get<number[]>(DIAS_KEY);
-  if (r.value && r.value.length > 0) {
-    return r.value.filter((d) => d >= 0 && d <= 6).sort((a, b) => a - b);
-  }
-  return [...DIAS_DEFAULT];
+export function getDiasResolucao(): Promise<number[]> {
+  const rows = getDb().prepare(
+    "SELECT dia_semana FROM draft_dias ORDER BY dia_semana",
+  )
+    .all<{ dia_semana: number }>();
+  if (rows.length === 0) return Promise.resolve([...DIAS_DEFAULT]);
+  return Promise.resolve(rows.map((r) => r.dia_semana));
 }
 
-export async function setDiasResolucao(
-  kv: Deno.Kv,
-  dias: number[],
-): Promise<void> {
+export function setDiasResolucao(dias: number[]): Promise<void> {
   const limpos = [
     ...new Set(dias.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)),
   ].sort((a, b) => a - b);
-  await kv.set(DIAS_KEY, limpos);
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare("DELETE FROM draft_dias").run();
+    const ins = db.prepare("INSERT INTO draft_dias (dia_semana) VALUES (?)");
+    for (const d of limpos) ins.run(d);
+  })();
+  return Promise.resolve();
 }
 
-/** Próxima resolução: 23:59:59 do próximo dia configurado, contando hoje
- *  se ainda estiver dentro do dia. Retorna null se a lista estiver vazia. */
 export function proximaResolucao(
   dias: number[],
   from: Date = new Date(),
@@ -153,25 +137,22 @@ export function proximaResolucao(
   return null;
 }
 
-/** Inicializa o draft se ainda não foi: ordem = inverso da classificação,
- *  meta = ciclo 1 rodadaCiclo 1. Idempotente: não faz nada se já existir meta. */
 export async function inicializarDraftSeNecessario(
-  kv: Deno.Kv,
   rodadaAtualBR: number,
 ): Promise<{ ordem: string[]; meta: DraftMeta; novo: boolean }> {
-  const metaExistente = await getDraftMeta(kv);
+  const metaExistente = await getDraftMeta();
   if (metaExistente) {
-    const r = await kv.get<string[]>(["draft_ordem"]);
-    const ordem = r.value ?? (await inverseRankingOrdem(kv));
+    const { getDraftOrdem } = await import("./kv.ts");
+    const ordem = await getDraftOrdem();
     return { ordem, meta: metaExistente, novo: false };
   }
-  const ordem = await inverseRankingOrdem(kv);
+  const ordem = await inverseRankingOrdem();
   const meta: DraftMeta = {
     ciclo: 1,
     rodadaCiclo: 1,
     rodadaBase: rodadaAtualBR,
   };
-  await setDraftOrdem(kv, ordem);
-  await setDraftMeta(kv, meta);
+  await setDraftOrdem(ordem);
+  await setDraftMeta(meta);
   return { ordem, meta, novo: true };
 }

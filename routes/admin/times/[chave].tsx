@@ -61,19 +61,18 @@ export const handler: Handlers<Data, State> = {
     if (!TODAS_CHAVES.includes(chave)) {
       return new Response("Time não encontrado", { status: 404 });
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const [elenco, fotos, rodadaStatus, aVendaIds] = await Promise.all([
-      getElenco(kv, chave),
-      getFotos(kv),
-      getRodadaStatus(kv),
-      getAVenda(kv, chave),
+      getElenco(chave),
+      getFotos(),
+      getRodadaStatus(),
+      getAVenda(chave),
     ]);
     if (!elenco) {
       return new Response("Elenco não seedado", { status: 404 });
     }
     const aoVivo = isRodadaEmAndamento(rodadaStatus?.status);
     const rodadaAtual = rodadaStatus?.rodada ?? 0;
-    const subsUsadas = aoVivo ? await getSubsUsadas(kv, rodadaAtual, chave) : 0;
+    const subsUsadas = aoVivo ? await getSubsUsadas(rodadaAtual, chave) : 0;
 
     const atletas: AtletaElenco[] = Object.values(elenco.jogadores)
       .filter((j) =>

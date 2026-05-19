@@ -28,8 +28,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 400, headers: H },
       );
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const oferta = await cancelarOferta(kv, body.id);
+    const oferta = await cancelarOferta(body.id);
     if (!oferta) {
       return new Response(
         JSON.stringify({ ok: false, erro: "Oferta não encontrada" }),

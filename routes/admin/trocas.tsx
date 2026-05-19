@@ -29,9 +29,8 @@ function nomeTime(chave: string): string {
 
 export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     // Inclui as desfeitas pra admin ter contexto histórico completo
-    const trocas = await listarTrocas(kv, { incluirDesfeitas: true });
+    const trocas = await listarTrocas({ incluirDesfeitas: true });
     const items: TrocaItem[] = trocas.map((t: TrocaConcluida) => ({
       id: t.id,
       concluidaEm: t.concluidaEm,

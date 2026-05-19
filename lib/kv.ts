@@ -1,4 +1,17 @@
-import type { AtletaCacheKV, ElencoKV, RodadaStatus } from "./types.ts";
+// Camada de acesso ao banco. Antes Deno KV, agora SQLite.
+// Os nomes dos exports são mantidos pra minimizar churn nos call sites —
+// só a assinatura mudou (sem `kv` param, usa o singleton de lib/db.ts).
+//
+// Tipos retornados (`ElencoKV`, `AtletaCacheKV`, etc) são os MESMOS
+// que existiam antes pra manter compat com SSR/componentes/handlers.
+
+import type {
+  AtletaCacheKV,
+  ElencoKV,
+  JogadorKV,
+  RodadaStatus,
+} from "./types.ts";
+import { getDb } from "./db.ts";
 
 export const DONOS_CHAVES: Record<string, string> = {
   "Aguiar": "aguiar",
@@ -26,353 +39,550 @@ export const CHAVES_TIMES: Record<string, { nome_time: string; dono: string }> =
   };
 
 export const TODAS_CHAVES = Object.keys(CHAVES_TIMES);
-
 export const POSICAO_CHAVES_CACHE = ["GOL", "LAT", "ZAG", "MEI", "ATA", "TEC"];
-
-/** Limite de substituições durante a rodada (ao_vivo). Fora da rodada o
-    usuário tem trocas ilimitadas no mercado. */
 export const MAX_SUBS_AO_VIVO = 3;
 
-/** Quantas substituições banco↔escala o usuário já usou na rodada. */
-export async function getSubsUsadas(
-  kv: Deno.Kv,
-  rodada: number,
-  chave: string,
-): Promise<number> {
-  const r = await kv.get<number>(["subs", rodada, chave]);
-  return r.value ?? 0;
+/** Mapping posição_id Cartola → chave de cache. Usado pra coletar
+ *  atletas por posição mesmo agora que o cache não é mais separado
+ *  por posChave no storage. */
+const POSICAO_ID_TO_CHAVE: Record<number, string> = {
+  1: "GOL",
+  2: "LAT",
+  3: "ZAG",
+  4: "MEI",
+  5: "ATA",
+  6: "TEC",
+};
+const POSICAO_CHAVE_TO_ID: Record<string, number> = {
+  GOL: 1,
+  LAT: 2,
+  ZAG: 3,
+  MEI: 4,
+  ATA: 5,
+  TEC: 6,
+};
+
+// ============================================================
+// SUBS USADAS (durante rodada ao vivo)
+// ============================================================
+
+export function getSubsUsadas(rodada: number, chave: string): Promise<number> {
+  const db = getDb();
+  const r = db.prepare(
+    "SELECT count FROM subs_usadas WHERE rodada=? AND chave=?",
+  )
+    .get<{ count: number }>(rodada, chave);
+  return Promise.resolve(r?.count ?? 0);
 }
 
 export async function incrementSubsUsadas(
-  kv: Deno.Kv,
   rodada: number,
   chave: string,
 ): Promise<number> {
-  const atual = await getSubsUsadas(kv, rodada, chave);
+  const atual = await getSubsUsadas(rodada, chave);
   const proximo = atual + 1;
-  await kv.set(["subs", rodada, chave], proximo);
+  getDb().prepare(
+    "INSERT INTO subs_usadas (rodada, chave, count) VALUES (?, ?, ?) " +
+      "ON CONFLICT (rodada, chave) DO UPDATE SET count=excluded.count",
+  ).run(rodada, chave, proximo);
   return proximo;
 }
 
-/* --- Mercado: jogadores marcados "à venda" pelos donos ---------------- */
+// ============================================================
+// MERCADO / NEGOCIÁVEIS (à venda)
+// ============================================================
 
-/** Lê o set de atleta_ids que o dono colocou à venda. */
-export async function getAVenda(
-  kv: Deno.Kv,
-  chave: string,
-): Promise<number[]> {
-  const r = await kv.get<number[]>(["a_venda", chave]);
-  return r.value ?? [];
+export function getAVenda(chave: string): Promise<number[]> {
+  const rows = getDb().prepare("SELECT atleta_id FROM a_venda WHERE chave=?")
+    .all<{ atleta_id: number }>(chave);
+  return Promise.resolve(rows.map((r) => r.atleta_id));
 }
 
-export async function setAVenda(
-  kv: Deno.Kv,
-  chave: string,
-  ids: number[],
-): Promise<void> {
-  await kv.set(["a_venda", chave], Array.from(new Set(ids)));
+export function setAVenda(chave: string, ids: number[]): Promise<void> {
+  const uniq = Array.from(new Set(ids));
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare("DELETE FROM a_venda WHERE chave=?").run(chave);
+    const ins = db.prepare(
+      "INSERT INTO a_venda (atleta_id, chave) VALUES (?, ?)",
+    );
+    for (const id of uniq) ins.run(id, chave);
+  })();
+  return Promise.resolve();
 }
 
 export async function toggleAVenda(
-  kv: Deno.Kv,
   chave: string,
   atletaId: number,
 ): Promise<{ aVenda: boolean }> {
-  const atual = await getAVenda(kv, chave);
+  const atual = await getAVenda(chave);
   const idx = atual.indexOf(atletaId);
   if (idx >= 0) {
     atual.splice(idx, 1);
-    await setAVenda(kv, chave, atual);
+    await setAVenda(chave, atual);
     return { aVenda: false };
   }
   atual.push(atletaId);
-  await setAVenda(kv, chave, atual);
+  await setAVenda(chave, atual);
   return { aVenda: true };
 }
 
-/** Map global: atleta_id → chave do dono que está oferecendo à venda.
- *  Reads paralelos (era sequencial, custava 9×latência KV ~ 800ms). */
-export async function getAVendaGlobal(
-  kv: Deno.Kv,
-): Promise<Record<number, string>> {
+export function getAVendaGlobal(): Promise<Record<number, string>> {
+  const rows = getDb().prepare("SELECT atleta_id, chave FROM a_venda")
+    .all<{ atleta_id: number; chave: string }>();
   const out: Record<number, string> = {};
-  const arrays = await Promise.all(
-    TODAS_CHAVES.map((c) => getAVenda(kv, c)),
-  );
-  TODAS_CHAVES.forEach((chave, i) => {
-    for (const id of arrays[i]) out[id] = chave;
-  });
-  return out;
+  for (const r of rows) out[r.atleta_id] = r.chave;
+  return Promise.resolve(out);
 }
 
-/* --- Lista de interessados em atletas (free agents) -------------------- */
+// ============================================================
+// INTERESSES (free agents / draft)
+// ============================================================
 
-/** Manifestação de interesse num free agent: além de marcar interesse,
-    o time precisa oferecer um jogador da mesma posição em troca. Quando o
-    draft é resolvido, o time com melhor posição leva o free agent e o
-    jogador oferecido vira free agent (ou volta pro pool). */
 export interface InteresseRegistro {
   chave: string;
-  /** atleta_id que o time ofereceu em troca */
   oferecido: number;
 }
 
-/** Lê os interesses registrados num atleta. Aceita formato legado
-    (string[] sem oferta) coerce'ando pra oferecido=0. */
-export async function getInteressados(
-  kv: Deno.Kv,
+export function getInteressados(
   atletaId: number,
 ): Promise<InteresseRegistro[]> {
-  const r = await kv.get<InteresseRegistro[] | string[]>([
-    "interessados",
-    atletaId,
-  ]);
-  const raw = r.value;
-  if (!raw) return [];
-  return raw.map((x) => typeof x === "string" ? { chave: x, oferecido: 0 } : x);
+  const rows = getDb().prepare(
+    "SELECT chave, atleta_oferecido AS oferecido FROM interesses WHERE atleta_alvo=? ORDER BY criado_em",
+  ).all<InteresseRegistro>(atletaId);
+  return Promise.resolve(rows);
 }
 
-/** Registra interesse com jogador oferecido. Se já existe interesse
-    do mesmo time, ATUALIZA a oferta. */
-export async function setInteresse(
-  kv: Deno.Kv,
+export function setInteresse(
   atletaId: number,
   chave: string,
   oferecido: number,
 ): Promise<{ total: number }> {
-  const atual = await getInteressados(kv, atletaId);
-  const idx = atual.findIndex((r) => r.chave === chave);
-  if (idx >= 0) atual[idx] = { chave, oferecido };
-  else atual.push({ chave, oferecido });
-  await kv.set(["interessados", atletaId], atual);
-  return { total: atual.length };
+  const db = getDb();
+  db.prepare(
+    "INSERT INTO interesses (chave, atleta_alvo, atleta_oferecido, criado_em) " +
+      "VALUES (?, ?, ?, ?) " +
+      "ON CONFLICT (chave, atleta_alvo) DO UPDATE SET atleta_oferecido=excluded.atleta_oferecido",
+  ).run(chave, atletaId, oferecido, Date.now());
+  const total =
+    db.prepare("SELECT COUNT(*) AS n FROM interesses WHERE atleta_alvo=?")
+      .get<{ n: number }>(atletaId)?.n ?? 0;
+  return Promise.resolve({ total });
 }
 
-/** Remove o interesse do time `chave` num atleta. */
-export async function removeInteresse(
-  kv: Deno.Kv,
+export function removeInteresse(
   atletaId: number,
   chave: string,
 ): Promise<{ total: number }> {
-  const atual = await getInteressados(kv, atletaId);
-  const novo = atual.filter((r) => r.chave !== chave);
-  await kv.set(["interessados", atletaId], novo);
-  return { total: novo.length };
+  const db = getDb();
+  db.prepare("DELETE FROM interesses WHERE atleta_alvo=? AND chave=?").run(
+    atletaId,
+    chave,
+  );
+  const total =
+    db.prepare("SELECT COUNT(*) AS n FROM interesses WHERE atleta_alvo=?")
+      .get<{ n: number }>(atletaId)?.n ?? 0;
+  return Promise.resolve({ total });
 }
 
-/** Map de todos os interesses (atleta_id → registros[]) — pra renderizar
-    a lista inteira de uma vez. Usa kv.list (1 round-trip) em vez de N
-    gets individuais. */
-export async function getInteressadosBatch(
-  kv: Deno.Kv,
+export function getInteressadosBatch(
   atletaIds: number[],
 ): Promise<Record<number, InteresseRegistro[]>> {
-  if (atletaIds.length === 0) return {};
+  if (atletaIds.length === 0) return Promise.resolve({});
+  const placeholders = atletaIds.map(() => "?").join(",");
+  const rows = getDb().prepare(
+    `SELECT atleta_alvo, chave, atleta_oferecido AS oferecido
+       FROM interesses
+      WHERE atleta_alvo IN (${placeholders})
+   ORDER BY atleta_alvo, criado_em`,
+  ).all<{ atleta_alvo: number } & InteresseRegistro>(...atletaIds);
   const out: Record<number, InteresseRegistro[]> = {};
-  const wanted = new Set(atletaIds);
-  const iter = kv.list<InteresseRegistro[] | string[]>({
-    prefix: ["interessados"],
-  });
-  for await (const entry of iter) {
-    const id = entry.key[1] as number;
-    if (!wanted.has(id)) continue;
-    const raw = entry.value;
-    if (!raw || raw.length === 0) continue;
-    out[id] = raw.map((x) =>
-      typeof x === "string" ? { chave: x, oferecido: 0 } : x
-    );
+  for (const r of rows) {
+    (out[r.atleta_alvo] ??= []).push({
+      chave: r.chave,
+      oferecido: r.oferecido,
+    });
   }
-  return out;
+  return Promise.resolve(out);
 }
 
-/* --- Prioridade pessoal de interesses (ordena dentro do meu próprio set) --- */
+// ============================================================
+// PRIORIDADE PESSOAL DOS INTERESSES
+// ============================================================
 
-/** Lê a ordem de prioridade dos meus interesses (atleta_ids). Index 0 = top. */
-export async function getMinhaPrioridade(
-  kv: Deno.Kv,
-  chave: string,
-): Promise<number[]> {
-  const r = await kv.get<number[]>(["minha_prioridade", chave]);
-  return r.value ?? [];
+export function getMinhaPrioridade(chave: string): Promise<number[]> {
+  const rows = getDb().prepare(
+    "SELECT atleta_id FROM prioridades WHERE chave=? ORDER BY ordem",
+  ).all<{ atleta_id: number }>(chave);
+  return Promise.resolve(rows.map((r) => r.atleta_id));
 }
 
-export async function setMinhaPrioridade(
-  kv: Deno.Kv,
+export function setMinhaPrioridade(
   chave: string,
   ordem: number[],
 ): Promise<void> {
-  await kv.set(["minha_prioridade", chave], ordem);
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare("DELETE FROM prioridades WHERE chave=?").run(chave);
+    const ins = db.prepare(
+      "INSERT INTO prioridades (chave, atleta_id, ordem) VALUES (?, ?, ?)",
+    );
+    ordem.forEach((atletaId, i) => ins.run(chave, atletaId, i));
+  })();
+  return Promise.resolve();
 }
 
-/** Adiciona um atleta ao fim da minha lista de prioridade. Idempotente. */
 export async function appendPrioridade(
-  kv: Deno.Kv,
   chave: string,
   atletaId: number,
 ): Promise<number[]> {
-  const atual = await getMinhaPrioridade(kv, chave);
+  const atual = await getMinhaPrioridade(chave);
   if (atual.includes(atletaId)) return atual;
   const nova = [...atual, atletaId];
-  await setMinhaPrioridade(kv, chave, nova);
+  await setMinhaPrioridade(chave, nova);
   return nova;
 }
 
-/** Remove um atleta da minha lista de prioridade. Idempotente. */
 export async function removePrioridade(
-  kv: Deno.Kv,
   chave: string,
   atletaId: number,
 ): Promise<number[]> {
-  const atual = await getMinhaPrioridade(kv, chave);
+  const atual = await getMinhaPrioridade(chave);
   const nova = atual.filter((id) => id !== atletaId);
   if (nova.length !== atual.length) {
-    await setMinhaPrioridade(kv, chave, nova);
+    await setMinhaPrioridade(chave, nova);
   }
   return nova;
 }
 
-/* --- Ordem do draft (resolução de interesses sobre free agents) ------- */
+// ============================================================
+// DRAFT ORDEM
+// ============================================================
 
-/** Lê a ordem do draft. Index 0 = primeira escolha. Default = ordem dos
-    seeds (TODAS_CHAVES) quando nada foi configurado ainda. */
-export async function getDraftOrdem(kv: Deno.Kv): Promise<string[]> {
-  const r = await kv.get<string[]>(["draft_ordem"]);
-  if (r.value && r.value.length > 0) {
-    // Garante que tem todas as chaves (caso novo time tenha sido adicionado)
-    const set = new Set(r.value);
+export function getDraftOrdem(): Promise<string[]> {
+  const rows = getDb().prepare("SELECT chave FROM draft_ordem ORDER BY ordem")
+    .all<{ chave: string }>();
+  if (rows.length > 0) {
+    const set = new Set(rows.map((r) => r.chave));
     const faltando = TODAS_CHAVES.filter((c) => !set.has(c));
-    return faltando.length === 0 ? r.value : [...r.value, ...faltando];
+    return Promise.resolve(
+      faltando.length === 0
+        ? rows.map((r) => r.chave)
+        : [...rows.map((r) => r.chave), ...faltando],
+    );
   }
-  return [...TODAS_CHAVES];
+  return Promise.resolve([...TODAS_CHAVES]);
 }
 
-export async function setDraftOrdem(
-  kv: Deno.Kv,
-  ordem: string[],
-): Promise<void> {
-  await kv.set(["draft_ordem"], ordem);
+export function setDraftOrdem(ordem: string[]): Promise<void> {
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare("DELETE FROM draft_ordem").run();
+    const ins = db.prepare(
+      "INSERT INTO draft_ordem (chave, ordem) VALUES (?, ?)",
+    );
+    ordem.forEach((c, i) => ins.run(c, i));
+  })();
+  return Promise.resolve();
 }
 
-/** Posição do time no draft (1-based). null se chave inválida. */
-export async function getPosicaoDraft(
-  kv: Deno.Kv,
-  chave: string,
-): Promise<number | null> {
-  const ordem = await getDraftOrdem(kv);
+export async function getPosicaoDraft(chave: string): Promise<number | null> {
+  const ordem = await getDraftOrdem();
   const idx = ordem.indexOf(chave);
   return idx >= 0 ? idx + 1 : null;
 }
 
-export async function getElenco(
-  kv: Deno.Kv,
-  chave: string,
-): Promise<ElencoKV | null> {
-  const r = await kv.get<ElencoKV>(["elenco", chave]);
-  return r.value;
+// ============================================================
+// ELENCOS + JOGADORES (relational, mas API retorna ElencoKV)
+// ============================================================
+
+interface JogadorRow {
+  chave: string;
+  atleta_id: number;
+  apelido_api: string;
+  clube: string;
+  clube_id: number;
+  posicao: string;
+  posicao_id: number;
+  escalacao: "Sim" | "Banco" | "Não";
+  status_id: number | null;
+  provavel: number | null;
+  lesionado: number | null;
+  suspenso: number | null;
+  nulo: number | null;
+  entrou_em_campo: number | null;
+  clube_casa: string | null;
+  clube_fora: string | null;
+  pontos: number | null;
 }
 
-export async function setElenco(
-  kv: Deno.Kv,
-  chave: string,
-  elenco: ElencoKV,
-): Promise<void> {
-  // Atomic: escreve elenco + invalida cache do melhor_time juntos pra
-  // evitar leitura stale entre escritas.
-  await kv.atomic()
-    .set(["elenco", chave], elenco)
-    .delete(["melhor_time", chave])
-    .commit();
+function rowToJogador(r: JogadorRow): JogadorKV {
+  const b = (v: number | null) => v === null ? null : v === 1;
+  return {
+    atleta_id: r.atleta_id,
+    apelido_api: r.apelido_api,
+    clube: r.clube,
+    clube_id: r.clube_id,
+    posicao: r.posicao,
+    posicao_id: r.posicao_id,
+    escalacao: r.escalacao,
+    status_id: r.status_id,
+    provavel: b(r.provavel),
+    lesionado: b(r.lesionado),
+    suspenso: b(r.suspenso),
+    nulo: b(r.nulo),
+    entrou_em_campo: b(r.entrou_em_campo),
+    clube_casa: r.clube_casa,
+    clube_fora: r.clube_fora,
+    pontos: r.pontos,
+  };
 }
 
-export async function getAllElencos(
-  kv: Deno.Kv,
-): Promise<Record<string, ElencoKV>> {
+export function getElenco(chave: string): Promise<ElencoKV | null> {
+  const db = getDb();
+  const meta = db.prepare(
+    "SELECT chave, nome_time, dono FROM elencos WHERE chave=?",
+  )
+    .get<{ chave: string; nome_time: string; dono: string }>(chave);
+  if (!meta) return Promise.resolve(null);
+  const rows = db.prepare("SELECT * FROM jogadores WHERE chave=?")
+    .all<JogadorRow>(chave);
+  const jogadores: Record<string, JogadorKV> = {};
+  for (const r of rows) jogadores[String(r.atleta_id)] = rowToJogador(r);
+  return Promise.resolve({
+    nome_time: meta.nome_time,
+    dono: meta.dono,
+    chave: meta.chave,
+    jogadores,
+  });
+}
+
+export function setElenco(chave: string, elenco: ElencoKV): Promise<void> {
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare(
+      "INSERT INTO elencos (chave, nome_time, dono) VALUES (?, ?, ?) " +
+        "ON CONFLICT (chave) DO UPDATE SET nome_time=excluded.nome_time, dono=excluded.dono",
+    ).run(chave, elenco.nome_time, elenco.dono);
+    db.prepare("DELETE FROM jogadores WHERE chave=?").run(chave);
+    const ins = db.prepare(
+      `INSERT INTO jogadores
+        (chave, atleta_id, apelido_api, clube, clube_id, posicao, posicao_id,
+         escalacao, status_id, provavel, lesionado, suspenso, nulo,
+         entrou_em_campo, clube_casa, clube_fora, pontos)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    const b = (v: boolean | null) => v === null ? null : v ? 1 : 0;
+    for (const j of Object.values(elenco.jogadores)) {
+      ins.run(
+        chave,
+        j.atleta_id,
+        j.apelido_api,
+        j.clube,
+        j.clube_id,
+        j.posicao,
+        j.posicao_id,
+        j.escalacao,
+        j.status_id,
+        b(j.provavel),
+        b(j.lesionado),
+        b(j.suspenso),
+        b(j.nulo),
+        b(j.entrou_em_campo),
+        j.clube_casa,
+        j.clube_fora,
+        j.pontos,
+      );
+    }
+    // Invalida cache derivado
+    db.prepare("DELETE FROM melhor_time WHERE chave=?").run(chave);
+  })();
+  return Promise.resolve();
+}
+
+export async function getAllElencos(): Promise<Record<string, ElencoKV>> {
   const result: Record<string, ElencoKV> = {};
-  await Promise.all(
-    TODAS_CHAVES.map(async (chave) => {
-      const e = await getElenco(kv, chave);
-      if (e) result[chave] = e;
-    }),
-  );
+  for (const chave of TODAS_CHAVES) {
+    const e = await getElenco(chave);
+    if (e) result[chave] = e;
+  }
   return result;
 }
 
-export async function getRodadaStatus(
-  kv: Deno.Kv,
-): Promise<RodadaStatus | null> {
-  const r = await kv.get<RodadaStatus>(["rodada_atual"]);
-  return r.value;
+// ============================================================
+// RODADA ATUAL
+// ============================================================
+
+export function getRodadaStatus(): Promise<RodadaStatus | null> {
+  const r = getDb().prepare(
+    "SELECT status, rodada, atualizado_em, fechamento_json FROM rodada_atual WHERE id=1",
+  ).get<{
+    status: "aguardando" | "aguardando_inicio" | "ao_vivo";
+    rodada: number;
+    atualizado_em: string | null;
+    fechamento_json: string | null;
+  }>();
+  if (!r) return Promise.resolve(null);
+  return Promise.resolve({
+    status: r.status,
+    rodada: r.rodada,
+    atualizadoEm: r.atualizado_em ?? undefined,
+    fechamento: r.fechamento_json ? JSON.parse(r.fechamento_json) : undefined,
+  });
 }
 
-/** Verifica se a rodada está em andamento — cobre `ao_vivo` (bola
- *  rolando agora) E `aguardando_inicio` (mercado fechado mas entre
- *  jogos). Cartola só marca bola_rolando=true durante o 90min de
- *  cada jogo; entre jogos da mesma rodada cai pra false. Pra UX
- *  isso é tudo "rodada rolando". */
 export function isRodadaEmAndamento(
   status: RodadaStatus["status"] | null | undefined,
 ): boolean {
   return status === "ao_vivo" || status === "aguardando_inicio";
 }
 
-export async function isAoVivo(kv: Deno.Kv): Promise<boolean> {
-  const s = await getRodadaStatus(kv);
+export async function isAoVivo(): Promise<boolean> {
+  const s = await getRodadaStatus();
   return isRodadaEmAndamento(s?.status);
 }
 
-export async function setRodadaStatus(
-  kv: Deno.Kv,
-  status: RodadaStatus,
-): Promise<void> {
-  await kv.set(["rodada_atual"], status);
+export function setRodadaStatus(status: RodadaStatus): Promise<void> {
+  getDb().prepare(
+    "INSERT INTO rodada_atual (id, status, rodada, atualizado_em, fechamento_json) " +
+      "VALUES (1, ?, ?, ?, ?) " +
+      "ON CONFLICT (id) DO UPDATE SET " +
+      "  status=excluded.status, rodada=excluded.rodada, " +
+      "  atualizado_em=excluded.atualizado_em, fechamento_json=excluded.fechamento_json",
+  ).run(
+    status.status,
+    status.rodada,
+    status.atualizadoEm ?? null,
+    status.fechamento ? JSON.stringify(status.fechamento) : null,
+  );
+  return Promise.resolve();
 }
 
-export async function getAtletasCache(
-  kv: Deno.Kv,
+// ============================================================
+// CACHES (atletas + partidas)
+// ============================================================
+
+export function getAtletasCache(
   posChave: string,
 ): Promise<AtletaCacheKV | null> {
-  const r = await kv.get<AtletaCacheKV>(["atletas_cache", posChave]);
-  return r.value;
+  const posId = POSICAO_CHAVE_TO_ID[posChave];
+  if (!posId) return Promise.resolve(null);
+  const rows = getDb().prepare(
+    "SELECT atleta_id, apelido, clube, clube_id, posicao, posicao_id, status_id, foto, atualizado_em " +
+      "FROM atletas_cache WHERE posicao_id=?",
+  ).all<{
+    atleta_id: number;
+    apelido: string;
+    clube: string;
+    clube_id: number;
+    posicao: string;
+    posicao_id: number;
+    status_id: number | null;
+    foto: string | null;
+    atualizado_em: string;
+  }>(posId);
+  if (rows.length === 0) return Promise.resolve(null);
+  const atletas: AtletaCacheKV["atletas"] = {};
+  for (const r of rows) {
+    atletas[String(r.atleta_id)] = {
+      apelido: r.apelido,
+      clube: r.clube,
+      clube_id: r.clube_id,
+      posicao: r.posicao,
+      posicao_id: r.posicao_id,
+      status_id: r.status_id,
+      foto: r.foto,
+    };
+  }
+  return Promise.resolve({
+    atualizadoEm: rows[0].atualizado_em,
+    atletas,
+  });
 }
 
-export async function getPartidasCache(
-  kv: Deno.Kv,
-): Promise<Record<string, { casa: string; fora: string }> | null> {
-  const r = await kv.get<Record<string, { casa: string; fora: string }>>([
-    "partidas_cache",
-  ]);
-  return r.value;
+/** Sobrescreve o cache pra UMA posição. Usado pelo sync-atletas que
+ *  monta os dados por posChave. */
+export function setAtletasCache(
+  posChave: string,
+  cache: AtletaCacheKV,
+): Promise<void> {
+  const posId = POSICAO_CHAVE_TO_ID[posChave];
+  if (!posId) return Promise.resolve();
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare("DELETE FROM atletas_cache WHERE posicao_id=?").run(posId);
+    const ins = db.prepare(
+      "INSERT INTO atletas_cache (atleta_id, apelido, clube, clube_id, posicao, posicao_id, status_id, foto, atualizado_em) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    );
+    for (const [idStr, a] of Object.entries(cache.atletas)) {
+      ins.run(
+        Number(idStr),
+        a.apelido,
+        a.clube,
+        a.clube_id,
+        a.posicao,
+        a.posicao_id,
+        a.status_id ?? null,
+        a.foto ?? null,
+        cache.atualizadoEm,
+      );
+    }
+  })();
+  return Promise.resolve();
 }
 
-export async function setPartidasCache(
-  kv: Deno.Kv,
+export function getPartidasCache(): Promise<
+  Record<string, { casa: string; fora: string }> | null
+> {
+  const rows = getDb().prepare(
+    "SELECT clube_id, casa, fora FROM partidas_cache",
+  )
+    .all<{ clube_id: number; casa: string; fora: string }>();
+  if (rows.length === 0) return Promise.resolve(null);
+  const out: Record<string, { casa: string; fora: string }> = {};
+  for (const r of rows) {
+    out[String(r.clube_id)] = { casa: r.casa, fora: r.fora };
+  }
+  return Promise.resolve(out);
+}
+
+export function setPartidasCache(
   data: Record<string, { casa: string; fora: string }>,
 ): Promise<void> {
-  await kv.set(["partidas_cache"], data);
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare("DELETE FROM partidas_cache").run();
+    const ins = db.prepare(
+      "INSERT INTO partidas_cache (clube_id, casa, fora) VALUES (?, ?, ?)",
+    );
+    for (const [k, v] of Object.entries(data)) {
+      ins.run(Number(k), v.casa, v.fora);
+    }
+  })();
+  return Promise.resolve();
 }
 
 export function donoToChave(dono: string): string | undefined {
   return DONOS_CHAVES[dono];
 }
 
-/**
- * Constrói um Map atleta_id → foto URL lendo todos os caches por posição.
- * Os fotos são salvos por atleta dentro de AtletaCacheEntry (sync-atletas).
- */
-export async function getFotos(kv: Deno.Kv): Promise<Record<string, string>> {
+// ============================================================
+// FOTOS (mapa atleta_id → URL pra renderizar campo/listas)
+// ============================================================
+
+export async function getFotos(): Promise<Record<string, string>> {
   const { cdn } = await import("./cdn.ts");
+  const rows = getDb().prepare(
+    "SELECT atleta_id, foto FROM atletas_cache WHERE foto IS NOT NULL",
+  ).all<{ atleta_id: number; foto: string }>();
   const out: Record<string, string> = {};
-  await Promise.all(
-    POSICAO_CHAVES_CACHE.map(async (pos) => {
-      const cache = await getAtletasCache(kv, pos);
-      if (!cache) return;
-      for (const [id, a] of Object.entries(cache.atletas)) {
-        if (a.foto) {
-          const wrapped = cdn(a.foto);
-          if (wrapped) out[id] = wrapped;
-        }
-      }
-    }),
-  );
+  for (const r of rows) {
+    const wrapped = cdn(r.foto);
+    if (wrapped) out[String(r.atleta_id)] = wrapped;
+  }
   return out;
 }
+
+// Re-export do mapping pra módulos que importam de kv.ts
+export { POSICAO_ID_TO_CHAVE };

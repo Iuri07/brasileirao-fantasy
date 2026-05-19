@@ -691,9 +691,7 @@ function ModalOferta(
 
   function toggle(j: AtletaMeuTime) {
     if (modo === "interesse") {
-      setSelecionados((cur) =>
-        cur[0]?.atleta_id === j.atleta_id ? [] : [j]
-      );
+      setSelecionados((cur) => cur[0]?.atleta_id === j.atleta_id ? [] : [j]);
       return;
     }
     setSelecionados((cur) => {
@@ -864,7 +862,9 @@ function ModalOferta(
               : modo === "interesse"
               ? "Confirmar interesse"
               : `Enviar oferta${
-                selecionados.length > 1 ? ` (${selecionados.length} jogadores)` : ""
+                selecionados.length > 1
+                  ? ` (${selecionados.length} jogadores)`
+                  : ""
               }`}
           </button>
         </div>

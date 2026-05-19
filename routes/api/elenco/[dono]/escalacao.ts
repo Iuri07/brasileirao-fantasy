@@ -46,8 +46,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const elenco = await getElenco(kv, chave);
+    const elenco = await getElenco(chave);
     if (!elenco) {
       return new Response(
         JSON.stringify({ ok: false, erro: "Elenco não encontrado" }),
@@ -67,7 +66,7 @@ export const handler: Handlers<unknown, State> = {
       ...elenco.jogadores[id],
       escalacao: body.escalacao,
     };
-    await setElenco(kv, chave, elenco);
+    await setElenco(chave, elenco);
 
     return new Response(JSON.stringify({ ok: true }), { headers: H });
   },

@@ -11,10 +11,10 @@ import { applyNomeOverrides, getAllTimeVisuais } from "../lib/time-visual.ts";
 // processo na primeira request; admin endpoints invalidam via
 // `invalidateVisualCache()`.
 let visualCacheLoaded = false;
-async function ensureVisualCache(kv: Deno.Kv): Promise<void> {
+async function ensureVisualCache(): Promise<void> {
   if (visualCacheLoaded) return;
   try {
-    const all = await getAllTimeVisuais(kv);
+    const all = await getAllTimeVisuais();
     applyVisualOverrides(all);
     applyNomeOverrides(all);
     visualCacheLoaded = true;
@@ -68,10 +68,9 @@ export async function handler(req: Request, ctx: FreshContext<State>) {
   const p = url.pathname;
 
   // 1. Carrega sessão (se houver cookie válido)
-  const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-  await ensureVisualCache(kv);
+  await ensureVisualCache();
   const sessionId = getSessionIdFromRequest(req);
-  const session = sessionId ? await getSession(kv, sessionId) : null;
+  const session = sessionId ? await getSession(sessionId) : null;
   ctx.state.sessionId = sessionId;
   ctx.state.session = session;
 

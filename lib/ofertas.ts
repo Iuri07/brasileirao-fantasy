@@ -1,43 +1,29 @@
 // Sistema de oferta de troca + notificações entre times.
-//
-// Fluxo:
-// 1. Usuário A vê jogador B (de time T) "à venda" no /mercado.
-// 2. A oferece jogador X (do seu elenco) por B → cria Oferta.
-// 3. Dono de B recebe notificação. Aceita/nega.
-// 4. Se aceita → swap real (X muda pra T, B vai pra A). Notif vai pra A.
-// 5. Se nega → notif vai pra A.
 
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
+import { getDb } from "./db.ts";
 
 export type StatusOferta = "pendente" | "aceita" | "negada" | "cancelada";
 
 export interface Oferta {
   id: string;
-  /** Chave do time que está ofertando */
   deChave: string;
-  /** Chave do time que recebe a oferta (dono do atleta pedido) */
   paraChave: string;
-  /** atleta_ids dos jogadores oferecidos (1-3, vêm do elenco de `deChave`).
-   *  Trocas N:1 viram N:N quando destinatário aceita preenchendo
-   *  atletasExtra com N-1 jogadores do próprio elenco. */
+  /** Lista de atletas oferecidos (1-3). */
   atletasOferecidos: number[];
-  /** atleta_id do jogador pedido (do elenco de `paraChave`, negociável) */
+  /** Atleta pedido (do elenco do destinatário, negociável). */
   atletaPedido: number;
-  /** Atletas extras do destinatário escolhidos no momento de aceitar.
-   *  length = atletasOferecidos.length - 1. Vazio/undefined em 1:1. */
+  /** Atletas extras escolhidos pelo destinatário (length = atletasOferecidos.length - 1). */
   atletasExtra?: number[];
   status: StatusOferta;
-  /** Unix ms */
   criadoEm: number;
   respondidoEm?: number;
-  /** Mensagem opcional do ofertante */
   mensagem?: string;
   /** @deprecated Compat com ofertas pré-multi. Use atletasOferecidos. */
   atletaOferecido?: number;
 }
 
-/** Helper canônico — sempre lê via aqui pra cobrir ofertas legacy 1:1
- *  que ainda só tinham `atletaOferecido`. */
+/** Helper canônico — cobre ofertas legacy. */
 export function ofertaAtletasOferecidos(o: Oferta): number[] {
   if (o.atletasOferecidos && o.atletasOferecidos.length > 0) {
     return o.atletasOferecidos;
@@ -46,17 +32,12 @@ export function ofertaAtletasOferecidos(o: Oferta): number[] {
   return [];
 }
 
-export type TipoNotif =
-  | "oferta_recebida"
-  | "oferta_aceita"
-  | "oferta_negada";
+export type TipoNotif = "oferta_recebida" | "oferta_aceita" | "oferta_negada";
 
 export interface Notif {
   id: string;
-  /** Chave do destinatário */
   chave: string;
   tipo: TipoNotif;
-  /** Id da oferta relacionada */
   ofertaId: string;
   lida: boolean;
   criadoEm: number;
@@ -68,22 +49,103 @@ function genId(): string {
   return encodeHex(buf);
 }
 
-/* --- Ofertas ----------------------------------------------------------- */
+// ============================================================
+// OFERTAS
+// ============================================================
 
-export async function getOferta(
-  kv: Deno.Kv,
-  id: string,
-): Promise<Oferta | null> {
-  const r = await kv.get<Oferta>(["oferta", id]);
-  return r.value;
+interface OfertaRow {
+  id: string;
+  de_chave: string;
+  para_chave: string;
+  atleta_pedido: number;
+  status: StatusOferta;
+  criado_em: number;
+  respondido_em: number | null;
+  mensagem: string | null;
 }
 
-export async function setOferta(kv: Deno.Kv, oferta: Oferta): Promise<void> {
-  await kv.set(["oferta", oferta.id], oferta);
+function rowToOferta(
+  r: OfertaRow,
+  oferecidos: number[],
+  extras: number[],
+): Oferta {
+  return {
+    id: r.id,
+    deChave: r.de_chave,
+    paraChave: r.para_chave,
+    atletasOferecidos: oferecidos,
+    atletaPedido: r.atleta_pedido,
+    atletasExtra: extras.length > 0 ? extras : undefined,
+    status: r.status,
+    criadoEm: r.criado_em,
+    respondidoEm: r.respondido_em ?? undefined,
+    mensagem: r.mensagem ?? undefined,
+  };
+}
+
+function loadOfertaParts(
+  id: string,
+): { oferecidos: number[]; extras: number[] } {
+  const db = getDb();
+  const ofRows = db.prepare(
+    "SELECT atleta_id FROM oferta_oferecidos WHERE oferta_id=? ORDER BY ordem",
+  ).all<{ atleta_id: number }>(id);
+  const exRows = db.prepare(
+    "SELECT atleta_id FROM oferta_extras WHERE oferta_id=? ORDER BY ordem",
+  ).all<{ atleta_id: number }>(id);
+  return {
+    oferecidos: ofRows.map((r) => r.atleta_id),
+    extras: exRows.map((r) => r.atleta_id),
+  };
+}
+
+export function getOferta(id: string): Promise<Oferta | null> {
+  const r = getDb().prepare("SELECT * FROM ofertas WHERE id=?").get<OfertaRow>(
+    id,
+  );
+  if (!r) return Promise.resolve(null);
+  const { oferecidos, extras } = loadOfertaParts(id);
+  return Promise.resolve(rowToOferta(r, oferecidos, extras));
+}
+
+export function setOferta(oferta: Oferta): Promise<void> {
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare(
+      "INSERT INTO ofertas (id, de_chave, para_chave, atleta_pedido, status, criado_em, respondido_em, mensagem) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
+        "ON CONFLICT (id) DO UPDATE SET " +
+        "  status=excluded.status, respondido_em=excluded.respondido_em, mensagem=excluded.mensagem",
+    ).run(
+      oferta.id,
+      oferta.deChave,
+      oferta.paraChave,
+      oferta.atletaPedido,
+      oferta.status,
+      oferta.criadoEm,
+      oferta.respondidoEm ?? null,
+      oferta.mensagem ?? null,
+    );
+    db.prepare("DELETE FROM oferta_oferecidos WHERE oferta_id=?").run(
+      oferta.id,
+    );
+    db.prepare("DELETE FROM oferta_extras WHERE oferta_id=?").run(oferta.id);
+    const insOf = db.prepare(
+      "INSERT INTO oferta_oferecidos (oferta_id, atleta_id, ordem) VALUES (?, ?, ?)",
+    );
+    const lista = ofertaAtletasOferecidos(oferta);
+    lista.forEach((id, i) => insOf.run(oferta.id, id, i));
+    if (oferta.atletasExtra && oferta.atletasExtra.length > 0) {
+      const insEx = db.prepare(
+        "INSERT INTO oferta_extras (oferta_id, atleta_id, ordem) VALUES (?, ?, ?)",
+      );
+      oferta.atletasExtra.forEach((id, i) => insEx.run(oferta.id, id, i));
+    }
+  })();
+  return Promise.resolve();
 }
 
 export async function criarOferta(
-  kv: Deno.Kv,
   data: Omit<Oferta, "id" | "status" | "criadoEm">,
 ): Promise<Oferta> {
   const oferta: Oferta = {
@@ -92,18 +154,8 @@ export async function criarOferta(
     criadoEm: Date.now(),
     ...data,
   };
-  await setOferta(kv, oferta);
-  // Indexes pra listar por usuário
-  await kv.set(
-    ["ofertas_recebidas", oferta.paraChave, oferta.id],
-    oferta.id,
-  );
-  await kv.set(
-    ["ofertas_enviadas", oferta.deChave, oferta.id],
-    oferta.id,
-  );
-  // Notif pro destinatário
-  await criarNotif(kv, {
+  await setOferta(oferta);
+  await criarNotif({
     chave: oferta.paraChave,
     tipo: "oferta_recebida",
     ofertaId: oferta.id,
@@ -111,79 +163,74 @@ export async function criarOferta(
   return oferta;
 }
 
-export async function listarOfertasRecebidas(
-  kv: Deno.Kv,
+export function listarOfertasRecebidas(
   chave: string,
   filtro?: { status?: StatusOferta },
 ): Promise<Oferta[]> {
+  const db = getDb();
+  const where = filtro?.status
+    ? "WHERE para_chave=? AND status=?"
+    : "WHERE para_chave=?";
+  const args = filtro?.status ? [chave, filtro.status] : [chave];
+  const rows = db.prepare(
+    `SELECT * FROM ofertas ${where} ORDER BY criado_em DESC`,
+  )
+    .all<OfertaRow>(...args);
   const out: Oferta[] = [];
-  for await (
-    const entry of kv.list<string>({
-      prefix: ["ofertas_recebidas", chave],
-    })
-  ) {
-    const oferta = await getOferta(kv, entry.value);
-    if (!oferta) continue;
-    if (filtro?.status && oferta.status !== filtro.status) continue;
-    out.push(oferta);
+  for (const r of rows) {
+    const { oferecidos, extras } = loadOfertaParts(r.id);
+    out.push(rowToOferta(r, oferecidos, extras));
   }
-  out.sort((a, b) => b.criadoEm - a.criadoEm);
-  return out;
+  return Promise.resolve(out);
 }
 
-export async function listarOfertasEnviadas(
-  kv: Deno.Kv,
-  chave: string,
-): Promise<Oferta[]> {
+export function listarOfertasEnviadas(chave: string): Promise<Oferta[]> {
+  const db = getDb();
+  const rows = db.prepare(
+    "SELECT * FROM ofertas WHERE de_chave=? ORDER BY criado_em DESC",
+  )
+    .all<OfertaRow>(chave);
   const out: Oferta[] = [];
-  for await (
-    const entry of kv.list<string>({
-      prefix: ["ofertas_enviadas", chave],
-    })
-  ) {
-    const oferta = await getOferta(kv, entry.value);
-    if (oferta) out.push(oferta);
+  for (const r of rows) {
+    const { oferecidos, extras } = loadOfertaParts(r.id);
+    out.push(rowToOferta(r, oferecidos, extras));
   }
-  out.sort((a, b) => b.criadoEm - a.criadoEm);
-  return out;
+  return Promise.resolve(out);
 }
 
-/** Lista TODAS as ofertas do KV (admin only — itera prefix completo).
- *  Filtro opcional por status (geralmente `pendente`). */
-export async function listarTodasOfertas(
-  kv: Deno.Kv,
+export function listarTodasOfertas(
   filtro?: { status?: StatusOferta },
 ): Promise<Oferta[]> {
+  const db = getDb();
+  const where = filtro?.status ? "WHERE status=?" : "";
+  const args = filtro?.status ? [filtro.status] : [];
+  const rows = db.prepare(
+    `SELECT * FROM ofertas ${where} ORDER BY criado_em DESC`,
+  )
+    .all<OfertaRow>(...args);
   const out: Oferta[] = [];
-  for await (const entry of kv.list<Oferta>({ prefix: ["oferta"] })) {
-    const o = entry.value;
-    if (filtro?.status && o.status !== filtro.status) continue;
-    out.push(o);
+  for (const r of rows) {
+    const { oferecidos, extras } = loadOfertaParts(r.id);
+    out.push(rowToOferta(r, oferecidos, extras));
   }
-  out.sort((a, b) => b.criadoEm - a.criadoEm);
-  return out;
+  return Promise.resolve(out);
 }
 
-/** Cancela uma oferta pendente. Idempotente — se não está pendente,
- *  retorna a oferta sem mudar. Usado pelo admin pra limpar ofertas
- *  esquecidas/incorretas. */
-export async function cancelarOferta(
-  kv: Deno.Kv,
-  id: string,
-): Promise<Oferta | null> {
-  const oferta = await getOferta(kv, id);
+export async function cancelarOferta(id: string): Promise<Oferta | null> {
+  const oferta = await getOferta(id);
   if (!oferta) return null;
   if (oferta.status !== "pendente") return oferta;
   oferta.status = "cancelada";
   oferta.respondidoEm = Date.now();
-  await setOferta(kv, oferta);
+  await setOferta(oferta);
   return oferta;
 }
 
-/* --- Notificações ------------------------------------------------------ */
+// ============================================================
+// NOTIFICAÇÕES
+// ============================================================
 
-export async function criarNotif(
-  kv: Deno.Kv,
+export function criarNotif(
   data: Omit<Notif, "id" | "lida" | "criadoEm">,
 ): Promise<Notif> {
   const notif: Notif = {
@@ -192,46 +239,49 @@ export async function criarNotif(
     criadoEm: Date.now(),
     ...data,
   };
-  await kv.set(["notif", notif.chave, notif.id], notif);
-  return notif;
+  getDb().prepare(
+    "INSERT INTO notificacoes (id, chave, tipo, oferta_id, lida, criado_em) VALUES (?, ?, ?, ?, 0, ?)",
+  ).run(notif.id, notif.chave, notif.tipo, notif.ofertaId, notif.criadoEm);
+  return Promise.resolve(notif);
 }
 
-export async function listarNotifs(
-  kv: Deno.Kv,
+export function listarNotifs(
   chave: string,
   apenasNaoLidas = false,
 ): Promise<Notif[]> {
-  const out: Notif[] = [];
-  for await (
-    const entry of kv.list<Notif>({ prefix: ["notif", chave] })
-  ) {
-    if (apenasNaoLidas && entry.value.lida) continue;
-    out.push(entry.value);
-  }
-  out.sort((a, b) => b.criadoEm - a.criadoEm);
-  return out;
+  const where = apenasNaoLidas ? "WHERE chave=? AND lida=0" : "WHERE chave=?";
+  const rows = getDb().prepare(
+    `SELECT id, chave, tipo, oferta_id, lida, criado_em
+       FROM notificacoes ${where}
+   ORDER BY criado_em DESC`,
+  ).all<{
+    id: string;
+    chave: string;
+    tipo: TipoNotif;
+    oferta_id: string;
+    lida: number;
+    criado_em: number;
+  }>(chave);
+  return Promise.resolve(rows.map((r) => ({
+    id: r.id,
+    chave: r.chave,
+    tipo: r.tipo,
+    ofertaId: r.oferta_id,
+    lida: r.lida === 1,
+    criadoEm: r.criado_em,
+  })));
 }
 
-export async function marcarNotifLida(
-  kv: Deno.Kv,
-  chave: string,
-  id: string,
-): Promise<void> {
-  const r = await kv.get<Notif>(["notif", chave, id]);
-  if (r.value) {
-    await kv.set(["notif", chave, id], { ...r.value, lida: true });
-  }
+export function marcarNotifLida(chave: string, id: string): Promise<void> {
+  getDb().prepare("UPDATE notificacoes SET lida=1 WHERE id=? AND chave=?")
+    .run(id, chave);
+  return Promise.resolve();
 }
 
-export async function contarNotifsNaoLidas(
-  kv: Deno.Kv,
-  chave: string,
-): Promise<number> {
-  let n = 0;
-  for await (
-    const entry of kv.list<Notif>({ prefix: ["notif", chave] })
-  ) {
-    if (!entry.value.lida) n++;
-  }
-  return n;
+export function contarNotifsNaoLidas(chave: string): Promise<number> {
+  const r = getDb().prepare(
+    "SELECT COUNT(*) AS n FROM notificacoes WHERE chave=? AND lida=0",
+  )
+    .get<{ n: number }>(chave);
+  return Promise.resolve(r?.n ?? 0);
 }

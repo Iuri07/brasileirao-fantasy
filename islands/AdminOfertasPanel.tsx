@@ -167,11 +167,13 @@ export default function AdminOfertasPanel({ aVenda, ofertas }: Props) {
                   </div>
                   <div class="bf-admin-ofertas__sub">
                     Oferece{" "}
-                    <strong>{o.atletasOferecidosApelidos.join(", ")}</strong>{" "}
+                    <strong>{o.atletasOferecidosApelidos.join(", ")}</strong>
+                    {" "}
                     por <strong>{o.atletaPedidoApelido}</strong>
                     {o.atletasOferecidosApelidos.length > 1 && (
                       <span style="color:var(--bf-fg-3);font-size:10px">
-                        {" "}(+ {o.atletasOferecidosApelidos.length - 1} extra(s) escolhido(s) pelo destinatário)
+                        {" "}(+ {o.atletasOferecidosApelidos.length - 1}{" "}
+                        extra(s) escolhido(s) pelo destinatário)
                       </span>
                     )}
                   </div>

@@ -1285,8 +1285,10 @@ body {
 }
 /* Líder: container do troféu SVG. Mesma altura visual do "#N" numérico. */
 .bf-team-row__pos--lider {
-  color: var(--bf-trophy, #FFD23F);
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--bf-trophy, #FFD23F) 60%, transparent));
+  color: var(--bf-trophy, #ffd23f);
+  filter: drop-shadow(
+    0 0 4px color-mix(in srgb, var(--bf-trophy, #ffd23f) 60%, transparent)
+  );
 }
 .bf-team-row__pos--lider svg {
   width: 22px;
@@ -4570,12 +4572,20 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
    Em mobile, a versão antiga (cards-link) continua visível.
    ==================================================================== */
 
-.bf-admin-desktop { display: none; }
-.bf-admin-mobile { display: block; }
+.bf-admin-desktop {
+  display: none;
+}
+.bf-admin-mobile {
+  display: block;
+}
 
 @media (min-width: 1024px) {
-  .bf-admin-desktop { display: grid; }
-  .bf-admin-mobile { display: none; }
+  .bf-admin-desktop {
+    display: grid;
+  }
+  .bf-admin-mobile {
+    display: none;
+  }
 
   /* Topbar continua, mas viewport amplia */
   .bf-admin-viewport {
@@ -4637,7 +4647,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     border-bottom: 1px solid var(--line-1);
     scroll-margin-top: 16px;
   }
-  .bf-admin-section:last-child { border-bottom: none; }
+  .bf-admin-section:last-child {
+    border-bottom: none;
+  }
   .bf-admin-section__header {
     display: flex;
     align-items: baseline;
@@ -4715,11 +4727,10 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   overflow-x: auto;
   border: 1px solid var(--line-2);
   border-radius: 10px;
-  background:
-    linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
+  background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.025),
-    0 8px 24px rgba(0,0,0,0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.025),
+    0 8px 24px rgba(0, 0, 0, 0.35);
 }
 .bf-historico-matriz__table {
   border-collapse: collapse;
@@ -4732,8 +4743,7 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   position: sticky;
   top: 0;
   z-index: 2;
-  background:
-    linear-gradient(180deg, var(--bg-3) 0%, var(--bg-2) 100%);
+  background: linear-gradient(180deg, var(--bg-3) 0%, var(--bg-2) 100%);
   border-bottom: 2px solid var(--line-2);
   padding: 12px 8px;
   text-align: center;
@@ -4744,11 +4754,17 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   color: var(--fg-0);
 }
 /* Zebra rows pra leitura mais fácil */
-.bf-historico-matriz__table tbody tr:nth-child(even) td:not(.bf-historico-matriz__td-total),
-.bf-historico-matriz__table tbody tr:nth-child(even) .bf-historico-matriz__th-time-row {
-  background: rgba(255,255,255,0.012);
+.bf-historico-matriz__table
+  tbody tr:nth-child(even)
+  td:not(.bf-historico-matriz__td-total),
+.bf-historico-matriz__table
+  tbody tr:nth-child(even)
+  .bf-historico-matriz__th-time-row {
+  background: rgba(255, 255, 255, 0.012);
 }
-.bf-historico-matriz__table tbody tr:hover td:not(.bf-historico-matriz__td-total),
+.bf-historico-matriz__table
+  tbody tr:hover
+  td:not(.bf-historico-matriz__td-total),
 .bf-historico-matriz__table tbody tr:hover .bf-historico-matriz__th-time-row {
   background: rgba(155, 123, 255, 0.04);
 }
@@ -4756,7 +4772,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   text-align: left !important;
   min-width: 160px;
 }
-.bf-historico-matriz__th-rodada { min-width: 56px; }
+.bf-historico-matriz__th-rodada {
+  min-width: 56px;
+}
 .bf-historico-matriz__th-total {
   min-width: 72px;
   color: var(--accent) !important;
@@ -4787,7 +4805,7 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   padding: 0;
   position: relative;
   border-bottom: 1px solid var(--line-1);
-  border-right: 1px solid rgba(255,255,255,0.03);
+  border-right: 1px solid rgba(255, 255, 255, 0.03);
 }
 .bf-historico-matriz__input {
   width: 100%;
@@ -4828,8 +4846,14 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   background: var(--fg-1);
   animation: bfPulse 800ms infinite ease-in-out;
 }
-.bf-historico-matriz__status--saved { color: var(--syn-green); font-weight: 700; }
-.bf-historico-matriz__status--error { color: var(--syn-red); font-weight: 700; }
+.bf-historico-matriz__status--saved {
+  color: var(--syn-green);
+  font-weight: 700;
+}
+.bf-historico-matriz__status--error {
+  color: var(--syn-red);
+  font-weight: 700;
+}
 .bf-historico-matriz__td-total {
   padding: 6px 10px;
   text-align: right;
@@ -4930,9 +4954,18 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   align-items: flex-end;
   min-width: 140px;
 }
-.bf-times-visual__ok { color: var(--syn-green); font-size: 12px; }
-.bf-times-visual__err { color: var(--syn-red); font-size: 11px; }
-.bf-times-visual__hint { color: var(--fg-1); font-size: 11px; }
+.bf-times-visual__ok {
+  color: var(--syn-green);
+  font-size: 12px;
+}
+.bf-times-visual__err {
+  color: var(--syn-red);
+  font-size: 11px;
+}
+.bf-times-visual__hint {
+  color: var(--fg-1);
+  font-size: 11px;
+}
 
 /* Em telas estreitas, empilha */
 @media (max-width: 800px) {
@@ -4966,22 +4999,24 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   align-items: center;
   gap: 16px;
   padding: 12px 14px;
-  background:
-    linear-gradient(90deg,
-      color-mix(in srgb, var(--accent, #888) 10%, var(--bg-2)) 0%,
-      var(--bg-1) 30%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent, #888) 10%, var(--bg-2)) 0%,
+    var(--bg-1) 30%
+  );
   border: 1px solid var(--line-1);
   border-left: 3px solid var(--accent, #888);
   border-radius: 8px;
   position: relative;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.025);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
   transition: background 160ms var(--ease-out), border-color 160ms;
 }
 .bf-times-grid__card:hover {
-  background:
-    linear-gradient(90deg,
-      color-mix(in srgb, var(--accent, #888) 14%, var(--bg-2)) 0%,
-      var(--bg-1) 35%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent, #888) 14%, var(--bg-2)) 0%,
+    var(--bg-1) 35%
+  );
   border-color: color-mix(in srgb, var(--accent) 30%, var(--line-1));
 }
 .bf-times-grid__card[data-customizado="1"]::after {
@@ -4990,7 +5025,8 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   top: 50%;
   right: -2px;
   transform: translateY(-50%);
-  width: 5px; height: 5px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 8px var(--accent);
@@ -5006,23 +5042,24 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   width: 48px;
   height: 48px;
   flex-shrink: 0;
-  background:
-    radial-gradient(circle at 50% 35%,
-      color-mix(in srgb, var(--accent, #888) 22%, var(--bg-2)) 0%,
-      var(--bg-2) 70%);
+  background: radial-gradient(
+    circle at 50% 35%,
+    color-mix(in srgb, var(--accent, #888) 22%, var(--bg-2)) 0%,
+    var(--bg-2) 70%
+  );
   border: 1px solid var(--line-2);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .bf-times-grid__preview img {
   max-width: 80%;
   max-height: 80%;
   object-fit: contain;
-  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
 }
 .bf-times-grid__sigla {
   font-family: var(--font-mono);
@@ -5169,9 +5206,15 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   text-align: right;
   white-space: nowrap;
 }
-.bf-times-grid__ok { color: var(--syn-green); }
-.bf-times-grid__err { color: var(--syn-red); }
-.bf-times-grid__hint { color: var(--fg-1); }
+.bf-times-grid__ok {
+  color: var(--syn-green);
+}
+.bf-times-grid__err {
+  color: var(--syn-red);
+}
+.bf-times-grid__hint {
+  color: var(--fg-1);
+}
 
 /* Em telas mais estreitas que desktop largo, empilha header acima
    dos campos. Mantém ainda 1 linha por time mas em 2 sub-linhas. */
@@ -5182,9 +5225,15 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
       "header  actions"
       "fields  fields";
   }
-  .bf-times-grid__header { grid-area: header; }
-  .bf-times-grid__fields { grid-area: fields; }
-  .bf-times-grid__footer { grid-area: actions; }
+  .bf-times-grid__header {
+    grid-area: header;
+  }
+  .bf-times-grid__fields {
+    grid-area: fields;
+  }
+  .bf-times-grid__footer {
+    grid-area: actions;
+  }
 }
 @media (max-width: 720px) {
   .bf-times-grid__fields {
@@ -5203,9 +5252,11 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     margin: 0 -8px;
     border-bottom: none;
     border-radius: 12px;
-    background: linear-gradient(180deg,
+    background: linear-gradient(
+      180deg,
       rgba(28, 29, 34, 0.5) 0%,
-      rgba(21, 22, 26, 0.2) 100%);
+      rgba(21, 22, 26, 0.2) 100%
+    );
     margin-bottom: 8px;
   }
   .bf-admin-section + .bf-admin-section {

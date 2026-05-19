@@ -62,18 +62,27 @@ interface Data {
 
 export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const [emailMap, todosOverrides, historicos, diasResolucao, rodadaStatus, simulandoKV, ofertas, trocas] =
-      await Promise.all([
-        getEmailMap(kv),
-        getAllTimeVisuais(kv),
-        getAllHistoricos(kv),
-        getDiasResolucao(kv),
-        getRodadaStatus(kv),
-        kv.get<boolean>(["simulando"]),
-        listarTodasOfertas(kv, { status: "pendente" }),
-        listarTrocas(kv),
-      ]);
+    const { getDb } = await import("../lib/db.ts");
+    const simRow = getDb().prepare("SELECT ativo FROM simulando WHERE id=1")
+      .get<{ ativo: number }>();
+    const simulando = simRow?.ativo === 1;
+    const [
+      emailMap,
+      todosOverrides,
+      historicos,
+      diasResolucao,
+      rodadaStatus,
+      ofertas,
+      trocas,
+    ] = await Promise.all([
+      getEmailMap(),
+      getAllTimeVisuais(),
+      getAllHistoricos(),
+      getDiasResolucao(),
+      getRodadaStatus(),
+      listarTodasOfertas({ status: "pendente" }),
+      listarTrocas(),
+    ]);
 
     const chaveToEmail: Record<string, string> = {};
     for (const [e, c] of Object.entries(emailMap)) chaveToEmail[c] = e;
@@ -92,7 +101,11 @@ export const handler: Handlers<Data, State> = {
 
     const visuais: VisualItem[] = TODAS_CHAVES.map((chave) => {
       const baseInfo = timeLigaInfo(chave);
-      const resolved = resolveTimeVisual(chave, todosOverrides[chave] ?? null, baseInfo);
+      const resolved = resolveTimeVisual(
+        chave,
+        todosOverrides[chave] ?? null,
+        baseInfo,
+      );
       const meta = CHAVES_TIMES[chave];
       return {
         chave,
@@ -109,7 +122,11 @@ export const handler: Handlers<Data, State> = {
 
     const historicoTimes: HistoricoTimeItem[] = TODAS_CHAVES.map((chave) => {
       const baseInfo = timeLigaInfo(chave);
-      const resolved = resolveTimeVisual(chave, todosOverrides[chave] ?? null, baseInfo);
+      const resolved = resolveTimeVisual(
+        chave,
+        todosOverrides[chave] ?? null,
+        baseInfo,
+      );
       return {
         chave,
         displayName: resolved.displayName,
@@ -123,7 +140,7 @@ export const handler: Handlers<Data, State> = {
       historicoTimes,
       historicos,
       diasResolucao,
-      simulando: !!simulandoKV.value,
+      simulando,
       rodadaAtual: rodadaStatus?.rodada ?? 1,
       ofertasPendentesCount: ofertas.length,
       trocasConcluidasCount: trocas.length,
@@ -178,20 +195,35 @@ export default function AdminPage({ data }: PageProps<Data>) {
               </header>
               <div class="bf-admin-overview">
                 <div class="bf-admin-overview__card">
-                  <span class="bf-admin-overview__num">{data.visuais.length}</span>
+                  <span class="bf-admin-overview__num">
+                    {data.visuais.length}
+                  </span>
                   <span class="bf-admin-overview__lbl">Times</span>
                 </div>
-                <a class="bf-admin-overview__card bf-admin-overview__card--link" href="/admin/ofertas">
-                  <span class="bf-admin-overview__num">{data.ofertasPendentesCount}</span>
+                <a
+                  class="bf-admin-overview__card bf-admin-overview__card--link"
+                  href="/admin/ofertas"
+                >
+                  <span class="bf-admin-overview__num">
+                    {data.ofertasPendentesCount}
+                  </span>
                   <span class="bf-admin-overview__lbl">Ofertas pendentes</span>
                 </a>
-                <a class="bf-admin-overview__card bf-admin-overview__card--link" href="/admin/trocas">
-                  <span class="bf-admin-overview__num">{data.trocasConcluidasCount}</span>
+                <a
+                  class="bf-admin-overview__card bf-admin-overview__card--link"
+                  href="/admin/trocas"
+                >
+                  <span class="bf-admin-overview__num">
+                    {data.trocasConcluidasCount}
+                  </span>
                   <span class="bf-admin-overview__lbl">Trocas concluídas</span>
                 </a>
                 <div class="bf-admin-overview__card">
                   <span class="bf-admin-overview__num">
-                    {Object.values(data.historicos).reduce((s, h) => s + Object.keys(h).length, 0)}
+                    {Object.values(data.historicos).reduce(
+                      (s, h) => s + Object.keys(h).length,
+                      0,
+                    )}
                   </span>
                   <span class="bf-admin-overview__lbl">Pontos lançados</span>
                 </div>
@@ -216,7 +248,8 @@ export default function AdminPage({ data }: PageProps<Data>) {
               <header class="bf-admin-section__header">
                 <h2>Times</h2>
                 <span class="bf-admin-section__sub">
-                  Logo, nome e email atrelado de cada time. Resetar volta o visual pro default.
+                  Logo, nome e email atrelado de cada time. Resetar volta o
+                  visual pro default.
                 </span>
               </header>
               <AdminTimesGrid times={data.visuais} />
@@ -226,10 +259,16 @@ export default function AdminPage({ data }: PageProps<Data>) {
               <header class="bf-admin-section__header">
                 <h2>Ofertas pendentes</h2>
                 <span class="bf-admin-section__sub">
-                  {data.ofertasPendentesCount} pendente(s) · cancela ofertas esquecidas e remove dos negociáveis.
+                  {data.ofertasPendentesCount}{" "}
+                  pendente(s) · cancela ofertas esquecidas e remove dos
+                  negociáveis.
                 </span>
               </header>
-              <a href="/admin/ofertas" class="bf-btn bf-btn--primary" style="display:inline-flex">
+              <a
+                href="/admin/ofertas"
+                class="bf-btn bf-btn--primary"
+                style="display:inline-flex"
+              >
                 Gerenciar →
               </a>
             </section>
@@ -238,10 +277,15 @@ export default function AdminPage({ data }: PageProps<Data>) {
               <header class="bf-admin-section__header">
                 <h2>Histórico de trocas</h2>
                 <span class="bf-admin-section__sub">
-                  {data.trocasConcluidasCount} troca(s) concluída(s) · pode desfazer.
+                  {data.trocasConcluidasCount}{" "}
+                  troca(s) concluída(s) · pode desfazer.
                 </span>
               </header>
-              <a href="/admin/trocas" class="bf-btn bf-btn--primary" style="display:inline-flex">
+              <a
+                href="/admin/trocas"
+                class="bf-btn bf-btn--primary"
+                style="display:inline-flex"
+              >
                 Ver histórico →
               </a>
             </section>
@@ -260,7 +304,8 @@ export default function AdminPage({ data }: PageProps<Data>) {
               <header class="bf-admin-section__header">
                 <h2>Simular rodada ao vivo</h2>
                 <span class="bf-admin-section__sub">
-                  Gera pontos aleatórios e marca status como ao_vivo (trava cron).
+                  Gera pontos aleatórios e marca status como ao_vivo (trava
+                  cron).
                 </span>
               </header>
               <AdminSimularRodada
@@ -284,15 +329,20 @@ export default function AdminPage({ data }: PageProps<Data>) {
                     class="bf-admin-times__item"
                     style={{ "--accent": t.accent } as Record<string, string>}
                   >
-                    {t.logo ? (
-                      <img class="bf-admin-times__escudo" src={t.logo} alt={t.displayName} />
-                    ) : (
-                      <div class="bf-admin-times__sigla">{t.sigla}</div>
-                    )}
+                    {t.logo
+                      ? (
+                        <img
+                          class="bf-admin-times__escudo"
+                          src={t.logo}
+                          alt={t.displayName}
+                        />
+                      )
+                      : <div class="bf-admin-times__sigla">{t.sigla}</div>}
                     <div class="bf-admin-times__meta">
                       <div class="bf-admin-times__name">{t.displayName}</div>
                       <div class="bf-admin-times__dono">
-                        {data.atribuicoes.find((a) => a.chave === t.chave)?.dono ?? ""}
+                        {data.atribuicoes.find((a) => a.chave === t.chave)
+                          ?.dono ?? ""}
                       </div>
                     </div>
                     <div class="bf-admin-times__count">
@@ -312,8 +362,8 @@ export default function AdminPage({ data }: PageProps<Data>) {
               <span class="bf-status-card__hello">Admin</span>
             </div>
             <p class="bf-status-card__sub" style="margin-top:8px">
-              Atribua um email Google a cada time. Esse email será aceito no login
-              via SSO e mapeado para o time correspondente.
+              Atribua um email Google a cada time. Esse email será aceito no
+              login via SSO e mapeado para o time correspondente.
             </p>
           </article>
 
@@ -369,9 +419,10 @@ export default function AdminPage({ data }: PageProps<Data>) {
           <article class="bf-card">
             <p class="bf-status-card__sub" style="margin:0 0 12px">
               Gera pontos aleatórios pros 26 jogadores de cada elenco e marca o
-              status como <strong>ao_vivo</strong>. Trava o cron pra não sobrescrever
-              até você encerrar. Útil pra testar a UI sem depender da rodada real
-              da Cartola.
+              status como{" "}
+              <strong>ao_vivo</strong>. Trava o cron pra não sobrescrever até
+              você encerrar. Útil pra testar a UI sem depender da rodada real da
+              Cartola.
             </p>
             <AdminSimularRodada
               ativoInicial={data.simulando}

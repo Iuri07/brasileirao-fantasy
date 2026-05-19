@@ -5,8 +5,7 @@ import type { State } from "../../_middleware.ts";
 export const handler: Handlers<unknown, State> = {
   async POST(req, ctx) {
     if (ctx.state.sessionId) {
-      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-      await deleteSession(kv, ctx.state.sessionId);
+      await deleteSession(ctx.state.sessionId);
     }
     const secure = new URL(req.url).protocol === "https:";
     return new Response(null, {

@@ -71,8 +71,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    const elenco = await getElenco(kv, chave);
+    const elenco = await getElenco(chave);
     if (!elenco) {
       return new Response(
         JSON.stringify({ ok: false, erro: "Elenco não encontrado" }),
@@ -120,12 +119,12 @@ export const handler: Handlers<unknown, State> = {
     // escala (alguém entra ou sai do "Sim"). Usa o KV (rodadaStatus) em
     // vez do Cartola direto — assim a simulação do admin também trava.
     const afetaEscala = sai.escalacao === "Sim" || entra.escalacao === "Sim";
-    const rodadaStatus = await getRodadaStatus(kv);
+    const rodadaStatus = await getRodadaStatus();
     const aoVivo = isRodadaEmAndamento(rodadaStatus?.status);
     const rodadaAtual = rodadaStatus?.rodada ?? 0;
     let subsUsadas = 0;
     if (aoVivo && afetaEscala) {
-      subsUsadas = await getSubsUsadas(kv, rodadaAtual, chave);
+      subsUsadas = await getSubsUsadas(rodadaAtual, chave);
       if (subsUsadas >= MAX_SUBS_AO_VIVO) {
         return new Response(
           JSON.stringify({
@@ -143,10 +142,10 @@ export const handler: Handlers<unknown, State> = {
     // Aplica a troca: trocam de categoria entre si
     elenco.jogadores[idSai] = { ...sai, escalacao: entra.escalacao };
     elenco.jogadores[idEntra] = { ...entra, escalacao: sai.escalacao };
-    await setElenco(kv, chave, elenco);
+    await setElenco(chave, elenco);
 
     if (aoVivo && afetaEscala) {
-      subsUsadas = await incrementSubsUsadas(kv, rodadaAtual, chave);
+      subsUsadas = await incrementSubsUsadas(rodadaAtual, chave);
     }
 
     return new Response(

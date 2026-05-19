@@ -12,10 +12,9 @@ const H = {
 export const handler: Handlers = {
   async GET() {
     try {
-      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
       const [elencos, rodada] = await Promise.all([
-        getAllElencos(kv),
-        getRodadaStatus(kv),
+        getAllElencos(),
+        getRodadaStatus(),
       ]);
 
       if (Object.keys(elencos).length === 0) {
@@ -24,22 +23,24 @@ export const handler: Handlers = {
 
       const times = Object.values(elencos).map((elenco) => {
         const todos = Object.values(elenco.jogadores);
-        const originalEsc = new Map(todos.map((j) => [j.atleta_id, j.escalacao]));
+        const originalEsc = new Map(
+          todos.map((j) => [j.atleta_id, j.escalacao]),
+        );
         const comSub = calcularMelhorTime(todos);
 
         const jogadores = comSub.map((j) => ({
-          atleta_id:        j.atleta_id,
-          nome:             j.apelido_api,
-          posicao:          j.posicao,
-          pontuacao:        j.pontos ?? 0,
-          escalacao:        j.escalacao,
+          atleta_id: j.atleta_id,
+          nome: j.apelido_api,
+          posicao: j.posicao,
+          pontuacao: j.pontos ?? 0,
+          escalacao: j.escalacao,
           escalacao_elenco: originalEsc.get(j.atleta_id) ?? j.escalacao,
-          status_id:        j.status_id,
-          clube:            j.clube,
-          substituido:      j.substituido,
-          entrou_em_campo:  j.entrou_em_campo,
-          clube_casa:       j.clube_casa,
-          clube_fora:       j.clube_fora,
+          status_id: j.status_id,
+          clube: j.clube,
+          substituido: j.substituido,
+          entrou_em_campo: j.entrou_em_campo,
+          clube_casa: j.clube_casa,
+          clube_fora: j.clube_fora,
         }));
 
         const pontuacao = Math.round(
@@ -49,9 +50,9 @@ export const handler: Handlers = {
         ) / 100;
 
         return {
-          nome:      getNomeTimeDisplay(elenco.chave, elenco.nome_time),
-          dono:      elenco.dono,
-          chave:     elenco.chave,
+          nome: getNomeTimeDisplay(elenco.chave, elenco.nome_time),
+          dono: elenco.dono,
+          chave: elenco.chave,
           pontuacao,
           jogadores,
         };
@@ -59,16 +60,19 @@ export const handler: Handlers = {
 
       return new Response(
         JSON.stringify({
-          rodada:      rodada?.rodada ?? 0,
+          rodada: rodada?.rodada ?? 0,
           atualizadoEm: rodada?.atualizadoEm ?? new Date().toISOString(),
-          status:      rodada?.status ?? "aguardando",
-          fechamento:  rodada?.fechamento,
+          status: rodada?.status ?? "aguardando",
+          fechamento: rodada?.fechamento,
           times,
         }),
         { headers: H },
       );
     } catch (e) {
-      return new Response(JSON.stringify({ erro: String(e) }), { status: 500, headers: H });
+      return new Response(JSON.stringify({ erro: String(e) }), {
+        status: 500,
+        headers: H,
+      });
     }
   },
 };

@@ -30,10 +30,9 @@ export const handler: Handlers<unknown, State> = {
         { status: 403, headers: H },
       );
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
     const [notifs, elencos] = await Promise.all([
-      listarNotifs(kv, chave),
-      getAllElencos(kv),
+      listarNotifs(chave),
+      getAllElencos(),
     ]);
     // Resolve atleta_id → { apelido, posicao } procurando em todos os
     // elencos (jogador pode ter mudado de time entre criação e leitura).
@@ -45,15 +44,21 @@ export const handler: Handlers<unknown, State> = {
     }
     const payload: NotifPayload[] = await Promise.all(
       notifs.map(async (n) => {
-        const oferta = await getOferta(kv, n.ofertaId);
+        const oferta = await getOferta(n.ofertaId);
         const oferecidos = oferta ? ofertaAtletasOferecidos(oferta) : [];
         return {
           ...n,
           oferta,
-          nomesOferecidos: oferecidos.map((id) => info[id]?.apelido ?? `#${id}`),
+          nomesOferecidos: oferecidos.map((id) =>
+            info[id]?.apelido ?? `#${id}`
+          ),
           posicoesOferecidas: oferecidos.map((id) => info[id]?.posicao ?? "?"),
-          nomePedido: oferta ? info[oferta.atletaPedido]?.apelido ?? null : null,
-          posicaoPedido: oferta ? info[oferta.atletaPedido]?.posicao ?? null : null,
+          nomePedido: oferta
+            ? info[oferta.atletaPedido]?.apelido ?? null
+            : null,
+          posicaoPedido: oferta
+            ? info[oferta.atletaPedido]?.posicao ?? null
+            : null,
         };
       }),
     );
@@ -86,8 +91,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 400, headers: H },
       );
     }
-    const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-    await marcarNotifLida(kv, chave, body.id);
+    await marcarNotifLida(chave, body.id);
     return new Response(JSON.stringify({ ok: true }), { headers: H });
   },
 };

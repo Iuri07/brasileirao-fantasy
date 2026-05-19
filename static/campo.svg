@@ -2,36 +2,126 @@
   <!-- Fundo transparente — as linhas aparecem sobre o background do card -->
 
   <!-- Field border -->
-  <rect x="12" y="16" width="276" height="418" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+  <rect
+    x="12"
+    y="16"
+    width="276"
+    height="418"
+    fill="none"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="2"
+  />
 
   <!-- Center line -->
-  <line x1="12" y1="225" x2="288" y2="225" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+  <line
+    x1="12"
+    y1="225"
+    x2="288"
+    y2="225"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1.5"
+  />
 
   <!-- Center circle -->
-  <circle cx="150" cy="225" r="44" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
-  <circle cx="150" cy="225" r="2.5" fill="rgba(255,255,255,0.25)"/>
+  <circle
+    cx="150"
+    cy="225"
+    r="44"
+    fill="none"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1.5"
+  />
+  <circle cx="150" cy="225" r="2.5" fill="rgba(255,255,255,0.25)" />
 
   <!-- Top penalty area -->
-  <rect x="76" y="16" width="148" height="66" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+  <rect
+    x="76"
+    y="16"
+    width="148"
+    height="66"
+    fill="none"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1.5"
+  />
   <!-- Top goal area -->
-  <rect x="111" y="16" width="78" height="28" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+  <rect
+    x="111"
+    y="16"
+    width="78"
+    height="28"
+    fill="none"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1.5"
+  />
   <!-- Top penalty spot -->
-  <circle cx="150" cy="64" r="2" fill="rgba(255,255,255,0.25)"/>
+  <circle cx="150" cy="64" r="2" fill="rgba(255,255,255,0.25)" />
 
   <!-- Bottom penalty area -->
-  <rect x="76" y="368" width="148" height="66" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+  <rect
+    x="76"
+    y="368"
+    width="148"
+    height="66"
+    fill="none"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1.5"
+  />
   <!-- Bottom goal area -->
-  <rect x="111" y="406" width="78" height="28" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+  <rect
+    x="111"
+    y="406"
+    width="78"
+    height="28"
+    fill="none"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1.5"
+  />
   <!-- Bottom penalty spot -->
-  <circle cx="150" cy="386" r="2" fill="rgba(255,255,255,0.25)"/>
+  <circle cx="150" cy="386" r="2" fill="rgba(255,255,255,0.25)" />
 
   <!-- Corner arcs -->
-  <path d="M 23 16 A 11 11 0 0 1 12 27" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
-  <path d="M 277 16 A 11 11 0 0 0 288 27" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
-  <path d="M 12 423 A 11 11 0 0 0 23 434" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
-  <path d="M 288 423 A 11 11 0 0 1 277 434" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+  <path
+    d="M 23 16 A 11 11 0 0 1 12 27"
+    fill="none"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1.5"
+  />
+  <path
+    d="M 277 16 A 11 11 0 0 0 288 27"
+    fill="none"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1.5"
+  />
+  <path
+    d="M 12 423 A 11 11 0 0 0 23 434"
+    fill="none"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1.5"
+  />
+  <path
+    d="M 288 423 A 11 11 0 0 1 277 434"
+    fill="none"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1.5"
+  />
 
   <!-- Goals -->
-  <rect x="113" y="8" width="74" height="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
-  <rect x="113" y="432" width="74" height="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+  <rect
+    x="113"
+    y="8"
+    width="74"
+    height="10"
+    fill="rgba(255,255,255,0.06)"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1"
+  />
+  <rect
+    x="113"
+    y="432"
+    width="74"
+    height="10"
+    fill="rgba(255,255,255,0.06)"
+    stroke="rgba(255,255,255,0.18)"
+    stroke-width="1"
+  />
 </svg>

@@ -3,6 +3,7 @@ import {
   getAllElencos,
   getAtletasCache,
   POSICAO_CHAVES_CACHE,
+  setAtletasCache,
 } from "../../../lib/kv.ts";
 import { fetchPlayerPhoto, sleep } from "../../../lib/sportsdb.ts";
 import type { AtletaCacheEntry, AtletaCacheKV } from "../../../lib/types.ts";
@@ -22,10 +23,8 @@ export const handler: Handlers = {
    */
   async POST() {
     try {
-      const kv = await Deno.openKv(Deno.env.get("DENO_KV_PATH") || undefined);
-
       // 1. Coleta atleta_ids escalados (sim) em qualquer elenco
-      const elencos = await getAllElencos(kv);
+      const elencos = await getAllElencos();
       const escaladosIds = new Set<number>();
       for (const elenco of Object.values(elencos)) {
         for (const j of Object.values(elenco.jogadores)) {
@@ -40,7 +39,7 @@ export const handler: Handlers = {
         { posChave: string; entry: AtletaCacheEntry }
       >();
       for (const pos of POSICAO_CHAVES_CACHE) {
-        const c = await getAtletasCache(kv, pos);
+        const c = await getAtletasCache(pos);
         if (!c) continue;
         caches.set(pos, c);
         for (const [id, entry] of Object.entries(c.atletas)) {
@@ -81,7 +80,7 @@ export const handler: Handlers = {
         const c = caches.get(pos);
         if (c) {
           c.atualizadoEm = new Date().toISOString();
-          await kv.set(["atletas_cache", pos], c);
+          await setAtletasCache(pos, c);
         }
       }
 
