@@ -87,11 +87,14 @@ export const handler: Handlers<unknown, State> = {
       return new Response(JSON.stringify({ ok: true }), { headers: H });
     }
     if (body.chave) {
-      // Remove o email atribuído à chave (lookup inverso) — DELETE direto
-      const { getDb } = await import("../../../lib/db.ts");
-      getDb().prepare("DELETE FROM email_map WHERE chave=?").run(
-        String(body.chave),
-      );
+      // Remove o email atribuído à chave (lookup inverso)
+      const { getEmailMap, setEmailMap } = await import("../../../lib/auth.ts");
+      const map = await getEmailMap();
+      const chave = String(body.chave);
+      for (const [e, c] of Object.entries(map)) {
+        if (c === chave) delete map[e];
+      }
+      await setEmailMap(map);
       return new Response(JSON.stringify({ ok: true }), { headers: H });
     }
     return new Response(

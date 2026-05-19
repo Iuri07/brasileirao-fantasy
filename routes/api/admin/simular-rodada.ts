@@ -6,7 +6,7 @@ import {
   setRodadaStatus,
 } from "../../../lib/kv.ts";
 import { fetchPartidas } from "../../../lib/cartola.ts";
-import { getDb } from "../../../lib/db.ts";
+import { appStateDelete, appStateSet } from "../../../lib/app-state.ts";
 import type { JogadorKV } from "../../../lib/types.ts";
 import type { State } from "../../_middleware.ts";
 
@@ -143,10 +143,9 @@ export const handler: Handlers<unknown, State> = {
 
     if (encerrar) {
       // Libera o cron pra atualizar de novo a partir da Cartola real
-      const db = getDb();
-      db.prepare("DELETE FROM simulando").run();
-      db.prepare("DELETE FROM sim_scout").run();
-      db.prepare("DELETE FROM sim_partidas").run();
+      appStateDelete("simulando");
+      appStateDelete("sim_scout");
+      appStateDelete("sim_partidas");
       await setRodadaStatus({
         status: "aguardando",
         rodada: rodadaAtual,
@@ -181,9 +180,7 @@ export const handler: Handlers<unknown, State> = {
     const entrouPct = Number.isFinite(body.entrouPct) ? body.entrouPct! : 70;
 
     // Trava o cron pra não sobrescrever a simulação a cada 5min
-    getDb().prepare(
-      "INSERT INTO simulando (id, ativo) VALUES (1, 1) ON CONFLICT (id) DO UPDATE SET ativo=1",
-    ).run();
+    appStateSet("simulando", true);
 
     // 1. Marca rodada ao vivo
     await setRodadaStatus({
@@ -225,9 +222,7 @@ export const handler: Handlers<unknown, State> = {
     }
 
     // 3. Salva scout pro proxy /api/live retornar
-    getDb().prepare(
-      "INSERT INTO sim_scout (id, data_json) VALUES (1, ?) ON CONFLICT (id) DO UPDATE SET data_json=excluded.data_json",
-    ).run(JSON.stringify(scoutMap));
+    appStateSet("sim_scout", scoutMap);
 
     // 4. Gera placares simulados das partidas da rodada atual. Pega o
     //    schedule da Cartola e sorteia placares 0..3 com bias pra valores
@@ -249,9 +244,7 @@ export const handler: Handlers<unknown, State> = {
         placar_oficial_visitante: rand(),
         status_transmissao_tr: "EM ANDAMENTO",
       }));
-      getDb().prepare(
-        "INSERT INTO sim_partidas (id, data_json) VALUES (1, ?) ON CONFLICT (id) DO UPDATE SET data_json=excluded.data_json",
-      ).run(JSON.stringify({ ...real, partidas }));
+      appStateSet("sim_partidas", { ...real, partidas });
       comPartidas = partidas.length;
     } catch {
       // Sem Cartola disponível — pula partidas, o proxy cai no fallback

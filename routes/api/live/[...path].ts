@@ -1,6 +1,6 @@
 import { Handlers } from "$fresh/server.ts";
 import { getAllElencos, getRodadaStatus } from "../../../lib/kv.ts";
-import { getDb } from "../../../lib/db.ts";
+import { appStateGet } from "../../../lib/app-state.ts";
 
 // Proxy minimalista pra Cartola API com cache de 30s.
 
@@ -17,31 +17,15 @@ const cache = new Map<string, CacheEntry>();
 const H = { "Content-Type": "application/json; charset=UTF-8" };
 
 function isSimulando(): boolean {
-  const r = getDb().prepare("SELECT ativo FROM simulando WHERE id=1")
-    .get<{ ativo: number }>();
-  return r?.ativo === 1;
+  return appStateGet<boolean>("simulando") === true;
 }
 
 function getSimScout(): Record<string, Record<string, number>> {
-  const r = getDb().prepare("SELECT data_json FROM sim_scout WHERE id=1")
-    .get<{ data_json: string }>();
-  if (!r) return {};
-  try {
-    return JSON.parse(r.data_json) as Record<string, Record<string, number>>;
-  } catch {
-    return {};
-  }
+  return appStateGet<Record<string, Record<string, number>>>("sim_scout") ?? {};
 }
 
 function getSimPartidas(): unknown | null {
-  const r = getDb().prepare("SELECT data_json FROM sim_partidas WHERE id=1")
-    .get<{ data_json: string }>();
-  if (!r) return null;
-  try {
-    return JSON.parse(r.data_json);
-  } catch {
-    return null;
-  }
+  return appStateGet<unknown>("sim_partidas");
 }
 
 async function simularPontuados(): Promise<Response> {

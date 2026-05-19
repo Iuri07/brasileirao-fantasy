@@ -116,27 +116,25 @@ export function calcularMelhorTime(todos: JogadorKV[]): JogadorComSub[] {
   return resultado;
 }
 
-/** Cache do calcularMelhorTime em SQLite por chave. Invalidado
- *  automaticamente pelo setElenco. */
+/** Cache do calcularMelhorTime em coluna do row de elencos.
+ *  Invalidado pelo setElenco (que seta melhor_time_json=NULL). */
 export async function getMelhorTimeCached(
   chave: string,
   elenco: ElencoKV,
 ): Promise<JogadorComSub[]> {
   const { getDb } = await import("./db.ts");
   const db = getDb();
-  const r = db.prepare("SELECT computed_json FROM melhor_time WHERE chave=?")
-    .get<{ computed_json: string }>(chave);
-  if (r) {
+  const r = db.prepare("SELECT melhor_time_json FROM elencos WHERE chave=?")
+    .get<{ melhor_time_json: string | null }>(chave);
+  if (r?.melhor_time_json) {
     try {
-      return JSON.parse(r.computed_json) as JogadorComSub[];
+      return JSON.parse(r.melhor_time_json) as JogadorComSub[];
     } catch {
       // Cache corrompido — recomputa
     }
   }
   const computed = calcularMelhorTime(Object.values(elenco.jogadores));
-  db.prepare(
-    "INSERT INTO melhor_time (chave, computed_json) VALUES (?, ?) " +
-      "ON CONFLICT (chave) DO UPDATE SET computed_json=excluded.computed_json",
-  ).run(chave, JSON.stringify(computed));
+  db.prepare("UPDATE elencos SET melhor_time_json=? WHERE chave=?")
+    .run(JSON.stringify(computed), chave);
   return computed;
 }

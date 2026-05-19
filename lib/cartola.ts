@@ -89,31 +89,14 @@ interface PartidasCache {
 export async function fetchPartidasCacheado(): Promise<
   Awaited<ReturnType<typeof fetchPartidas>>
 > {
-  const { getDb } = await import("./db.ts");
-  const db = getDb();
-  const r = db.prepare(
-    "SELECT data_json, atualizado_em FROM mercado_status_cache WHERE id=2",
-  ).get<{ data_json: string; atualizado_em: string }>();
-  // Reusa a tabela mercado_status_cache com id=2 pra partidas
-  // (singleton expandido — id=1 status, id=2 partidas). Evita criar
-  // outra tabela só pra isso.
+  const { appStateGet, appStateSet } = await import("./app-state.ts");
+  const cached = appStateGet<PartidasCache>("partidas_full_cache");
   const now = Date.now();
-  if (r) {
-    try {
-      const parsed = JSON.parse(r.data_json) as PartidasCache;
-      if (parsed.cachedAt && now - parsed.cachedAt < PARTIDAS_CACHE_TTL_MS) {
-        return parsed.data;
-      }
-    } catch { /* corrompido */ }
+  if (cached?.cachedAt && now - cached.cachedAt < PARTIDAS_CACHE_TTL_MS) {
+    return cached.data;
   }
   const fresh = await fetchPartidas();
-  db.prepare(
-    "INSERT INTO mercado_status_cache (id, atualizado_em, data_json) VALUES (2, ?, ?) " +
-      "ON CONFLICT (id) DO UPDATE SET atualizado_em=excluded.atualizado_em, data_json=excluded.data_json",
-  ).run(
-    new Date(now).toISOString(),
-    JSON.stringify({ data: fresh, cachedAt: now }),
-  );
+  appStateSet("partidas_full_cache", { data: fresh, cachedAt: now });
   return fresh;
 }
 
@@ -128,28 +111,14 @@ interface StatusCache {
 export async function fetchMercadoStatusCacheado(): Promise<
   CartolaMercadoStatus
 > {
-  const { getDb } = await import("./db.ts");
-  const db = getDb();
-  const r = db.prepare(
-    "SELECT data_json FROM mercado_status_cache WHERE id=1",
-  ).get<{ data_json: string }>();
+  const { appStateGet, appStateSet } = await import("./app-state.ts");
+  const cached = appStateGet<StatusCache>("mercado_status_cache");
   const now = Date.now();
-  if (r) {
-    try {
-      const parsed = JSON.parse(r.data_json) as StatusCache;
-      if (parsed.cachedAt && now - parsed.cachedAt < STATUS_CACHE_TTL_MS) {
-        return parsed.data;
-      }
-    } catch { /* corrompido */ }
+  if (cached?.cachedAt && now - cached.cachedAt < STATUS_CACHE_TTL_MS) {
+    return cached.data;
   }
   const fresh = await fetchMercadoStatus();
-  db.prepare(
-    "INSERT INTO mercado_status_cache (id, atualizado_em, data_json) VALUES (1, ?, ?) " +
-      "ON CONFLICT (id) DO UPDATE SET atualizado_em=excluded.atualizado_em, data_json=excluded.data_json",
-  ).run(
-    new Date(now).toISOString(),
-    JSON.stringify({ data: fresh, cachedAt: now }),
-  );
+  appStateSet("mercado_status_cache", { data: fresh, cachedAt: now });
   return fresh;
 }
 
@@ -165,41 +134,24 @@ export async function fetchAtletasMercadoCacheado(): Promise<{
   clubes: Record<string, ClubeMin>;
   rodada_atual: number;
 }> {
-  const { getDb } = await import("./db.ts");
-  const db = getDb();
-  const r = db.prepare(
-    "SELECT atletas_json FROM mercado_cache WHERE id=1",
-  ).get<{ atletas_json: string }>();
+  const { appStateGet, appStateSet } = await import("./app-state.ts");
+  const cached = appStateGet<MercadoCachePayload>("mercado_cache");
   const now = Date.now();
-  if (r) {
-    try {
-      const parsed = JSON.parse(r.atletas_json) as MercadoCachePayload;
-      if (parsed.cachedAt && now - parsed.cachedAt < MERCADO_CACHE_TTL_MS) {
-        return {
-          atletas: parsed.atletas,
-          clubes: parsed.clubes,
-          rodada_atual: parsed.rodada_atual,
-        };
-      }
-    } catch { /* corrompido */ }
+  if (cached?.cachedAt && now - cached.cachedAt < MERCADO_CACHE_TTL_MS) {
+    return {
+      atletas: cached.atletas,
+      clubes: cached.clubes,
+      rodada_atual: cached.rodada_atual,
+    };
   }
   const fresh = await fetchAtletasMercado();
-  // Sem limite de 64KB agora — JSON inteiro num row.
   try {
-    db.prepare(
-      "INSERT INTO mercado_cache (id, atualizado_em, atletas_json) VALUES (1, ?, ?) " +
-        "ON CONFLICT (id) DO UPDATE SET atualizado_em=excluded.atualizado_em, atletas_json=excluded.atletas_json",
-    ).run(
-      new Date(now).toISOString(),
-      JSON.stringify(
-        {
-          atletas: fresh.atletas,
-          clubes: fresh.clubes,
-          rodada_atual: fresh.rodada_atual,
-          cachedAt: now,
-        } satisfies MercadoCachePayload,
-      ),
-    );
+    appStateSet("mercado_cache", {
+      atletas: fresh.atletas,
+      clubes: fresh.clubes,
+      rodada_atual: fresh.rodada_atual,
+      cachedAt: now,
+    } satisfies MercadoCachePayload);
   } catch (e) {
     console.warn("[mercado_cache] persist failed:", e);
   }

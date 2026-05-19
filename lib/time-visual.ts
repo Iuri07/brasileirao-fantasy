@@ -23,18 +23,22 @@ export interface TimeVisualOverride {
 
 interface VisualRow {
   chave: string;
-  nome_time: string | null;
-  display_name: string | null;
-  logo: string | null;
-  updated_at: string | null;
+  nome_time_override: string | null;
+  display_name_override: string | null;
+  logo_override: string | null;
+  visual_updated_at: string | null;
 }
 
-function rowToOverride(r: VisualRow): TimeVisualOverride {
+function rowToOverride(r: VisualRow): TimeVisualOverride | null {
+  // Só retorna se algum override estiver setado.
+  if (!r.nome_time_override && !r.display_name_override && !r.logo_override) {
+    return null;
+  }
   const out: TimeVisualOverride = {};
-  if (r.nome_time) out.nome_time = r.nome_time;
-  if (r.display_name) out.displayName = r.display_name;
-  if (r.logo) out.logo = r.logo;
-  if (r.updated_at) out.updatedAt = r.updated_at;
+  if (r.nome_time_override) out.nome_time = r.nome_time_override;
+  if (r.display_name_override) out.displayName = r.display_name_override;
+  if (r.logo_override) out.logo = r.logo_override;
+  if (r.visual_updated_at) out.updatedAt = r.visual_updated_at;
   return out;
 }
 
@@ -42,7 +46,7 @@ export function getTimeVisual(
   chave: string,
 ): Promise<TimeVisualOverride | null> {
   const r = getDb().prepare(
-    "SELECT chave, nome_time, display_name, logo, updated_at FROM time_visual WHERE chave=?",
+    "SELECT chave, nome_time_override, display_name_override, logo_override, visual_updated_at FROM elencos WHERE chave=?",
   ).get<VisualRow>(chave);
   return Promise.resolve(r ? rowToOverride(r) : null);
 }
@@ -58,23 +62,26 @@ export async function setTimeVisual(
     updatedAt: new Date().toISOString(),
   };
   getDb().prepare(
-    "INSERT INTO time_visual (chave, nome_time, display_name, logo, updated_at) " +
-      "VALUES (?, ?, ?, ?, ?) " +
-      "ON CONFLICT (chave) DO UPDATE SET " +
-      "  nome_time=excluded.nome_time, display_name=excluded.display_name, " +
-      "  logo=excluded.logo, updated_at=excluded.updated_at",
+    "UPDATE elencos SET " +
+      "  nome_time_override=?, display_name_override=?, logo_override=?, visual_updated_at=? " +
+      "WHERE chave=?",
   ).run(
-    chave,
     next.nome_time ?? null,
     next.displayName ?? null,
     next.logo ?? null,
     next.updatedAt ?? null,
+    chave,
   );
   return next;
 }
 
 export function deleteTimeVisual(chave: string): Promise<void> {
-  getDb().prepare("DELETE FROM time_visual WHERE chave=?").run(chave);
+  getDb().prepare(
+    "UPDATE elencos SET " +
+      "  nome_time_override=NULL, display_name_override=NULL, " +
+      "  logo_override=NULL, visual_updated_at=NULL " +
+      "WHERE chave=?",
+  ).run(chave);
   return Promise.resolve();
 }
 
@@ -82,10 +89,13 @@ export function getAllTimeVisuais(): Promise<
   Record<string, TimeVisualOverride>
 > {
   const rows = getDb().prepare(
-    "SELECT chave, nome_time, display_name, logo, updated_at FROM time_visual",
+    "SELECT chave, nome_time_override, display_name_override, logo_override, visual_updated_at FROM elencos",
   ).all<VisualRow>();
   const out: Record<string, TimeVisualOverride> = {};
-  for (const r of rows) out[r.chave] = rowToOverride(r);
+  for (const r of rows) {
+    const ov = rowToOverride(r);
+    if (ov) out[r.chave] = ov;
+  }
   return Promise.resolve(out);
 }
 

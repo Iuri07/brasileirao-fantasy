@@ -2,7 +2,7 @@
 
 import { setDraftOrdem, TODAS_CHAVES } from "./kv.ts";
 import { getHistorico, totalPontos } from "./historico.ts";
-import { getDb } from "./db.ts";
+import { appStateGet, appStateSet } from "./app-state.ts";
 
 export interface DraftMeta {
   ciclo: number;
@@ -11,23 +11,11 @@ export interface DraftMeta {
 }
 
 export function getDraftMeta(): Promise<DraftMeta | null> {
-  const r = getDb().prepare(
-    "SELECT ciclo, rodada_ciclo, rodada_base FROM draft_meta WHERE id=1",
-  ).get<{ ciclo: number; rodada_ciclo: number; rodada_base: number }>();
-  if (!r) return Promise.resolve(null);
-  return Promise.resolve({
-    ciclo: r.ciclo,
-    rodadaCiclo: r.rodada_ciclo,
-    rodadaBase: r.rodada_base,
-  });
+  return Promise.resolve(appStateGet<DraftMeta>("draft_meta"));
 }
 
 export function setDraftMeta(meta: DraftMeta): Promise<void> {
-  getDb().prepare(
-    "INSERT INTO draft_meta (id, ciclo, rodada_ciclo, rodada_base) VALUES (1, ?, ?, ?) " +
-      "ON CONFLICT (id) DO UPDATE SET " +
-      "  ciclo=excluded.ciclo, rodada_ciclo=excluded.rodada_ciclo, rodada_base=excluded.rodada_base",
-  ).run(meta.ciclo, meta.rodadaCiclo, meta.rodadaBase);
+  appStateSet("draft_meta", meta);
   return Promise.resolve();
 }
 
@@ -100,24 +88,16 @@ export async function avancarRodadaDraft(
 const DIAS_DEFAULT = [3]; // quarta-feira
 
 export function getDiasResolucao(): Promise<number[]> {
-  const rows = getDb().prepare(
-    "SELECT dia_semana FROM draft_dias ORDER BY dia_semana",
-  )
-    .all<{ dia_semana: number }>();
-  if (rows.length === 0) return Promise.resolve([...DIAS_DEFAULT]);
-  return Promise.resolve(rows.map((r) => r.dia_semana));
+  const stored = appStateGet<number[]>("draft_dias");
+  if (!stored || stored.length === 0) return Promise.resolve([...DIAS_DEFAULT]);
+  return Promise.resolve([...stored].sort((a, b) => a - b));
 }
 
 export function setDiasResolucao(dias: number[]): Promise<void> {
   const limpos = [
     ...new Set(dias.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)),
   ].sort((a, b) => a - b);
-  const db = getDb();
-  db.transaction(() => {
-    db.prepare("DELETE FROM draft_dias").run();
-    const ins = db.prepare("INSERT INTO draft_dias (dia_semana) VALUES (?)");
-    for (const d of limpos) ins.run(d);
-  })();
+  appStateSet("draft_dias", limpos);
   return Promise.resolve();
 }
 

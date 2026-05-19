@@ -5,6 +5,7 @@
 
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
 import { getDb } from "./db.ts";
+import { appStateDelete, appStateGet, appStateSet } from "./app-state.ts";
 
 export type Role = "admin" | "user";
 
@@ -129,65 +130,50 @@ export function buildClearCookie(secure: boolean): string {
 
 /* --- Email → chave de time --------------------------------------------- */
 
-/** Lê o map email→chave mantido pelo admin. */
+/** Lê o map email→chave (JSON em app_state). Count baixo (~9 emails),
+ *  query rápida não importa. */
 export function getEmailMap(): Promise<Record<string, string>> {
-  const rows = getDb().prepare("SELECT email, chave FROM email_map")
-    .all<{ email: string; chave: string }>();
-  const out: Record<string, string> = {};
-  for (const r of rows) out[r.email] = r.chave;
-  return Promise.resolve(out);
+  return Promise.resolve(
+    appStateGet<Record<string, string>>("email_map") ?? {},
+  );
 }
 
 export function setEmailMap(map: Record<string, string>): Promise<void> {
-  const db = getDb();
-  db.transaction(() => {
-    db.prepare("DELETE FROM email_map").run();
-    const ins = db.prepare(
-      "INSERT INTO email_map (email, chave) VALUES (?, ?)",
-    );
-    for (const [email, chave] of Object.entries(map)) ins.run(email, chave);
-  })();
+  appStateSet("email_map", map);
   return Promise.resolve();
 }
 
 /** Atribui um email a um time (1:1). Joga erro se conflito. */
-export function atribuirEmailATime(
+export async function atribuirEmailATime(
   email: string,
   chave: string,
 ): Promise<void> {
   const normalizado = email.trim().toLowerCase();
   if (!normalizado) throw new Error("Email vazio");
-  const db = getDb();
-  const existente = db.prepare("SELECT chave FROM email_map WHERE email=?")
-    .get<{ chave: string }>(normalizado);
-  if (existente && existente.chave !== chave) {
+  const map = await getEmailMap();
+  if (map[normalizado] && map[normalizado] !== chave) {
     throw new Error(
-      `Email ${normalizado} já está atribuído ao time ${existente.chave}`,
+      `Email ${normalizado} já está atribuído ao time ${map[normalizado]}`,
     );
   }
-  db.transaction(() => {
-    // 1:1 — remove qualquer email anterior atribuído a essa chave
-    db.prepare("DELETE FROM email_map WHERE chave=? AND email != ?")
-      .run(chave, normalizado);
-    db.prepare(
-      "INSERT INTO email_map (email, chave) VALUES (?, ?) " +
-        "ON CONFLICT (email) DO UPDATE SET chave=excluded.chave",
-    ).run(normalizado, chave);
-  })();
-  return Promise.resolve();
+  // 1:1 — remove qualquer email anterior atribuído a essa chave
+  for (const [e, c] of Object.entries(map)) {
+    if (c === chave && e !== normalizado) delete map[e];
+  }
+  map[normalizado] = chave;
+  await setEmailMap(map);
 }
 
-export function removerEmail(email: string): Promise<void> {
-  getDb().prepare("DELETE FROM email_map WHERE email=?")
-    .run(email.trim().toLowerCase());
-  return Promise.resolve();
+export async function removerEmail(email: string): Promise<void> {
+  const map = await getEmailMap();
+  delete map[email.trim().toLowerCase()];
+  await setEmailMap(map);
 }
 
 /** Resolve um email → chave. */
-export function emailParaChave(email: string): Promise<string | null> {
-  const r = getDb().prepare("SELECT chave FROM email_map WHERE email=?")
-    .get<{ chave: string }>(email.trim().toLowerCase());
-  return Promise.resolve(r?.chave ?? null);
+export async function emailParaChave(email: string): Promise<string | null> {
+  const map = await getEmailMap();
+  return map[email.trim().toLowerCase()] ?? null;
 }
 
 /* --- Admin user via env ------------------------------------------------ */
@@ -233,23 +219,22 @@ export function genOAuthState(): string {
   return encodeHex(buf);
 }
 
-/** Guarda o state em DB (com TTL curto). Independe de cookies. */
+/** Guarda o state em app_state com key `oauth:<state>`. */
 export function saveOAuthState(state: string, next: string): Promise<void> {
-  getDb().prepare(
-    "INSERT INTO oauth_state (state, next, exp) VALUES (?, ?, ?)",
-  ).run(state, next, Date.now() + OAUTH_STATE_TTL_MS);
+  appStateSet(`oauth:${state}`, {
+    next,
+    exp: Date.now() + OAUTH_STATE_TTL_MS,
+  });
   return Promise.resolve();
 }
 
 export function consumeOAuthState(
   state: string,
 ): Promise<{ next: string } | null> {
-  const db = getDb();
-  const r = db.prepare("SELECT next, exp FROM oauth_state WHERE state=?")
-    .get<{ next: string; exp: number }>(state);
+  const key = `oauth:${state}`;
+  const r = appStateGet<{ next: string; exp: number }>(key);
   if (!r) return Promise.resolve(null);
-  // Consume (single-use) + purge stale
-  db.prepare("DELETE FROM oauth_state WHERE state=?").run(state);
+  appStateDelete(key); // single-use
   if (r.exp < Date.now()) return Promise.resolve(null);
   return Promise.resolve({ next: r.next });
 }

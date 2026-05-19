@@ -146,13 +146,13 @@ async function sincronizarAtletas(): Promise<void> {
 
 export async function atualizarTudo(): Promise<void> {
   // Flag de simulação
-  const db = getDb();
-  const sim = db.prepare("SELECT ativo FROM simulando WHERE id=1")
-    .get<{ ativo: number }>();
-  if (sim?.ativo === 1) {
+  const { appStateGet } = await import("./app-state.ts");
+  const sim = appStateGet<boolean>("simulando");
+  if (sim === true) {
     console.log("[cron] simulação ativa — skip atualizarTudo");
     return;
   }
+  const db = getDb();
 
   const now = new Date().toISOString();
   const mercado = await fetchMercadoStatus();
@@ -265,14 +265,12 @@ export async function atualizarTudo(): Promise<void> {
     fetchMercadoStatusCacheado().catch(() => {}),
   ]);
 
-  // Pre-computa melhor_time pra cada elenco
+  // Pre-computa melhor_time pra cada elenco (coluna no próprio row)
   const elencosAtualizados = await getAllElencos();
   for (const [chave, elenco] of Object.entries(elencosAtualizados)) {
     const computed = calcularMelhorTime(Object.values(elenco.jogadores));
-    db.prepare(
-      "INSERT INTO melhor_time (chave, computed_json) VALUES (?, ?) " +
-        "ON CONFLICT (chave) DO UPDATE SET computed_json=excluded.computed_json",
-    ).run(chave, JSON.stringify(computed));
+    db.prepare("UPDATE elencos SET melhor_time_json=? WHERE chave=?")
+      .run(JSON.stringify(computed), chave);
   }
 
   console.log(`[cron] pontuação atualizada: rodada ${pontuados.rodada_id}`);

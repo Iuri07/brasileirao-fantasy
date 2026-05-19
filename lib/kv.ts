@@ -12,6 +12,7 @@ import type {
   RodadaStatus,
 } from "./types.ts";
 import { getDb } from "./db.ts";
+import { appStateGet, appStateSet } from "./app-state.ts";
 
 export const DONOS_CHAVES: Record<string, string> = {
   "Aguiar": "aguiar",
@@ -66,13 +67,14 @@ const POSICAO_CHAVE_TO_ID: Record<string, number> = {
 // SUBS USADAS (durante rodada ao vivo)
 // ============================================================
 
+// Coluna no elenco — só rodada atual importa. Quando muda de rodada,
+// count zera automaticamente porque rodada não bate.
 export function getSubsUsadas(rodada: number, chave: string): Promise<number> {
-  const db = getDb();
-  const r = db.prepare(
-    "SELECT count FROM subs_usadas WHERE rodada=? AND chave=?",
-  )
-    .get<{ count: number }>(rodada, chave);
-  return Promise.resolve(r?.count ?? 0);
+  const r = getDb().prepare(
+    "SELECT subs_usadas_rodada AS rodada, subs_usadas_count AS count FROM elencos WHERE chave=?",
+  ).get<{ rodada: number | null; count: number }>(chave);
+  if (!r || r.rodada !== rodada) return Promise.resolve(0);
+  return Promise.resolve(r.count);
 }
 
 export async function incrementSubsUsadas(
@@ -82,9 +84,8 @@ export async function incrementSubsUsadas(
   const atual = await getSubsUsadas(rodada, chave);
   const proximo = atual + 1;
   getDb().prepare(
-    "INSERT INTO subs_usadas (rodada, chave, count) VALUES (?, ?, ?) " +
-      "ON CONFLICT (rodada, chave) DO UPDATE SET count=excluded.count",
-  ).run(rodada, chave, proximo);
+    "UPDATE elencos SET subs_usadas_rodada=?, subs_usadas_count=? WHERE chave=?",
+  ).run(rodada, proximo, chave);
   return proximo;
 }
 
@@ -260,29 +261,19 @@ export async function removePrioridade(
 // ============================================================
 
 export function getDraftOrdem(): Promise<string[]> {
-  const rows = getDb().prepare("SELECT chave FROM draft_ordem ORDER BY ordem")
-    .all<{ chave: string }>();
-  if (rows.length > 0) {
-    const set = new Set(rows.map((r) => r.chave));
+  const stored = appStateGet<string[]>("draft_ordem");
+  if (stored && stored.length > 0) {
+    const set = new Set(stored);
     const faltando = TODAS_CHAVES.filter((c) => !set.has(c));
     return Promise.resolve(
-      faltando.length === 0
-        ? rows.map((r) => r.chave)
-        : [...rows.map((r) => r.chave), ...faltando],
+      faltando.length === 0 ? stored : [...stored, ...faltando],
     );
   }
   return Promise.resolve([...TODAS_CHAVES]);
 }
 
 export function setDraftOrdem(ordem: string[]): Promise<void> {
-  const db = getDb();
-  db.transaction(() => {
-    db.prepare("DELETE FROM draft_ordem").run();
-    const ins = db.prepare(
-      "INSERT INTO draft_ordem (chave, ordem) VALUES (?, ?)",
-    );
-    ordem.forEach((c, i) => ins.run(c, i));
-  })();
+  appStateSet("draft_ordem", ordem);
   return Promise.resolve();
 }
 
@@ -360,6 +351,9 @@ export function getElenco(chave: string): Promise<ElencoKV | null> {
 export function setElenco(chave: string, elenco: ElencoKV): Promise<void> {
   const db = getDb();
   db.transaction(() => {
+    // Não tocar nas colunas de override (nome_time_override etc) nem em
+    // melhor_time_json/subs_usadas — só nome_time/dono que mudam aqui.
+    // Se o row não existe, criamos com defaults nulos pros overrides.
     db.prepare(
       "INSERT INTO elencos (chave, nome_time, dono) VALUES (?, ?, ?) " +
         "ON CONFLICT (chave) DO UPDATE SET nome_time=excluded.nome_time, dono=excluded.dono",
@@ -394,8 +388,8 @@ export function setElenco(chave: string, elenco: ElencoKV): Promise<void> {
         j.pontos,
       );
     }
-    // Invalida cache derivado
-    db.prepare("DELETE FROM melhor_time WHERE chave=?").run(chave);
+    // Invalida cache derivado (melhor_time é coluna no próprio row)
+    db.prepare("UPDATE elencos SET melhor_time_json=NULL WHERE chave=?").run(chave);
   })();
   return Promise.resolve();
 }
@@ -414,21 +408,7 @@ export async function getAllElencos(): Promise<Record<string, ElencoKV>> {
 // ============================================================
 
 export function getRodadaStatus(): Promise<RodadaStatus | null> {
-  const r = getDb().prepare(
-    "SELECT status, rodada, atualizado_em, fechamento_json FROM rodada_atual WHERE id=1",
-  ).get<{
-    status: "aguardando" | "aguardando_inicio" | "ao_vivo";
-    rodada: number;
-    atualizado_em: string | null;
-    fechamento_json: string | null;
-  }>();
-  if (!r) return Promise.resolve(null);
-  return Promise.resolve({
-    status: r.status,
-    rodada: r.rodada,
-    atualizadoEm: r.atualizado_em ?? undefined,
-    fechamento: r.fechamento_json ? JSON.parse(r.fechamento_json) : undefined,
-  });
+  return Promise.resolve(appStateGet<RodadaStatus>("rodada_atual"));
 }
 
 export function isRodadaEmAndamento(
@@ -443,18 +423,7 @@ export async function isAoVivo(): Promise<boolean> {
 }
 
 export function setRodadaStatus(status: RodadaStatus): Promise<void> {
-  getDb().prepare(
-    "INSERT INTO rodada_atual (id, status, rodada, atualizado_em, fechamento_json) " +
-      "VALUES (1, ?, ?, ?, ?) " +
-      "ON CONFLICT (id) DO UPDATE SET " +
-      "  status=excluded.status, rodada=excluded.rodada, " +
-      "  atualizado_em=excluded.atualizado_em, fechamento_json=excluded.fechamento_json",
-  ).run(
-    status.status,
-    status.rodada,
-    status.atualizadoEm ?? null,
-    status.fechamento ? JSON.stringify(status.fechamento) : null,
-  );
+  appStateSet("rodada_atual", status);
   return Promise.resolve();
 }
 
@@ -535,31 +504,15 @@ export function setAtletasCache(
 export function getPartidasCache(): Promise<
   Record<string, { casa: string; fora: string }> | null
 > {
-  const rows = getDb().prepare(
-    "SELECT clube_id, casa, fora FROM partidas_cache",
-  )
-    .all<{ clube_id: number; casa: string; fora: string }>();
-  if (rows.length === 0) return Promise.resolve(null);
-  const out: Record<string, { casa: string; fora: string }> = {};
-  for (const r of rows) {
-    out[String(r.clube_id)] = { casa: r.casa, fora: r.fora };
-  }
-  return Promise.resolve(out);
+  return Promise.resolve(
+    appStateGet<Record<string, { casa: string; fora: string }>>("partidas_cache"),
+  );
 }
 
 export function setPartidasCache(
   data: Record<string, { casa: string; fora: string }>,
 ): Promise<void> {
-  const db = getDb();
-  db.transaction(() => {
-    db.prepare("DELETE FROM partidas_cache").run();
-    const ins = db.prepare(
-      "INSERT INTO partidas_cache (clube_id, casa, fora) VALUES (?, ?, ?)",
-    );
-    for (const [k, v] of Object.entries(data)) {
-      ins.run(Number(k), v.casa, v.fora);
-    }
-  })();
+  appStateSet("partidas_cache", data);
   return Promise.resolve();
 }
 

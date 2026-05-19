@@ -62,10 +62,8 @@ interface Data {
 
 export const handler: Handlers<Data, State> = {
   async GET(_req, ctx) {
-    const { getDb } = await import("../lib/db.ts");
-    const simRow = getDb().prepare("SELECT ativo FROM simulando WHERE id=1")
-      .get<{ ativo: number }>();
-    const simulando = simRow?.ativo === 1;
+    const { appStateGet } = await import("../lib/app-state.ts");
+    const simulando = appStateGet<boolean>("simulando") === true;
     const [
       emailMap,
       todosOverrides,

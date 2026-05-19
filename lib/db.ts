@@ -1,35 +1,36 @@
 // SQLite singleton + schema. Substitui Deno KV.
 //
-// Por que SQLite direto e não Deno KV:
-//   - Limite 64KB do KV (cache de mercado já estourou)
-//   - Queries com índices custom (rankings, filtros admin)
-//   - Schema explícito, tipado
-//   - Ferramentas externas (sqlite3 CLI, DBeaver) leem direto
+// Schema v2: consolida 28 tabelas em 16.
+// - Singletons (rodada_atual, simulando, mercado_cache, etc) viram rows
+//   em `app_state(key, data_json)`.
+// - time_visual, melhor_time, subs_usadas viram colunas em `elencos`.
+// - oauth_state e email_map viram entries em `app_state` (count baixo,
+//   query rápida não importa).
+// - partidas_cache vira singleton em `app_state` (20 rows num record).
 //
 // Path do banco vem de DB_PATH env (prod = /data/app.db).
-// Em dev sem env, usa ./data/app.db relativo ao cwd.
 
 import { Database } from "@db/sqlite";
 
 const DEFAULT_PATH = "./data/app.db";
+const SCHEMA_VERSION = 2;
 
 let _db: Database | null = null;
 
 export function getDb(): Database {
   if (_db) return _db;
   const path = Deno.env.get("DB_PATH") || DEFAULT_PATH;
-  // Garante que o dir existe (best-effort; ignora se já existe).
   try {
     const dir = path.replace(/\/[^/]+$/, "");
     if (dir && dir !== path) Deno.mkdirSync(dir, { recursive: true });
   } catch (_) { /* já existe */ }
   _db = new Database(path);
-  // Pragmas pra perf e correção:
   _db.exec("PRAGMA journal_mode = WAL");
   _db.exec("PRAGMA synchronous = NORMAL");
   _db.exec("PRAGMA foreign_keys = ON");
   _db.exec("PRAGMA busy_timeout = 5000");
   initSchema(_db);
+  migrateIfNeeded(_db);
   return _db;
 }
 
@@ -40,20 +41,40 @@ export function closeDb(): void {
   }
 }
 
+function getUserVersion(db: Database): number {
+  const r = db.prepare("PRAGMA user_version").get<{ user_version: number }>();
+  return r?.user_version ?? 0;
+}
+
+function setUserVersion(db: Database, v: number): void {
+  db.exec(`PRAGMA user_version = ${v}`);
+}
+
 // ============================================================
-// SCHEMA — idempotente, roda no startup
+// SCHEMA v2 — idempotente
 // ============================================================
 
 function initSchema(db: Database): void {
   db.exec(`
-    -- Elencos: 1 linha por time
+    -- Elencos: 1 row por time. Engole as ex-tabelas:
+    --   time_visual (overrides), melhor_time (cache), subs_usadas (rodada atual).
     CREATE TABLE IF NOT EXISTS elencos (
       chave TEXT PRIMARY KEY,
       nome_time TEXT NOT NULL,
-      dono TEXT NOT NULL
+      dono TEXT NOT NULL,
+      -- Overrides visuais editáveis pelo admin (ex-time_visual)
+      nome_time_override TEXT,
+      display_name_override TEXT,
+      logo_override TEXT,
+      visual_updated_at TEXT,
+      -- Cache da escalação computada com auto-subs (ex-melhor_time)
+      melhor_time_json TEXT,
+      -- Subs banco↔escala usadas na rodada ao_vivo atual (ex-subs_usadas).
+      -- Quando rodada muda, count zera e rodada atualiza.
+      subs_usadas_rodada INTEGER,
+      subs_usadas_count INTEGER NOT NULL DEFAULT 0
     );
 
-    -- Jogadores: 1 linha por (chave, atleta_id). PK composta.
     CREATE TABLE IF NOT EXISTS jogadores (
       chave TEXT NOT NULL,
       atleta_id INTEGER NOT NULL,
@@ -77,7 +98,6 @@ function initSchema(db: Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_jogadores_atleta ON jogadores(atleta_id);
 
-    -- Histórico de pontos por rodada
     CREATE TABLE IF NOT EXISTS historico (
       chave TEXT NOT NULL,
       rodada INTEGER NOT NULL,
@@ -85,13 +105,6 @@ function initSchema(db: Database): void {
       PRIMARY KEY (chave, rodada)
     );
 
-    -- Email map: email Google → chave do time
-    CREATE TABLE IF NOT EXISTS email_map (
-      email TEXT PRIMARY KEY,
-      chave TEXT NOT NULL
-    );
-
-    -- Sessões ativas
     CREATE TABLE IF NOT EXISTS sessions (
       id TEXT PRIMARY KEY,
       role TEXT NOT NULL CHECK (role IN ('user','admin')),
@@ -104,29 +117,7 @@ function initSchema(db: Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 
-    -- OAuth state (CSRF, TTL curto)
-    CREATE TABLE IF NOT EXISTS oauth_state (
-      state TEXT PRIMARY KEY,
-      next TEXT NOT NULL,
-      exp INTEGER NOT NULL
-    );
-
-    -- Rodada atual (singleton — sempre id=1)
-    CREATE TABLE IF NOT EXISTS rodada_atual (
-      id INTEGER PRIMARY KEY CHECK (id=1),
-      status TEXT NOT NULL CHECK (status IN ('aguardando','aguardando_inicio','ao_vivo')),
-      rodada INTEGER NOT NULL,
-      atualizado_em TEXT,
-      fechamento_json TEXT
-    );
-
-    -- "Está simulando rodada?" (singleton boolean)
-    CREATE TABLE IF NOT EXISTS simulando (
-      id INTEGER PRIMARY KEY CHECK (id=1),
-      ativo INTEGER NOT NULL DEFAULT 0
-    );
-
-    -- Cache de atletas (1 linha por atleta, sem chunking por posição)
+    -- Cache de atletas Cartola (1 row por atleta)
     CREATE TABLE IF NOT EXISTS atletas_cache (
       atleta_id INTEGER PRIMARY KEY,
       apelido TEXT NOT NULL,
@@ -140,27 +131,14 @@ function initSchema(db: Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_atletas_cache_pos ON atletas_cache(posicao_id);
 
-    -- Partidas (clube_id → casa+fora abreviado)
-    CREATE TABLE IF NOT EXISTS partidas_cache (
-      clube_id INTEGER PRIMARY KEY,
-      casa TEXT NOT NULL,
-      fora TEXT NOT NULL
-    );
-
-    -- Melhor time computado (cache — escalação com auto-subs aplicadas)
-    CREATE TABLE IF NOT EXISTS melhor_time (
-      chave TEXT PRIMARY KEY,
-      computed_json TEXT NOT NULL
-    );
-
-    -- À venda (negociáveis) — 1 linha por atleta_id; chave indica dono
+    -- Negociáveis (ex-à venda)
     CREATE TABLE IF NOT EXISTS a_venda (
       atleta_id INTEGER PRIMARY KEY,
       chave TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_a_venda_chave ON a_venda(chave);
 
-    -- Interesses de draft (1 linha por (chave_ofertante, atleta_alvo))
+    -- Interesses de draft (1 row por (chave_ofertante, atleta_alvo))
     CREATE TABLE IF NOT EXISTS interesses (
       chave TEXT NOT NULL,
       atleta_alvo INTEGER NOT NULL,
@@ -170,24 +148,16 @@ function initSchema(db: Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_interesses_alvo ON interesses(atleta_alvo);
 
-    -- Substituições já usadas na rodada ao_vivo
-    CREATE TABLE IF NOT EXISTS subs_usadas (
-      rodada INTEGER NOT NULL,
+    -- Ordem pessoal dos meus interesses
+    CREATE TABLE IF NOT EXISTS prioridades (
       chave TEXT NOT NULL,
-      count INTEGER NOT NULL DEFAULT 0,
-      PRIMARY KEY (rodada, chave)
+      atleta_id INTEGER NOT NULL,
+      ordem INTEGER NOT NULL,
+      PRIMARY KEY (chave, atleta_id)
     );
+    CREATE INDEX IF NOT EXISTS idx_prioridades ON prioridades(chave, ordem);
 
-    -- Visual override (logo + nome + displayName)
-    CREATE TABLE IF NOT EXISTS time_visual (
-      chave TEXT PRIMARY KEY,
-      nome_time TEXT,
-      display_name TEXT,
-      logo TEXT,
-      updated_at TEXT
-    );
-
-    -- Ofertas + tabelas filhas pra atletas múltiplos
+    -- Ofertas (multi-jogador) + tabelas filhas mantidas pra indexabilidade
     CREATE TABLE IF NOT EXISTS ofertas (
       id TEXT PRIMARY KEY,
       de_chave TEXT NOT NULL,
@@ -218,7 +188,6 @@ function initSchema(db: Database): void {
       FOREIGN KEY (oferta_id) REFERENCES ofertas(id) ON DELETE CASCADE
     );
 
-    -- Notificações
     CREATE TABLE IF NOT EXISTS notificacoes (
       id TEXT PRIMARY KEY,
       chave TEXT NOT NULL,
@@ -230,7 +199,6 @@ function initSchema(db: Database): void {
     CREATE INDEX IF NOT EXISTS idx_notif_chave  ON notificacoes(chave);
     CREATE INDEX IF NOT EXISTS idx_notif_lida   ON notificacoes(chave, lida);
 
-    -- Histórico de trocas (admin pode desfazer)
     CREATE TABLE IF NOT EXISTS historico_trocas (
       id TEXT PRIMARY KEY,
       oferta_id TEXT NOT NULL,
@@ -258,7 +226,6 @@ function initSchema(db: Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_evento_rodada ON evento_hist(rodada, ts DESC);
 
-    -- Estado do scout (último valor visto por código → pra diff)
     CREATE TABLE IF NOT EXISTS scout_estado (
       rodada INTEGER NOT NULL,
       atleta_id INTEGER NOT NULL,
@@ -267,62 +234,276 @@ function initSchema(db: Database): void {
       PRIMARY KEY (rodada, atleta_id, codigo)
     );
 
-    -- Mercado cache (sem limite de 64KB agora — JSON livre)
-    CREATE TABLE IF NOT EXISTS mercado_cache (
-      id INTEGER PRIMARY KEY CHECK (id=1),
-      atualizado_em TEXT NOT NULL,
-      atletas_json TEXT NOT NULL
-    );
-
-    -- Classificação (singleton — JSON externo via n8n)
-    CREATE TABLE IF NOT EXISTS classificacao (
-      id INTEGER PRIMARY KEY CHECK (id=1),
-      data_json TEXT NOT NULL
-    );
-
-    -- Configuração do draft
-    CREATE TABLE IF NOT EXISTS draft_dias (
-      dia_semana INTEGER PRIMARY KEY CHECK (dia_semana BETWEEN 0 AND 6)
-    );
-
-    CREATE TABLE IF NOT EXISTS draft_ordem (
-      chave TEXT PRIMARY KEY,
-      ordem INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_draft_ordem ON draft_ordem(ordem);
-
-    -- Prioridades pessoais (cada user lista preferências no draft)
-    CREATE TABLE IF NOT EXISTS prioridades (
-      chave TEXT NOT NULL,
-      atleta_id INTEGER NOT NULL,
-      ordem INTEGER NOT NULL,
-      PRIMARY KEY (chave, atleta_id)
-    );
-    CREATE INDEX IF NOT EXISTS idx_prioridades ON prioridades(chave, ordem);
-
-    -- Cache do mercado/status da Cartola (singleton)
-    CREATE TABLE IF NOT EXISTS mercado_status_cache (
-      id INTEGER PRIMARY KEY CHECK (id=1),
-      atualizado_em TEXT NOT NULL,
-      data_json TEXT NOT NULL
-    );
-
-    -- Metadata do draft (singleton)
-    CREATE TABLE IF NOT EXISTS draft_meta (
-      id INTEGER PRIMARY KEY CHECK (id=1),
-      ciclo INTEGER NOT NULL,
-      rodada_ciclo INTEGER NOT NULL,
-      rodada_base INTEGER NOT NULL
-    );
-
-    -- Simulação de rodada (admin) — scout + partidas falsas
-    CREATE TABLE IF NOT EXISTS sim_scout (
-      id INTEGER PRIMARY KEY CHECK (id=1),
-      data_json TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS sim_partidas (
-      id INTEGER PRIMARY KEY CHECK (id=1),
-      data_json TEXT NOT NULL
+    -- App state (key-value) — singletons, caches pequenos, configs.
+    -- Engole: rodada_atual, simulando, classificacao, mercado_cache,
+    -- mercado_status_cache, draft_meta, draft_ordem, draft_dias,
+    -- partidas_cache, sim_scout, sim_partidas, email_map, oauth_state.
+    CREATE TABLE IF NOT EXISTS app_state (
+      key TEXT PRIMARY KEY,
+      data_json TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
     );
   `);
+
+  // Detecta versão real: se user_version=0 mas tabelas v1 existem,
+  // marca como v1 pra migrateIfNeeded rodar. Tabelas v1 que NÃO existem
+  // em v2: time_visual, melhor_time, simulando, rodada_atual, etc.
+  if (getUserVersion(db) === 0) {
+    if (hasTable(db, "time_visual") || hasTable(db, "rodada_atual")) {
+      setUserVersion(db, 1);
+    } else {
+      // Banco novo — já é v2
+      setUserVersion(db, SCHEMA_VERSION);
+    }
+  }
+}
+
+// ============================================================
+// MIGRATION v1 → v2 (in-place)
+// ============================================================
+
+function migrateIfNeeded(db: Database): void {
+  const version = getUserVersion(db);
+  if (version >= SCHEMA_VERSION) return;
+  console.log(`[db] migrating schema v${version} → v${SCHEMA_VERSION}…`);
+  migrateV1toV2(db);
+  setUserVersion(db, SCHEMA_VERSION);
+  console.log(`[db] migration done`);
+}
+
+function hasTable(db: Database, name: string): boolean {
+  const r = db.prepare(
+    "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+  ).get(name);
+  return !!r;
+}
+
+function columnExists(db: Database, table: string, column: string): boolean {
+  const rows = db.prepare(`PRAGMA table_info(${table})`).all<{ name: string }>();
+  return rows.some((r) => r.name === column);
+}
+
+function addColumnIfMissing(
+  db: Database,
+  table: string,
+  column: string,
+  definition: string,
+): void {
+  if (!columnExists(db, table, column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
+function migrateV1toV2(db: Database): void {
+  db.transaction(() => {
+    // 0. Garante que as novas colunas existem em elencos antes de popular
+    addColumnIfMissing(db, "elencos", "nome_time_override", "TEXT");
+    addColumnIfMissing(db, "elencos", "display_name_override", "TEXT");
+    addColumnIfMissing(db, "elencos", "logo_override", "TEXT");
+    addColumnIfMissing(db, "elencos", "visual_updated_at", "TEXT");
+    addColumnIfMissing(db, "elencos", "melhor_time_json", "TEXT");
+    addColumnIfMissing(db, "elencos", "subs_usadas_rodada", "INTEGER");
+    addColumnIfMissing(
+      db,
+      "elencos",
+      "subs_usadas_count",
+      "INTEGER NOT NULL DEFAULT 0",
+    );
+
+    // 1. time_visual → colunas em elencos
+    if (hasTable(db, "time_visual")) {
+      const rows = db.prepare(
+        "SELECT chave, nome_time, display_name, logo, updated_at FROM time_visual",
+      ).all<{
+        chave: string;
+        nome_time: string | null;
+        display_name: string | null;
+        logo: string | null;
+        updated_at: string | null;
+      }>();
+      const upd = db.prepare(
+        "UPDATE elencos SET nome_time_override=?, display_name_override=?, logo_override=?, visual_updated_at=? WHERE chave=?",
+      );
+      for (const r of rows) {
+        upd.run(r.nome_time, r.display_name, r.logo, r.updated_at, r.chave);
+      }
+      db.exec("DROP TABLE time_visual");
+    }
+
+    // 2. melhor_time → coluna em elencos
+    if (hasTable(db, "melhor_time")) {
+      const rows = db.prepare("SELECT chave, computed_json FROM melhor_time")
+        .all<{ chave: string; computed_json: string }>();
+      const upd = db.prepare("UPDATE elencos SET melhor_time_json=? WHERE chave=?");
+      for (const r of rows) upd.run(r.computed_json, r.chave);
+      db.exec("DROP TABLE melhor_time");
+    }
+
+    // 3. subs_usadas → colunas em elencos (mantém só a rodada mais recente
+    // por chave; outras eram só histórico que o app não consulta)
+    if (hasTable(db, "subs_usadas")) {
+      const rows = db.prepare(
+        "SELECT chave, MAX(rodada) AS rodada, count FROM subs_usadas GROUP BY chave",
+      ).all<{ chave: string; rodada: number; count: number }>();
+      const upd = db.prepare(
+        "UPDATE elencos SET subs_usadas_rodada=?, subs_usadas_count=? WHERE chave=?",
+      );
+      for (const r of rows) upd.run(r.rodada, r.count, r.chave);
+      db.exec("DROP TABLE subs_usadas");
+    }
+
+    // 4. Singletons + caches → app_state
+    const moveToAppState = (
+      sourceTable: string,
+      stateKey: string,
+      buildJson: () => string | null,
+    ) => {
+      if (!hasTable(db, sourceTable)) return;
+      const json = buildJson();
+      if (json !== null) {
+        db.prepare(
+          "INSERT OR REPLACE INTO app_state (key, data_json, updated_at) VALUES (?, ?, ?)",
+        ).run(stateKey, json, Date.now());
+      }
+      db.exec(`DROP TABLE ${sourceTable}`);
+    };
+
+    moveToAppState("rodada_atual", "rodada_atual", () => {
+      const r = db.prepare(
+        "SELECT status, rodada, atualizado_em, fechamento_json FROM rodada_atual WHERE id=1",
+      ).get<{
+        status: string;
+        rodada: number;
+        atualizado_em: string | null;
+        fechamento_json: string | null;
+      }>();
+      if (!r) return null;
+      return JSON.stringify({
+        status: r.status,
+        rodada: r.rodada,
+        atualizadoEm: r.atualizado_em ?? undefined,
+        fechamento: r.fechamento_json ? JSON.parse(r.fechamento_json) : undefined,
+      });
+    });
+
+    moveToAppState("simulando", "simulando", () => {
+      const r = db.prepare("SELECT ativo FROM simulando WHERE id=1")
+        .get<{ ativo: number }>();
+      return JSON.stringify(r?.ativo === 1);
+    });
+
+    moveToAppState("classificacao", "classificacao", () => {
+      const r = db.prepare("SELECT data_json FROM classificacao WHERE id=1")
+        .get<{ data_json: string }>();
+      return r?.data_json ?? null;
+    });
+
+    moveToAppState("mercado_cache", "mercado_cache", () => {
+      const r = db.prepare("SELECT atletas_json FROM mercado_cache WHERE id=1")
+        .get<{ atletas_json: string }>();
+      return r?.atletas_json ?? null;
+    });
+
+    // mercado_status_cache tinha id=1 (status) e id=2 (partidas) — split
+    if (hasTable(db, "mercado_status_cache")) {
+      const rows = db.prepare(
+        "SELECT id, data_json FROM mercado_status_cache",
+      ).all<{ id: number; data_json: string }>();
+      for (const r of rows) {
+        const key = r.id === 2 ? "partidas_full_cache" : "mercado_status_cache";
+        db.prepare(
+          "INSERT OR REPLACE INTO app_state (key, data_json, updated_at) VALUES (?, ?, ?)",
+        ).run(key, r.data_json, Date.now());
+      }
+      db.exec("DROP TABLE mercado_status_cache");
+    }
+
+    moveToAppState("draft_meta", "draft_meta", () => {
+      const r = db.prepare(
+        "SELECT ciclo, rodada_ciclo, rodada_base FROM draft_meta WHERE id=1",
+      ).get<{ ciclo: number; rodada_ciclo: number; rodada_base: number }>();
+      if (!r) return null;
+      return JSON.stringify({
+        ciclo: r.ciclo,
+        rodadaCiclo: r.rodada_ciclo,
+        rodadaBase: r.rodada_base,
+      });
+    });
+
+    if (hasTable(db, "draft_ordem")) {
+      const rows = db.prepare("SELECT chave FROM draft_ordem ORDER BY ordem")
+        .all<{ chave: string }>();
+      if (rows.length > 0) {
+        db.prepare(
+          "INSERT OR REPLACE INTO app_state (key, data_json, updated_at) VALUES (?, ?, ?)",
+        ).run("draft_ordem", JSON.stringify(rows.map((r) => r.chave)), Date.now());
+      }
+      db.exec("DROP TABLE draft_ordem");
+    }
+
+    if (hasTable(db, "draft_dias")) {
+      const rows = db.prepare("SELECT dia_semana FROM draft_dias ORDER BY dia_semana")
+        .all<{ dia_semana: number }>();
+      if (rows.length > 0) {
+        db.prepare(
+          "INSERT OR REPLACE INTO app_state (key, data_json, updated_at) VALUES (?, ?, ?)",
+        ).run("draft_dias", JSON.stringify(rows.map((r) => r.dia_semana)), Date.now());
+      }
+      db.exec("DROP TABLE draft_dias");
+    }
+
+    if (hasTable(db, "partidas_cache")) {
+      const rows = db.prepare("SELECT clube_id, casa, fora FROM partidas_cache")
+        .all<{ clube_id: number; casa: string; fora: string }>();
+      const map: Record<string, { casa: string; fora: string }> = {};
+      for (const r of rows) map[String(r.clube_id)] = { casa: r.casa, fora: r.fora };
+      if (rows.length > 0) {
+        db.prepare(
+          "INSERT OR REPLACE INTO app_state (key, data_json, updated_at) VALUES (?, ?, ?)",
+        ).run("partidas_cache", JSON.stringify(map), Date.now());
+      }
+      db.exec("DROP TABLE partidas_cache");
+    }
+
+    moveToAppState("sim_scout", "sim_scout", () => {
+      const r = db.prepare("SELECT data_json FROM sim_scout WHERE id=1")
+        .get<{ data_json: string }>();
+      return r?.data_json ?? null;
+    });
+
+    moveToAppState("sim_partidas", "sim_partidas", () => {
+      const r = db.prepare("SELECT data_json FROM sim_partidas WHERE id=1")
+        .get<{ data_json: string }>();
+      return r?.data_json ?? null;
+    });
+
+    // 5. email_map → app_state["email_map"] (Record<email, chave>)
+    if (hasTable(db, "email_map")) {
+      const rows = db.prepare("SELECT email, chave FROM email_map")
+        .all<{ email: string; chave: string }>();
+      const map: Record<string, string> = {};
+      for (const r of rows) map[r.email] = r.chave;
+      db.prepare(
+        "INSERT OR REPLACE INTO app_state (key, data_json, updated_at) VALUES (?, ?, ?)",
+      ).run("email_map", JSON.stringify(map), Date.now());
+      db.exec("DROP TABLE email_map");
+    }
+
+    // 6. oauth_state → app_state["oauth:<state>"]
+    if (hasTable(db, "oauth_state")) {
+      const rows = db.prepare("SELECT state, next, exp FROM oauth_state")
+        .all<{ state: string; next: string; exp: number }>();
+      for (const r of rows) {
+        if (r.exp < Date.now()) continue; // skip expirado
+        db.prepare(
+          "INSERT OR REPLACE INTO app_state (key, data_json, updated_at) VALUES (?, ?, ?)",
+        ).run(
+          `oauth:${r.state}`,
+          JSON.stringify({ next: r.next, exp: r.exp }),
+          Date.now(),
+        );
+      }
+      db.exec("DROP TABLE oauth_state");
+    }
+  })();
 }
