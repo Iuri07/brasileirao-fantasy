@@ -346,7 +346,7 @@ export default function MeuTimeEditor(
       data-selecionado={selecionado ?? undefined}
     >
       <div class="bf-meu-time__bar">
-        <span class="bf-meu-time__titulo">Sua escalacao</span>
+        <span class="bf-meu-time__titulo">Escalacao</span>
         {!aoVivo && fechamentoTexto && (
           <span class="bf-meu-time__market">
             <span class="bf-meu-time__market-dot" aria-hidden="true"></span>
