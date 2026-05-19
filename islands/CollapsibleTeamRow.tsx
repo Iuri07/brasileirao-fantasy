@@ -147,9 +147,6 @@ export default function CollapsibleTeamRow(
         <div class="bf-team-row__meta">
           <div class="bf-team-row__name">{displayName}</div>
           <div class="bf-team-row__owner">{dono}</div>
-          {historico && Object.keys(historico).length >= 2 && (
-            <Sparkline historico={historico} accent={accent} />
-          )}
         </div>
         {subsBadge && (
           <span
@@ -169,6 +166,16 @@ export default function CollapsibleTeamRow(
         <div class="bf-team-row__pts">
           <span class="bf-team-row__pts-value">{totalFmt}</span>
           <span class="bf-team-row__pts-foot">{ptsLabel}</span>
+          {historico && Object.keys(historico).length >= 2 && (
+            <div class="bf-team-row__sparkline">
+              <Sparkline
+                historico={historico}
+                accent={accent}
+                width={76}
+                height={18}
+              />
+            </div>
+          )}
         </div>
         <svg
           width="14"

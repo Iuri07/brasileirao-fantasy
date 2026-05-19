@@ -1392,14 +1392,18 @@ body {
   line-height: 1;
 }
 .bf-team-row__pts {
-  /* Largura fixa baseada no maior caso ("PARCIAL" + 3 dígitos + vírgula
-     + 1 decimal, ex: "100,5"). */
-  width: 52px;
+  /* Acomoda valor + label + sparkline (76px) à direita. */
+  width: 80px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
   font-variant-numeric: tabular-nums;
+}
+.bf-team-row__sparkline {
+  margin-top: 4px;
+  /* Sparkline interno alinhado à direita junto ao valor. */
+  line-height: 0;
 }
 .bf-team-row__pts-value {
   font-family: var(--bf-font-display);

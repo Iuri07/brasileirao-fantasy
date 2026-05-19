@@ -96,7 +96,7 @@ export default function AdminOfertasPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Vendas e Ofertas</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=132" />
+        <link rel="stylesheet" href="/bf-styles.css?v=133" />
       </Head>
       <div class="bf-viewport">
         <TopBar
