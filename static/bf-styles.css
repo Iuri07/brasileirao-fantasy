@@ -1461,7 +1461,8 @@ body {
    ============================================================ */
 .bf-league-chart {
   margin: 16px var(--bf-gutter) 0;
-  background: var(--bf-chassis);
+  /* Mesma fórmula do bf-status-card (dash da home) — ~55% chassis. */
+  background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
   border: 1px solid var(--bf-line);
   border-radius: var(--bf-radius-lg);
   box-shadow: var(--bf-shadow-card);
