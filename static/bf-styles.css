@@ -1392,17 +1392,22 @@ body {
   line-height: 1;
 }
 .bf-team-row__pts {
-  /* Acomoda valor + label + sparkline (76px) à direita. */
-  width: 80px;
+  /* Acomoda "922,8 PTS" inline + sparkline (76px) abaixo. */
+  min-width: 96px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
   font-variant-numeric: tabular-nums;
 }
+/* Linha valor + label (antes empilhados, agora lado a lado). */
+.bf-team-row__pts-line {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
 .bf-team-row__sparkline {
   margin-top: 4px;
-  /* Sparkline interno alinhado à direita junto ao valor. */
   line-height: 0;
 }
 .bf-team-row__pts-value {

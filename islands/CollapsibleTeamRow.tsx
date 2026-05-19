@@ -164,8 +164,10 @@ export default function CollapsibleTeamRow(
           </span>
         )}
         <div class="bf-team-row__pts">
-          <span class="bf-team-row__pts-value">{totalFmt}</span>
-          <span class="bf-team-row__pts-foot">{ptsLabel}</span>
+          <div class="bf-team-row__pts-line">
+            <span class="bf-team-row__pts-value">{totalFmt}</span>
+            <span class="bf-team-row__pts-foot">{ptsLabel}</span>
+          </div>
           {historico && Object.keys(historico).length >= 2 && (
             <div class="bf-team-row__sparkline">
               <Sparkline
