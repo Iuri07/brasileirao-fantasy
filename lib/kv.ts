@@ -11,7 +11,7 @@ import type {
   JogadorKV,
   RodadaStatus,
 } from "./types.ts";
-import { getDb } from "./db.ts";
+import { getDb, i64 } from "./db.ts";
 import { appStateGet, appStateSet } from "./app-state.ts";
 
 export const DONOS_CHAVES: Record<string, string> = {
@@ -164,7 +164,7 @@ export function setInteresse(
     "INSERT INTO interesses (chave, atleta_alvo, atleta_oferecido, criado_em) " +
       "VALUES (?, ?, ?, ?) " +
       "ON CONFLICT (chave, atleta_alvo) DO UPDATE SET atleta_oferecido=excluded.atleta_oferecido",
-  ).run(chave, atletaId, oferecido, Date.now());
+  ).run(chave, atletaId, oferecido, i64(Date.now()));
   const total =
     db.prepare("SELECT COUNT(*) AS n FROM interesses WHERE atleta_alvo=?")
       .get<{ n: number }>(atletaId)?.n ?? 0;

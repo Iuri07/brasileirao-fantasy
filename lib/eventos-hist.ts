@@ -1,7 +1,7 @@
 // Histórico de eventos da rodada — detectado pelo cron via diff entre
 // snapshots do scout Cartola.
 
-import { getDb } from "./db.ts";
+import { getDb, i64 } from "./db.ts";
 
 export interface EventoHist {
   ts: number;
@@ -47,7 +47,7 @@ export function appendEvento(evento: EventoHist): Promise<void> {
   getDb().prepare(
     "INSERT OR REPLACE INTO evento_hist (rodada, ts, atleta_id, codigo, qtd) " +
       "VALUES (?, ?, ?, ?, ?)",
-  ).run(evento.rodada, evento.ts, evento.atletaId, evento.codigo, evento.qtd);
+  ).run(evento.rodada, i64(evento.ts), evento.atletaId, evento.codigo, evento.qtd);
   return Promise.resolve();
 }
 

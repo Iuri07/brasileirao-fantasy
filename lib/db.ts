@@ -45,6 +45,13 @@ export function closeDb(): void {
   }
 }
 
+/** Converte number pra BigInt pra evitar truncamento int32 no driver
+ *  @db/sqlite. Timestamps Date.now() (~13 dígitos) ultrapassam 2^31.
+ *  Use sempre que passar `Date.now()` ou similar pra `.run(...)`. */
+export function i64(n: number): bigint {
+  return BigInt(n);
+}
+
 function getUserVersion(db: Database): number {
   const r = db.prepare("PRAGMA user_version").get<{ user_version: number }>();
   return r?.user_version ?? 0;

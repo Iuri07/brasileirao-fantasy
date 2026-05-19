@@ -3,7 +3,7 @@
 
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
 import { getElenco, setElenco } from "./kv.ts";
-import { getDb } from "./db.ts";
+import { getDb, i64 } from "./db.ts";
 import type { JogadorKV } from "./types.ts";
 
 export type EscCat = "Sim" | "Banco" | "Não";
@@ -101,7 +101,7 @@ export function registrarTroca(
     troca.atletaB.atleta_id,
     troca.atletaB.apelido,
     troca.atletaB.escalacaoOriginal,
-    troca.concluidaEm,
+    i64(troca.concluidaEm),
   );
   return Promise.resolve(troca);
 }
@@ -170,8 +170,9 @@ export async function desfazerTroca(
   await setElenco(troca.chaveA, elencoA);
   await setElenco(troca.chaveB, elencoB);
 
+  const now = Date.now();
   getDb().prepare("UPDATE historico_trocas SET desfeito_em=? WHERE id=?")
-    .run(Date.now(), id);
-  troca.desfeitaEm = Date.now();
+    .run(i64(now), id);
+  troca.desfeitaEm = now;
   return { ok: true, troca };
 }

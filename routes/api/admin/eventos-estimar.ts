@@ -86,15 +86,15 @@ export const handler: Handlers<unknown, State> = {
         const ev = batch[i];
         const novoTs = Math.round(startMs + (i + 0.5) * step);
         if (novoTs === ev.ts) continue;
-        const { getDb } = await import("../../../lib/db.ts");
+        const { getDb, i64 } = await import("../../../lib/db.ts");
         const db = getDb();
         db.transaction(() => {
           db.prepare(
             "DELETE FROM evento_hist WHERE rodada=? AND ts=? AND atleta_id=? AND codigo=?",
-          ).run(ev.rodada, ev.ts, ev.atletaId, ev.codigo);
+          ).run(ev.rodada, i64(ev.ts), ev.atletaId, ev.codigo);
           db.prepare(
             "INSERT OR REPLACE INTO evento_hist (rodada, ts, atleta_id, codigo, qtd) VALUES (?, ?, ?, ?, ?)",
-          ).run(ev.rodada, novoTs, ev.atletaId, ev.codigo, ev.qtd);
+          ).run(ev.rodada, i64(novoTs), ev.atletaId, ev.codigo, ev.qtd);
         })();
         updated++;
       }

@@ -73,6 +73,8 @@ export function createSession(
   const sessionId = genSessionId();
   const now = Date.now();
   const exp = now + SESSION_TTL_MS;
+  // BigInt: timestamps de Date.now() são 13 dígitos (> 2^31), e
+  // o @db/sqlite trunca pra int32 ao receber number direto.
   getDb().prepare(
     "INSERT INTO sessions (id, role, chave, email, name, picture, created_at, expires_at) " +
       "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -83,8 +85,8 @@ export function createSession(
     session.email ?? null,
     session.name ?? null,
     session.picture ?? null,
-    now,
-    exp,
+    BigInt(now),
+    BigInt(exp),
   );
   return Promise.resolve(sessionId);
 }

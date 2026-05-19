@@ -2,7 +2,7 @@
 // tabelas singleton (rodada_atual, simulando, draft_meta, etc) por
 // um único key-value store. SQL-light, mas pragmático pra essa escala.
 
-import { getDb } from "./db.ts";
+import { getDb, i64 } from "./db.ts";
 
 export function appStateGet<T = unknown>(key: string): T | null {
   const r = getDb().prepare("SELECT data_json FROM app_state WHERE key=?")
@@ -19,7 +19,7 @@ export function appStateSet(key: string, value: unknown): void {
   getDb().prepare(
     "INSERT INTO app_state (key, data_json, updated_at) VALUES (?, ?, ?) " +
       "ON CONFLICT (key) DO UPDATE SET data_json=excluded.data_json, updated_at=excluded.updated_at",
-  ).run(key, JSON.stringify(value), Date.now());
+  ).run(key, JSON.stringify(value), i64(Date.now()));
 }
 
 export function appStateDelete(key: string): void {

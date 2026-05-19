@@ -1,7 +1,7 @@
 // Sistema de oferta de troca + notificações entre times.
 
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
-import { getDb } from "./db.ts";
+import { getDb, i64 } from "./db.ts";
 
 export type StatusOferta = "pendente" | "aceita" | "negada" | "cancelada";
 
@@ -122,8 +122,8 @@ export function setOferta(oferta: Oferta): Promise<void> {
       oferta.paraChave,
       oferta.atletaPedido,
       oferta.status,
-      oferta.criadoEm,
-      oferta.respondidoEm ?? null,
+      i64(oferta.criadoEm),
+      oferta.respondidoEm ? i64(oferta.respondidoEm) : null,
       oferta.mensagem ?? null,
     );
     db.prepare("DELETE FROM oferta_oferecidos WHERE oferta_id=?").run(
@@ -241,7 +241,7 @@ export function criarNotif(
   };
   getDb().prepare(
     "INSERT INTO notificacoes (id, chave, tipo, oferta_id, lida, criado_em) VALUES (?, ?, ?, ?, 0, ?)",
-  ).run(notif.id, notif.chave, notif.tipo, notif.ofertaId, notif.criadoEm);
+  ).run(notif.id, notif.chave, notif.tipo, notif.ofertaId, i64(notif.criadoEm));
   return Promise.resolve(notif);
 }
 
