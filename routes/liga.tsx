@@ -182,7 +182,7 @@ export default function Liga({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=128" />
+        <link rel="stylesheet" href="/bf-styles.css?v=129" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -194,7 +194,7 @@ export default function Liga({ data }: PageProps<Data>) {
 
         <header class="bf-liga-hero">
           <span class="bf-label-micro">Liga</span>
-          <h1 class="bf-liga-hero__title">LIGA DA SEXTA</h1>
+          <h1 class="bf-liga-hero__title">LIGA PRO CLUB</h1>
           <div class="bf-liga-hero__meta">
             <span class="bf-liga-hero__rodada">Rodada {data.rodada}</span>
             <span class="bf-liga-hero__sep">·</span>

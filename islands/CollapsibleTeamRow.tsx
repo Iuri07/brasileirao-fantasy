@@ -117,15 +117,15 @@ export default function CollapsibleTeamRow(
           )}
           {isLider ? "🏆" : `#${pos}`}
         </span>
+        <div class="bf-team-row__crest">
+          <TeamCrest chave={chave} size={36} />
+        </div>
         <div class="bf-team-row__meta">
           <div class="bf-team-row__name">{displayName}</div>
           <div class="bf-team-row__owner">{dono}</div>
           {historico && Object.keys(historico).length >= 2 && (
             <Sparkline historico={historico} accent={accent} />
           )}
-        </div>
-        <div class="bf-team-row__crest">
-          <TeamCrest chave={chave} size={36} />
         </div>
         {subsBadge && (
           <span

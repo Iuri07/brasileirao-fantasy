@@ -1217,10 +1217,12 @@ body {
     var(--bf-shadow-card);
 }
 .bf-team-row--lider {
+  /* Sem chassis sólido — gradient transparente pinta só com o accent
+     do líder, deixando o bg da página aparecer atrás. */
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--accent) 14%, var(--bf-chassis)) 0%,
-    var(--bf-chassis) 60%
+    color-mix(in srgb, var(--accent) 14%, transparent) 0%,
+    transparent 60%
   );
   box-shadow:
     0 0 18px color-mix(in srgb, var(--accent) 35%, transparent),
