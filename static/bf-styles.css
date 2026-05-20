@@ -5348,3 +5348,242 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   outline: none;
   border-color: var(--bf-lime);
 }
+
+/* ====================================================================
+   Modal de detalhes do atleta (botão ⓘ no card do mercado)
+   ==================================================================== */
+
+/* Botão ⓘ no canto top-right do card */
+.bf-merc-card__info {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  color: var(--bf-fg-2);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 120ms;
+  padding: 0;
+  z-index: 2;
+}
+.bf-merc-card__info:hover {
+  background: rgba(155, 123, 255, 0.18);
+  border-color: var(--bf-lime);
+  color: var(--bf-fg-1);
+}
+
+/* Modal — usa .bf-modal base, mas com card maior */
+.bf-modal__card--atleta {
+  max-width: 480px;
+  width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.bf-atleta-detalhes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Header: foto + identidade */
+.bf-atleta-detalhes__head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.bf-atleta-detalhes__foto {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  background:
+    radial-gradient(
+      circle at 50% 40%,
+      rgba(255, 255, 255, 0.04) 0%,
+      var(--bf-chassis) 70%
+    );
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.bf-atleta-detalhes__foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+}
+.bf-atleta-detalhes__jersey {
+  width: 70%;
+  height: 70%;
+}
+.bf-atleta-detalhes__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.bf-atleta-detalhes__nome {
+  font-family: var(--bf-font-cond);
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  color: var(--bf-fg-1);
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.bf-atleta-detalhes__nome-full {
+  font-family: var(--bf-font-body);
+  font-size: 12px;
+  color: var(--bf-fg-3);
+  font-style: italic;
+}
+.bf-atleta-detalhes__sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+  font-family: var(--bf-font-cond);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.bf-atleta-detalhes__pos {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--bf-fg-2);
+  font-weight: 700;
+}
+.bf-atleta-detalhes__clube {
+  color: var(--bf-fg-2);
+}
+.bf-atleta-detalhes__status {
+  color: var(--st-color, var(--bf-fg-2));
+  font-weight: 700;
+}
+
+/* Stats grid */
+.bf-atleta-detalhes__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-md);
+}
+.bf-atleta-detalhes__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+.bf-atleta-detalhes__stat-val {
+  font-family: var(--bf-font-cond);
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--bf-lime);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Linha de status na liga */
+.bf-atleta-detalhes__liga {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border-left: 3px solid var(--bf-blue);
+  border-radius: var(--bf-radius-sm);
+  font-family: var(--bf-font-body);
+  font-size: 13px;
+}
+.bf-atleta-detalhes__liga-link {
+  color: var(--bf-lime);
+  text-decoration: none;
+  font-weight: 600;
+}
+.bf-atleta-detalhes__liga-link:hover {
+  text-decoration: underline;
+}
+.bf-atleta-detalhes__liga-free {
+  color: var(--bf-fg-2);
+  font-style: italic;
+}
+.bf-atleta-detalhes__liga-tag {
+  padding: 2px 7px;
+  background: color-mix(in srgb, var(--bf-yellow) 18%, transparent);
+  color: var(--bf-yellow);
+  border-radius: 999px;
+  font-family: var(--bf-font-cond);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Scout */
+.bf-atleta-detalhes__loading {
+  text-align: center;
+  font-style: italic;
+  color: var(--bf-fg-3);
+  padding: 16px;
+  font-size: 13px;
+}
+.bf-atleta-detalhes__scout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bf-atleta-detalhes__scout-titulo {
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bf-fg-3);
+}
+.bf-atleta-detalhes__scout-grupo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+}
+.bf-atleta-detalhes__scout-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: var(--bf-radius-sm);
+  border-left: 2px solid var(--bf-fg-3);
+}
+.bf-atleta-detalhes__scout-grupo--pos .bf-atleta-detalhes__scout-item {
+  border-left-color: var(--bf-lime);
+}
+.bf-atleta-detalhes__scout-grupo--neg .bf-atleta-detalhes__scout-item {
+  border-left-color: var(--bf-red);
+}
+.bf-atleta-detalhes__scout-qtd {
+  font-family: var(--bf-font-cond);
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--bf-fg-1);
+  font-variant-numeric: tabular-nums;
+  min-width: 16px;
+}
+.bf-atleta-detalhes__scout-lbl {
+  font-family: var(--bf-font-body);
+  font-size: 11px;
+  color: var(--bf-fg-2);
+}

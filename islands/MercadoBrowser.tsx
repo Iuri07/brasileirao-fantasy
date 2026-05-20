@@ -131,6 +131,8 @@ export default function MercadoBrowser(
   const [interesses, setInteresses] = useState<MeuInteresse[]>(meusInteresses);
   const [interessesAberto, setInteressesAberto] = useState(false);
   const [carregando, setCarregando] = useState(lazy);
+  /** Atleta cujos detalhes estão abertos no modal. */
+  const [detalhes, setDetalhes] = useState<AtletaMercado | null>(null);
 
   // Lazy load: SSR mandou shell vazio; busca dados pesados na hidratação
   useEffect(() => {
@@ -566,6 +568,7 @@ export default function MercadoBrowser(
                 key={j.atleta_id}
                 j={j as AtletaMeuTime}
                 onToggleVenda={toggleAVenda}
+                onDetalhes={setDetalhes}
                 pendendo={pendendo === j.atleta_id}
                 aoVivo={aoVivo}
               />
@@ -580,6 +583,7 @@ export default function MercadoBrowser(
                 onOfertar={aoVivo
                   ? undefined
                   : (jj) => setModal({ modo: "oferta", pedido: jj })}
+                onDetalhes={setDetalhes}
                 pendendo={pendendo === j.atleta_id}
                 aoVivo={aoVivo}
               />
@@ -611,6 +615,13 @@ export default function MercadoBrowser(
             setConfirma(null);
             fn();
           }}
+        />
+      )}
+
+      {detalhes && (
+        <ModalAtletaDetalhes
+          base={detalhes}
+          onClose={() => setDetalhes(null)}
         />
       )}
     </div>
@@ -892,12 +903,22 @@ function Chip(
 }
 
 function CardJogador(
-  { j, minhaChave, meuElenco, onInteresse, onOfertar, pendendo, aoVivo }: {
+  {
+    j,
+    minhaChave,
+    meuElenco,
+    onInteresse,
+    onOfertar,
+    onDetalhes,
+    pendendo,
+    aoVivo,
+  }: {
     j: AtletaMercado;
     minhaChave: string | null;
     meuElenco: AtletaMeuTime[];
     onInteresse: (j: AtletaMercado) => void;
     onOfertar?: (j: AtletaMercado) => void;
+    onDetalhes: (j: AtletaMercado) => void;
     pendendo: boolean;
     aoVivo: boolean;
   },
@@ -940,6 +961,18 @@ function CardJogador(
             {st.sym}
           </span>
         )}
+        <button
+          type="button"
+          class="bf-merc-card__info"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDetalhes(j);
+          }}
+          aria-label="Ver detalhes"
+          title="Ver detalhes"
+        >
+          ⓘ
+        </button>
       </div>
       <div class="bf-merc-card__nome">{j.nome}</div>
       <div class="bf-merc-card__clube">{j.clubeNome}</div>
@@ -998,9 +1031,10 @@ function CardJogador(
 }
 
 function CardMeu(
-  { j, onToggleVenda, pendendo, aoVivo }: {
+  { j, onToggleVenda, onDetalhes, pendendo, aoVivo }: {
     j: AtletaMeuTime;
     onToggleVenda: (j: AtletaMeuTime) => void;
+    onDetalhes: (j: AtletaMercado) => void;
     pendendo: boolean;
     aoVivo: boolean;
   },
@@ -1036,6 +1070,18 @@ function CardMeu(
             {st.sym}
           </span>
         )}
+        <button
+          type="button"
+          class="bf-merc-card__info"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDetalhes(j);
+          }}
+          aria-label="Ver detalhes"
+          title="Ver detalhes"
+        >
+          ⓘ
+        </button>
       </div>
       <div class="bf-merc-card__nome">{j.nome}</div>
       <div class="bf-merc-card__clube">{j.clubeNome}</div>
@@ -1249,6 +1295,295 @@ function ModalInteresses(
               </p>
             </div>
           </details>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Modal de detalhes do atleta — fetch lazy de /api/atleta/:id/info
+// ============================================================
+
+interface DetalheRes {
+  ok: boolean;
+  atleta?: {
+    atleta_id: number;
+    apelido: string;
+    nome_completo: string | null;
+    posicao_id: number;
+    clube_nome: string;
+    status_id: number | null;
+    jogos: number;
+    ultima: number | null;
+    media: number | null;
+    preco: number | null;
+    variacao: number | null;
+    scout: Record<string, number>;
+  };
+  donoChave?: string | null;
+  donoNome?: string | null;
+  negociavel?: boolean;
+  interesses?: Array<{ chave: string; oferecido: number }>;
+  erro?: string;
+}
+
+// Labels dos códigos de scout — keep self-contained no island pra
+// não importar /lib/scout.ts que tem icon emoji.
+const SCOUT_LABEL: Record<string, string> = {
+  G: "Gols",
+  A: "Assistências",
+  FT: "Na trave",
+  FD: "Finalização defendida",
+  FF: "Finalização fora",
+  FS: "Faltas sofridas",
+  FC: "Faltas cometidas",
+  DS: "Desarmes",
+  PS: "Pênaltis sofridos",
+  PP: "Pênaltis perdidos",
+  PC: "Pênaltis cometidos",
+  CA: "Cartões amarelos",
+  CV: "Cartões vermelhos",
+  GC: "Gols contra",
+  I: "Impedimentos",
+  PI: "Passes incompletos",
+  PE: "Passes errados",
+  DD: "Defesas difíceis",
+  DP: "Defesa de pênalti",
+  GS: "Gols sofridos",
+  SG: "Sem sofrer gols",
+};
+
+const SCOUT_POSITIVO = new Set([
+  "G",
+  "A",
+  "FT",
+  "FD",
+  "FS",
+  "DS",
+  "PS",
+  "DD",
+  "DP",
+  "SG",
+]);
+
+function ModalAtletaDetalhes(
+  { base, onClose }: {
+    base: AtletaMercado;
+    onClose: () => void;
+  },
+) {
+  const [data, setData] = useState<DetalheRes | null>(null);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      try {
+        const r = await fetch(`/api/atleta/${base.atleta_id}/info`);
+        const d = await r.json();
+        if (!cancel) setData(d);
+      } catch (e) {
+        if (!cancel) setData({ ok: false, erro: String(e) });
+      } finally {
+        if (!cancel) setCarregando(false);
+      }
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, [base.atleta_id]);
+
+  // ESC pra fechar
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const a = data?.atleta;
+  const hasFoto = !!base.foto;
+  const st = base.statusId != null ? STATUS_LABEL[base.statusId] : null;
+
+  const scoutEntries = a
+    ? Object.entries(a.scout).sort((x, y) => y[1] - x[1])
+    : [];
+  const positivos = scoutEntries.filter(([k]) => SCOUT_POSITIVO.has(k));
+  const negativos = scoutEntries.filter(([k]) => !SCOUT_POSITIVO.has(k));
+
+  return (
+    <div class="bf-modal" onClick={onClose}>
+      <div class="bf-modal__card bf-modal__card--atleta" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          class="bf-modal__close"
+          onClick={onClose}
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+
+        <div class="bf-atleta-detalhes">
+          {/* Header com foto + identidade */}
+          <header class="bf-atleta-detalhes__head">
+            <div
+              class={`bf-atleta-detalhes__foto ${
+                hasFoto ? "bf-atleta-detalhes__foto--cutout" : ""
+              }`}
+            >
+              {hasFoto
+                ? <img src={base.foto!} alt="" />
+                : (
+                  <JerseySvg
+                    cores={base.cores}
+                    class="bf-atleta-detalhes__jersey"
+                  />
+                )}
+            </div>
+            <div class="bf-atleta-detalhes__meta">
+              <div class="bf-atleta-detalhes__nome">{base.nome}</div>
+              {a?.nome_completo && a.nome_completo !== base.nome && (
+                <div class="bf-atleta-detalhes__nome-full">
+                  {a.nome_completo}
+                </div>
+              )}
+              <div class="bf-atleta-detalhes__sub">
+                <span class="bf-atleta-detalhes__pos">
+                  {POS_ABREV[base.posicao]}
+                </span>
+                <span class="bf-atleta-detalhes__clube">{base.clubeNome}</span>
+                {st && (
+                  <span
+                    class="bf-atleta-detalhes__status"
+                    style={{ "--st-color": st.cor } as Record<string, string>}
+                  >
+                    {st.sym} {st.txt}
+                  </span>
+                )}
+              </div>
+            </div>
+          </header>
+
+          {/* Stats grid */}
+          <div class="bf-atleta-detalhes__stats">
+            <div class="bf-atleta-detalhes__stat">
+              <span class="bf-label-micro">Última</span>
+              <span class="bf-atleta-detalhes__stat-val">
+                {base.pontosUltima != null
+                  ? base.pontosUltima.toFixed(1).replace(".", ",")
+                  : "—"}
+              </span>
+            </div>
+            <div class="bf-atleta-detalhes__stat">
+              <span class="bf-label-micro">Média</span>
+              <span class="bf-atleta-detalhes__stat-val">
+                {base.mediaPontos != null
+                  ? base.mediaPontos.toFixed(1).replace(".", ",")
+                  : "—"}
+              </span>
+            </div>
+            {a && (
+              <div class="bf-atleta-detalhes__stat">
+                <span class="bf-label-micro">Jogos</span>
+                <span class="bf-atleta-detalhes__stat-val">{a.jogos}</span>
+              </div>
+            )}
+            {a?.preco != null && (
+              <div class="bf-atleta-detalhes__stat">
+                <span class="bf-label-micro">Preço (C$)</span>
+                <span class="bf-atleta-detalhes__stat-val">
+                  {a.preco.toFixed(2).replace(".", ",")}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Status na liga: dono ou free agent */}
+          {!carregando && data?.ok && (
+            <div class="bf-atleta-detalhes__liga">
+              {data.donoChave
+                ? (
+                  <>
+                    <span class="bf-label-micro">Time na liga</span>
+                    <a
+                      href={`/time/${data.donoChave}`}
+                      class="bf-atleta-detalhes__liga-link"
+                    >
+                      {data.donoNome ?? data.donoChave}
+                    </a>
+                    {data.negociavel && (
+                      <span class="bf-atleta-detalhes__liga-tag">
+                        negociável
+                      </span>
+                    )}
+                  </>
+                )
+                : (
+                  <>
+                    <span class="bf-label-micro">Liga</span>
+                    <span class="bf-atleta-detalhes__liga-free">
+                      Free agent
+                    </span>
+                    {data.interesses && data.interesses.length > 0 && (
+                      <span class="bf-atleta-detalhes__liga-tag">
+                        {data.interesses.length} interessado
+                        {data.interesses.length > 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </>
+                )}
+            </div>
+          )}
+
+          {/* Scout da temporada */}
+          {carregando && (
+            <div class="bf-atleta-detalhes__loading">
+              Carregando scout da temporada…
+            </div>
+          )}
+          {!carregando && a && scoutEntries.length > 0 && (
+            <div class="bf-atleta-detalhes__scout">
+              <div class="bf-atleta-detalhes__scout-titulo">
+                Scout da temporada
+              </div>
+              {positivos.length > 0 && (
+                <div class="bf-atleta-detalhes__scout-grupo bf-atleta-detalhes__scout-grupo--pos">
+                  {positivos.map(([k, v]) => (
+                    <div class="bf-atleta-detalhes__scout-item" key={k}>
+                      <span class="bf-atleta-detalhes__scout-qtd">{v}</span>
+                      <span class="bf-atleta-detalhes__scout-lbl">
+                        {SCOUT_LABEL[k] ?? k}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {negativos.length > 0 && (
+                <div class="bf-atleta-detalhes__scout-grupo bf-atleta-detalhes__scout-grupo--neg">
+                  {negativos.map(([k, v]) => (
+                    <div class="bf-atleta-detalhes__scout-item" key={k}>
+                      <span class="bf-atleta-detalhes__scout-qtd">{v}</span>
+                      <span class="bf-atleta-detalhes__scout-lbl">
+                        {SCOUT_LABEL[k] ?? k}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {!carregando && a && scoutEntries.length === 0 && (
+            <div class="bf-atleta-detalhes__loading">
+              Sem scout registrado nesta temporada
+            </div>
+          )}
+          {!carregando && data && !data.ok && (
+            <div class="bf-modal__erro">
+              {data.erro ?? "Erro ao carregar detalhes"}
+            </div>
+          )}
         </div>
       </div>
     </div>

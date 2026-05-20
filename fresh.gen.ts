@@ -29,6 +29,7 @@ import * as $api_admin_sync_historico from "./routes/api/admin/sync-historico.ts
 import * as $api_admin_time_visual from "./routes/api/admin/time-visual.ts";
 import * as $api_admin_transferir from "./routes/api/admin/transferir.ts";
 import * as $api_admin_trocas_desfazer from "./routes/api/admin/trocas-desfazer.ts";
+import * as $api_atleta_id_info from "./routes/api/atleta/[id]/info.ts";
 import * as $api_atleta_id_interesse from "./routes/api/atleta/[id]/interesse.ts";
 import * as $api_atletas_buscar from "./routes/api/atletas/buscar.ts";
 import * as $api_auth_google_callback from "./routes/api/auth/google/callback.ts";
@@ -110,6 +111,7 @@ const manifest = {
     "./routes/api/admin/time-visual.ts": $api_admin_time_visual,
     "./routes/api/admin/transferir.ts": $api_admin_transferir,
     "./routes/api/admin/trocas-desfazer.ts": $api_admin_trocas_desfazer,
+    "./routes/api/atleta/[id]/info.ts": $api_atleta_id_info,
     "./routes/api/atleta/[id]/interesse.ts": $api_atleta_id_interesse,
     "./routes/api/atletas/buscar.ts": $api_atletas_buscar,
     "./routes/api/auth/google/callback.ts": $api_auth_google_callback,
