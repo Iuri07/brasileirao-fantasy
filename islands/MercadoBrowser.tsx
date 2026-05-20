@@ -494,7 +494,7 @@ export default function MercadoBrowser(
           <Chip ativo={tipo === "venda"} onClick={() => setTipo("venda")}>
             Negociáveis
           </Chip>
-          {minhaChave && meuElenco.length > 0 && (
+          {minhaChave && meu.length > 0 && (
             <Chip
               ativo={tipo === "meu"}
               onClick={() => setTipo("meu")}
