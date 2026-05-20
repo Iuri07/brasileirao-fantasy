@@ -1953,7 +1953,8 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   grid-template-columns: 56px 1fr;
   align-items: center;
   gap: 12px;
-  background: var(--bf-chassis);
+  /* Mesma transparência dos outros cards (dash da home, mercado). */
+  background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
   border: 1px solid rgba(31, 168, 255, 0.25);
   border-left: 3px solid var(--bf-blue);
   border-radius: var(--bf-radius-md);

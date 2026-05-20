@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bf-dev",
+      "runtimeExecutable": "deno",
+      "runtimeArgs": ["task", "start"],
+      "port": 8080
+    }
+  ]
+}
