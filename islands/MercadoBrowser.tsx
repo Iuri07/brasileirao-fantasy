@@ -1197,10 +1197,6 @@ function ModalDraft(
             <div class="bf-draft__meta">
               <div class="bf-draft__meta-cel">
                 <span class="bf-label-micro">Ciclo</span>
-                <span class="bf-draft__meta-val">{meta.ciclo}</span>
-              </div>
-              <div class="bf-draft__meta-cel">
-                <span class="bf-label-micro">Rodada do ciclo</span>
                 <span class="bf-draft__meta-val">{meta.rodadaCiclo}/5</span>
               </div>
             </div>
