@@ -6485,8 +6485,8 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   /* Rows: agora se posicionam por LEFT em vez de TOP. Top/bottom
      com folga pros heads dos pinos topo/base aparecerem inteiros. */
   .bf-home-grid__escala .bf-field__row {
-    top: 8%;
-    bottom: 8%;
+    top: 4%;
+    bottom: 4%;
     left: auto;
     right: auto;
     width: 22%;
@@ -6497,6 +6497,39 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   .bf-home-grid__escala .bf-field__row--def { left: 24%; }
   .bf-home-grid__escala .bf-field__row--mid { left: 50%; }
   .bf-home-grid__escala .bf-field__row--ata { left: 76%; }
+
+  /* Encolhe os pinos no landscape — em portrait os pinos têm ~85-100px
+     de altura cada. Numa coluna DEF com 4 jogadores (2 LAT + 2 ZAG),
+     isso passa de 360px e não cabe no aspect 8/5. Pinos menores fazem
+     caber sem sobrar lateral fora do campo. */
+  .bf-home-grid__escala .bf-pin {
+    width: 56px;
+    padding-top: 16px;
+  }
+  .bf-home-grid__escala .bf-pin__head-wrap {
+    width: 40px;
+    height: 40px;
+    margin-bottom: -14px;
+  }
+  .bf-home-grid__escala .bf-pin__card {
+    padding: 18px 3px 4px;
+  }
+  .bf-home-grid__escala .bf-pin__card-name {
+    font-size: 9px;
+  }
+  .bf-home-grid__escala .bf-pin__card-pts {
+    font-size: 10px;
+  }
+  /* Badges (status, escudo, capt) acompanham o head menor */
+  .bf-home-grid__escala .bf-pin__badge--escudo {
+    width: 16px;
+    height: 16px;
+  }
+  .bf-home-grid__escala .bf-pin__badge--status {
+    width: 14px;
+    height: 14px;
+    font-size: 9px;
+  }
   /* Stripes do gramado também viram verticais pra parecer linhas
      laterais (canchas TV). */
   .bf-home-grid__escala .bf-field__pitch::before {
