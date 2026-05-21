@@ -6502,37 +6502,18 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   .bf-home-grid__escala .bf-field__row--mid { left: 50%; }
   .bf-home-grid__escala .bf-field__row--ata { left: 76%; }
 
-  /* Encolhe os pinos no landscape — em portrait os pinos têm ~85-100px
-     de altura cada. Numa coluna DEF com 4 jogadores (2 LAT + 2 ZAG),
-     isso passa de 360px e não cabe no aspect 8/5. Pinos menores fazem
-     caber sem sobrar lateral fora do campo. */
+  /* Pinos no landscape: tamanho próximo ao original (não encolhe).
+     Com overflow: visible no .bf-field, os heads dos pinos topo/base
+     podem extrapolar o gramado sem quebrar visualmente — o que faz
+     uma diferença marginal de altura. Os 4 defensores cabem porque
+     o pitch é wide o suficiente em desktop. */
   .bf-home-grid__escala .bf-pin {
-    width: 56px;
-    padding-top: 16px;
+    width: 76px;
   }
   .bf-home-grid__escala .bf-pin__head-wrap {
-    width: 40px;
-    height: 40px;
-    margin-bottom: -14px;
-  }
-  .bf-home-grid__escala .bf-pin__card {
-    padding: 18px 3px 4px;
-  }
-  .bf-home-grid__escala .bf-pin__card-name {
-    font-size: 9px;
-  }
-  .bf-home-grid__escala .bf-pin__card-pts {
-    font-size: 10px;
-  }
-  /* Badges (status, escudo, capt) acompanham o head menor */
-  .bf-home-grid__escala .bf-pin__badge--escudo {
-    width: 16px;
-    height: 16px;
-  }
-  .bf-home-grid__escala .bf-pin__badge--status {
-    width: 14px;
-    height: 14px;
-    font-size: 9px;
+    width: 54px;
+    height: 54px;
+    margin-bottom: -18px;
   }
   /* Stripes do gramado também viram verticais pra parecer linhas
      laterais (canchas TV). */
