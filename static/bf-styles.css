@@ -135,9 +135,10 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 12px var(--bf-gutter);
-  background: color-mix(in srgb, var(--bf-ink) 45%, transparent);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  /* Mobile: fundo sólido pra não usar backdrop-filter (gargalo de
+     scroll em GPU modesta tipo Mali-G57). Desktop reativa blur via
+     media query no fim do arquivo. */
+  background: var(--bf-ink);
 }
 /* Fade decorativo abaixo da topbar — pointer-events:none pra não
    bloquear clicks no conteúdo que passa por baixo ao rolar. */
@@ -150,12 +151,10 @@ body {
   height: 20px;
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--bf-ink) 35%, transparent),
+    var(--bf-ink),
     transparent
   );
   pointer-events: none;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .bf-iconbtn {
@@ -1643,9 +1642,10 @@ body {
   max-width: calc(var(--bf-mobile-w) - 28px);
   margin: 0 auto;
   height: var(--bf-footer-h);
-  background: rgba(20, 22, 30, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  /* Mobile: fundo sólido (era rgba 0.85 + blur 20). backdrop-filter
+     em element position:fixed em cima de scroll = lag absurdo em
+     GPU mid-range. Trade-off aceitável: nav opaca em vez de glass. */
+  background: rgba(20, 22, 30, 0.98);
   border: 1px solid var(--bf-line);
   border-radius: 999px;
   display: grid;
