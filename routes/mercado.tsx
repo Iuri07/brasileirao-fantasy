@@ -37,8 +37,12 @@ interface Data {
   draftMeta: DraftMeta;
   /** Milissegundos até o fechamento do mercado (Cartola). null se sem info. */
   msAteFechamento: number | null;
+  /** Timestamp absoluto (UTC ms) do fechamento. Pra renderizar dia/hora exatos. */
+  fechamentoTs: number | null;
   /** Milissegundos até a próxima resolução de conflitos. null se sem config. */
   msAteResolucao: number | null;
+  /** Timestamp absoluto (UTC ms) da próxima resolução. */
+  resolucaoTs: number | null;
   userEmail: string | null;
   userRole: "admin" | "user" | null;
   userNome: string | null;
@@ -123,7 +127,9 @@ export const handler: Handlers<Data, State> = {
       draftOrdem,
       draftMeta,
       msAteFechamento,
+      fechamentoTs: fechTimestamp ? fechTimestamp * 1000 : null,
       msAteResolucao,
+      resolucaoTs: prox ? prox.getTime() : null,
       userEmail: ctx.state.session?.email ?? null,
       userRole: ctx.state.session?.role ?? null,
       userNome: ctx.state.session?.name ?? null,
@@ -140,36 +146,129 @@ export const handler: Handlers<Data, State> = {
   },
 };
 
-function formatTiming(
-  ms: number,
-): { texto: string; severity: "normal" | "warn" | "danger" } {
-  const H = 60 * 60 * 1000;
-  if (ms <= 0) return { texto: "agora", severity: "danger" };
-  if (ms < 6 * H) {
-    return { texto: `em ${Math.ceil(ms / H)}h`, severity: "danger" };
-  }
-  if (ms < 24 * H) {
-    return { texto: `em ${Math.ceil(ms / H)}h`, severity: "warn" };
-  }
-  const d = Math.ceil(ms / (24 * H));
-  return { texto: d === 1 ? "em 1 dia" : `em ${d} dias`, severity: "normal" };
+const TZ = "America/Sao_Paulo";
+const DOW_SHORT = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+
+/** Parts de uma data no fuso BR — usa Intl em vez de toLocale* pra ser
+ *  determinístico independente do TZ do container. */
+function partsBR(d: Date): {
+  weekday: number;
+  day: number;
+  month: number;
+  hour: number;
+  minute: number;
+} {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ,
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(
+    fmt.formatToParts(d).map((p) => [p.type, p.value]),
+  );
+  const dowMap: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  return {
+    weekday: dowMap[parts.weekday] ?? 0,
+    day: Number(parts.day),
+    month: Number(parts.month),
+    hour: Number(parts.hour === "24" ? "0" : parts.hour),
+    minute: Number(parts.minute),
+  };
 }
 
-/** Formata "em 4 dias" → "4D" / "em 6h" → "6H" — compacto pra caber no header. */
-function compacto(t: { texto: string }): string {
-  return t.texto
-    .replace("em 1 dia", "1D")
-    .replace(/em (\d+) dias?/, "$1D")
-    .replace(/em (\d+)h/, "$1H")
-    .replace("agora", "0H");
+function hhmm(h: number, m: number): string {
+  return m === 0 ? `${h}h` : `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+interface Timing {
+  /** Texto curto pra aparecer no pill (ex: "qua 21h", "em 45min") */
+  curto: string;
+  /** Texto longo pro tooltip (ex: "sex 23/05 às 16:30 (em 1d 4h)") */
+  longo: string;
+  severity: "normal" | "warn" | "danger";
+}
+
+function formatTiming(ts: number, ms: number): Timing {
+  const MIN = 60 * 1000;
+  const H = 60 * MIN;
+  const D = 24 * H;
+
+  // Severity baseada no quão próximo está
+  const severity: Timing["severity"] = ms <= 0
+    ? "danger"
+    : ms < 6 * H
+    ? "danger"
+    : ms < 24 * H
+    ? "warn"
+    : "normal";
+
+  if (ms <= 0) {
+    return { curto: "agora", longo: "agora", severity };
+  }
+
+  const alvo = partsBR(new Date(ts));
+  const agora = partsBR(new Date());
+  const mesmoDia = alvo.day === agora.day && alvo.month === agora.month;
+  const dowAlvo = DOW_SHORT[alvo.weekday];
+  const horaFmt = hhmm(alvo.hour, alvo.minute);
+
+  // Relativa (pra tooltip e pra contagem curta)
+  let rel: string;
+  if (ms < H) {
+    const min = Math.max(1, Math.ceil(ms / MIN));
+    rel = `em ${min} min`;
+  } else if (ms < D) {
+    const h = Math.ceil(ms / H);
+    rel = `em ${h}h`;
+  } else {
+    const d = Math.floor(ms / D);
+    const hRest = Math.round((ms - d * D) / H);
+    rel = hRest > 0 ? `em ${d}d ${hRest}h` : `em ${d}d`;
+  }
+
+  // Curto: quando faltar < 1h, mostra contagem regressiva (mais útil que
+  // "qua 21:42" quando faltam 8 min). Acima disso, mostra dia + hora.
+  let curto: string;
+  if (ms < H) {
+    const min = Math.max(1, Math.ceil(ms / MIN));
+    curto = `${min}min`;
+  } else if (mesmoDia) {
+    curto = `hoje ${horaFmt}`;
+  } else if (ms < 7 * D) {
+    curto = `${dowAlvo} ${horaFmt}`;
+  } else {
+    curto = `${String(alvo.day).padStart(2, "0")}/${
+      String(alvo.month).padStart(2, "0")
+    } ${horaFmt}`;
+  }
+
+  const dataLonga = mesmoDia
+    ? `hoje às ${horaFmt}`
+    : `${dowAlvo} ${String(alvo.day).padStart(2, "0")}/${
+      String(alvo.month).padStart(2, "0")
+    } às ${horaFmt}`;
+
+  return { curto, longo: `${dataLonga} (${rel})`, severity };
 }
 
 function renderTimingPills(data: Data) {
-  const tFech = data.msAteFechamento != null
-    ? formatTiming(data.msAteFechamento)
+  const tFech = data.fechamentoTs != null && data.msAteFechamento != null
+    ? formatTiming(data.fechamentoTs, data.msAteFechamento)
     : null;
-  const tResol = data.msAteResolucao != null
-    ? formatTiming(data.msAteResolucao)
+  const tResol = data.resolucaoTs != null && data.msAteResolucao != null
+    ? formatTiming(data.resolucaoTs, data.msAteResolucao)
     : null;
   if (!tFech && !tResol) return null;
   return (
@@ -177,19 +276,19 @@ function renderTimingPills(data: Data) {
       {tFech && (
         <span
           class={`bf-pill bf-pill--timing-${tFech.severity}`}
-          title={`Mercado fecha ${tFech.texto}`}
+          title={`Mercado fecha ${tFech.longo}`}
         >
           <span class="bf-pill__lbl">Mkt</span>
-          <span class="bf-pill__val">{compacto(tFech)}</span>
+          <span class="bf-pill__val">{tFech.curto}</span>
         </span>
       )}
       {tResol && (
         <span
           class={`bf-pill bf-pill--timing-${tResol.severity}`}
-          title={`Conflitos resolvem ${tResol.texto}`}
+          title={`Conflitos resolvem ${tResol.longo}`}
         >
           <span class="bf-pill__lbl">Draft</span>
-          <span class="bf-pill__val">{compacto(tResol)}</span>
+          <span class="bf-pill__val">{tResol.curto}</span>
         </span>
       )}
     </div>
@@ -201,7 +300,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=143" />
+        <link rel="stylesheet" href="/bf-styles.css?v=144" />
       </Head>
       <div class="bf-viewport">
         <TopBar
