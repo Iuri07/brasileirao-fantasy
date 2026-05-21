@@ -5861,6 +5861,11 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   display: none;
 }
 
+/* SVG do campo em landscape some no mobile (visual portrait padrão) */
+.bf-field__lines--landscape {
+  display: none;
+}
+
 /* Mobile: saudação do dashboard escondida — TopBar já tem identidade.
    No mobile o status card cobre essa info. */
 .bf-home-head {
@@ -5904,6 +5909,21 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
    desse breakpoint.
    ============================================================ */
 @media (min-width: 1024px) {
+  /* === TopBar no desktop: logo some (sidebar já tem), UserMenu e
+     NotifBell ficam nas pontas. Padding mais apertado. === */
+  .bf-topbar {
+    padding: 10px var(--bf-gutter);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .bf-topbar::after {
+    display: none;
+  }
+  .bf-topbar .bf-minlogo {
+    display: none;
+  }
+
   /* === DesktopSidebar visível, BottomNav oculto === */
   .bf-sidebar {
     display: flex;
@@ -6441,11 +6461,45 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     margin-bottom: 14px;
   }
 
-  /* === Escalação: campo cap, mostra bench na lateral se couber === */
+  /* === Escalação: campo em LANDSCAPE (8/5) dentro do home — usa
+     toda a largura da coluna central sem esticar verticalmente. === */
   .bf-home-grid__escala .bf-field {
     max-width: none;
     margin-left: 0;
     margin-right: 0;
+  }
+  .bf-home-grid__escala .bf-field__pitch {
+    /* Aspect 8/5 inverte de 5/8 portrait → landscape */
+    aspect-ratio: 8 / 5;
+  }
+  /* Troca SVG: portrait some, landscape aparece */
+  .bf-home-grid__escala .bf-field__lines--portrait { display: none; }
+  .bf-home-grid__escala .bf-field__lines--landscape { display: block; }
+  /* Rows: agora se posicionam por LEFT em vez de TOP, ocupando
+     altura inteira, e os pinos stacam vertical. */
+  .bf-home-grid__escala .bf-field__row {
+    top: 0;
+    bottom: 0;
+    left: auto;
+    right: auto;
+    width: 22%;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+  .bf-home-grid__escala .bf-field__row--gk { left: 1%; top: 0; }
+  .bf-home-grid__escala .bf-field__row--def { left: 24%; top: 0; }
+  .bf-home-grid__escala .bf-field__row--mid { left: 50%; top: 0; }
+  .bf-home-grid__escala .bf-field__row--ata { left: 76%; top: 0; }
+  /* Stripes do gramado também viram verticais pra parecer linhas
+     laterais (canchas TV). */
+  .bf-home-grid__escala .bf-field__pitch::before {
+    background: repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--field-tint) 5%, transparent) 0,
+      color-mix(in srgb, var(--field-tint) 5%, transparent) 9%,
+      transparent 9%,
+      transparent 18%
+    );
   }
 
   /* Outras páginas: cap campo (não sobrescrito pelo grid acima) */

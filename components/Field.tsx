@@ -382,25 +382,40 @@ export default function Field(
   return (
     <div class="bf-field" style={style}>
       <div class="bf-field__pitch">
+        {/* Linhas do campo em DUAS versões — portrait (5/8, mobile) e
+            landscape (8/5, desktop). CSS decide qual aparece via
+            media query. */}
         <svg
-          class="bf-field__lines"
+          class="bf-field__lines bf-field__lines--portrait"
           viewBox="0 0 100 160"
           preserveAspectRatio="none"
         >
-          {/* Outline do campo + linhas. ViewBox 100×160 = aspect 5/8. */}
           <rect x="2" y="2" width="96" height="156" rx="1" />
-          {/* Linha do meio campo no centro (y=80) */}
           <line x1="2" y1="80" x2="98" y2="80" />
           <circle cx="50" cy="80" r="10" />
-          {/* Grande área + pequena área superior */}
           <rect x="22" y="2" width="56" height="14" />
           <rect x="34" y="2" width="32" height="6" />
-          {/* Grande área + pequena área inferior */}
           <rect x="22" y="144" width="56" height="14" />
           <rect x="34" y="152" width="32" height="6" />
-          {/* Semicircles das grandes áreas */}
           <path d="M 42 16 A 8 8 0 0 0 58 16" />
           <path d="M 42 144 A 8 8 0 0 1 58 144" />
+        </svg>
+        <svg
+          class="bf-field__lines bf-field__lines--landscape"
+          viewBox="0 0 160 100"
+          preserveAspectRatio="none"
+        >
+          <rect x="2" y="2" width="156" height="96" rx="1" />
+          <line x1="80" y1="2" x2="80" y2="98" />
+          <circle cx="80" cy="50" r="10" />
+          {/* Áreas: ATA fica à esquerda (penaliza o adversário),
+              GK fica à direita defendendo. */}
+          <rect x="2" y="22" width="14" height="56" />
+          <rect x="2" y="34" width="6" height="32" />
+          <rect x="144" y="22" width="14" height="56" />
+          <rect x="152" y="34" width="6" height="32" />
+          <path d="M 16 42 A 8 8 0 0 1 16 58" />
+          <path d="M 144 42 A 8 8 0 0 0 144 58" />
         </svg>
         <div class="bf-field__row bf-field__row--gk">
           <PlayerPin
