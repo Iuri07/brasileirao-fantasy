@@ -5587,3 +5587,19 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   font-size: 11px;
   color: var(--bf-fg-2);
 }
+
+/* Admin: dropdown "Visualizar como" no topo do mercado */
+.bf-mercado__admin-as {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin: 0 var(--bf-gutter) 10px;
+  background: color-mix(in srgb, var(--bf-magenta) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bf-magenta) 40%, transparent);
+  border-radius: var(--bf-radius-md);
+}
+.bf-mercado__admin-as-select {
+  flex: 1;
+  background: var(--bf-chassis);
+}

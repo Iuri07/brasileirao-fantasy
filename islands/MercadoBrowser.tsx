@@ -71,6 +71,10 @@ interface Props {
   draftMeta?: DraftMetaProp | null;
   /** Meus interesses em ordem de prioridade (top = primeiro). */
   meusInteresses?: MeuInteresse[];
+  /** Admin sem chave própria — habilita dropdown de "visualizar como X". */
+  isAdmin?: boolean;
+  /** Lista de times disponíveis pro admin escolher (ignorado se !isAdmin). */
+  timesDisponiveis?: Array<{ chave: string; nome: string }>;
 }
 
 const POS_ABREV: Record<string, string> = {
@@ -99,17 +103,26 @@ export default function MercadoBrowser(
     aoVivo = false,
     lazy = false,
     jogadores: inicial,
-    minhaChave = null,
+    minhaChave: minhaChaveProp = null,
     meuElenco = [],
     qtdAVenda: _qtdAVendaInicial = 0,
     posicaoDraft = null,
     draftOrdem = [],
     draftMeta = null,
     meusInteresses = [],
+    isAdmin = false,
+    timesDisponiveis = [],
   }: Props,
 ) {
   const [jogadores, setJogadores] = useState<AtletaMercado[]>(inicial);
   const [meu, setMeu] = useState<AtletaMeuTime[]>(meuElenco);
+  // Admin: chave virtual (sobrescreve sessão) pra simular logar como um time.
+  const [adminAsChave, setAdminAsChave] = useState<string | null>(
+    isAdmin && !minhaChaveProp && timesDisponiveis.length > 0
+      ? timesDisponiveis[0].chave
+      : null,
+  );
+  const minhaChave = adminAsChave ?? minhaChaveProp;
   // Derivado de `meu` — atualiza automaticamente ao pôr/tirar à venda
   const qtdAVenda = useMemo(
     () => meu.filter((j) => j.aVenda).length,
@@ -134,13 +147,18 @@ export default function MercadoBrowser(
   /** Atleta cujos detalhes estão abertos no modal. */
   const [detalhes, setDetalhes] = useState<AtletaMercado | null>(null);
 
-  // Lazy load: SSR mandou shell vazio; busca dados pesados na hidratação
+  // Lazy load: SSR mandou shell vazio; busca dados pesados na hidratação.
+  // Refetcha quando admin troca o time visualizado (asChave query param).
   useEffect(() => {
-    if (!lazy) return;
+    if (!lazy && !adminAsChave) return;
     let cancelado = false;
+    setCarregando(true);
     (async () => {
       try {
-        const r = await fetch("/api/mercado/data");
+        const url = adminAsChave
+          ? `/api/mercado/data?asChave=${adminAsChave}`
+          : "/api/mercado/data";
+        const r = await fetch(url);
         const d = await r.json();
         if (cancelado) return;
         setJogadores(d.jogadores ?? []);
@@ -155,7 +173,7 @@ export default function MercadoBrowser(
     return () => {
       cancelado = true;
     };
-  }, [lazy]);
+  }, [lazy, adminAsChave]);
 
   // Modal único — distingue por modo:
   // - "oferta": trade entre times (precisa enviar pra dono)
@@ -476,6 +494,22 @@ export default function MercadoBrowser(
               onOk: () => removerInteresse(m.atleta_id),
             })}
         />
+      )}
+
+      {isAdmin && timesDisponiveis.length > 0 && (
+        <div class="bf-mercado__admin-as">
+          <span class="bf-label-micro">Visualizar como</span>
+          <select
+            class="bf-mercado__select bf-mercado__admin-as-select"
+            value={adminAsChave ?? ""}
+            onChange={(e) =>
+              setAdminAsChave((e.target as HTMLSelectElement).value || null)}
+          >
+            {timesDisponiveis.map((t) => (
+              <option key={t.chave} value={t.chave}>{t.nome}</option>
+            ))}
+          </select>
+        </div>
       )}
 
       <div class="bf-mercado__filtros">

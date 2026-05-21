@@ -6,6 +6,7 @@ import {
   getDraftOrdem,
   getRodadaStatus,
   isRodadaEmAndamento,
+  TODAS_CHAVES,
 } from "../lib/kv.ts";
 import {
   type DraftMeta,
@@ -42,6 +43,8 @@ interface Data {
   userRole: "admin" | "user" | null;
   userNome: string | null;
   userPicture: string | null;
+  /** Admin sem chave própria — lista de times pra escolher "visualizar como". */
+  timesDisponiveis: Array<{ chave: string; nome: string }>;
 }
 
 export const handler: Handlers<Data, State> = {
@@ -125,6 +128,10 @@ export const handler: Handlers<Data, State> = {
       userRole: ctx.state.session?.role ?? null,
       userNome: ctx.state.session?.name ?? null,
       userPicture: ctx.state.session?.picture ?? null,
+      timesDisponiveis: TODAS_CHAVES.map((c) => ({
+        chave: c,
+        nome: getNomeTimeDisplay(c, CHAVES_TIMES[c]?.nome_time),
+      })),
     });
     mark("render", Trender);
     mark("total", T0);
@@ -194,7 +201,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=139" />
+        <link rel="stylesheet" href="/bf-styles.css?v=140" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -222,6 +229,8 @@ export default function MercadoPage({ data }: PageProps<Data>) {
           draftOrdem={data.draftOrdem}
           draftMeta={data.draftMeta}
           meusInteresses={[]}
+          isAdmin={data.userRole === "admin" && !data.minhaChave}
+          timesDisponiveis={data.timesDisponiveis}
         />
         <BottomNav active="mercado" liveDisabled={!data.aoVivo} />
       </div>

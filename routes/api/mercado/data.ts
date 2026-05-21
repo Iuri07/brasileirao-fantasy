@@ -7,6 +7,7 @@ import {
   getFotos,
   getInteressadosBatch,
   getMinhaPrioridade,
+  TODAS_CHAVES,
 } from "../../../lib/kv.ts";
 import { fetchAtletasMercadoCacheado } from "../../../lib/cartola.ts";
 import { fotoUrl } from "../../../lib/fotos.ts";
@@ -34,8 +35,15 @@ const POSICAO: Record<
  * rápida (shell em ~150ms, dados em mais ~200ms).
  */
 export const handler: Handlers<unknown, State> = {
-  async GET(_req, ctx) {
-    const chaveLogadaAux = ctx.state.session?.chave;
+  async GET(req, ctx) {
+    // Admin pode pedir como outro time via ?asChave=<chave> (escolher
+    // qual elenco visualizar no mercado). Pra user comum, ignora.
+    const url = new URL(req.url);
+    const asChave = url.searchParams.get("asChave")?.toLowerCase();
+    const isAdmin = ctx.state.session?.role === "admin";
+    const chaveLogadaAux = (isAdmin && asChave && TODAS_CHAVES.includes(asChave))
+      ? asChave
+      : ctx.state.session?.chave;
 
     const [
       elencos,
