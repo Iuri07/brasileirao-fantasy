@@ -5861,6 +5861,43 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   display: none;
 }
 
+/* Mobile: saudação do dashboard escondida — TopBar já tem identidade.
+   No mobile o status card cobre essa info. */
+.bf-home-head {
+  display: none;
+}
+
+/* Mobile: widgets de Posição e Total duplicam info do status card.
+   Próximas é o único widget visível no mobile (e ele faz papel da seção
+   antiga bf-home-grid__proximas). */
+.bf-widget--posicao,
+.bf-widget--total {
+  display: none;
+}
+.bf-widget--proximas {
+  /* Reset mobile: parece com o antigo bloco de próximas (sem o card
+     visual de widget) — só o header + lista de partidas. */
+  padding: 0;
+  background: transparent;
+  border: none;
+  margin: 0 var(--bf-gutter);
+}
+.bf-widget--proximas .bf-widget__header {
+  padding: 4px 0 8px;
+}
+
+/* Delta vs média no status card metric */
+.bf-status-card__delta {
+  margin-top: 4px;
+  font-family: var(--bf-font-cond);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.bf-status-card__delta--up { color: var(--bf-lime); }
+.bf-status-card__delta--down { color: var(--bf-red); }
+
 /* ============================================================
    DESKTOP — sidebar nav, viewport mais largo, modais maiores.
    Aplicado a partir de 1024px. Mobile-first segue intacto abaixo
@@ -6194,62 +6231,199 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     padding-bottom: 32px;
   }
 
-  /* ----- Home: dashboard horizontal + 2-col abaixo ----- */
+  /* Desktop: home-head, widgets ativos */
+  .bf-home-head { display: flex; }
+  .bf-widget--posicao,
+  .bf-widget--total {
+    display: block;
+  }
+  .bf-widget--proximas {
+    padding: 14px 14px;
+    background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
+    border: 1px solid var(--bf-line);
+    border-radius: var(--bf-radius-md);
+    margin: 0;
+  }
+  .bf-widget--proximas .bf-widget__header {
+    padding: 0;
+  }
 
-  /* Grid em template-areas: status banner full-width no topo,
-     escalação+próximas em 2-col abaixo. */
+  /* ----- Home: dashboard estilo mockup (hero + escala + widgets) -----
+     Grid template-areas: hero spanando o topo, escala na esquerda,
+     widgets em coluna sticky-feeling à direita. */
   .bf-home-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
     grid-template-areas:
-      "status status"
-      "escala proximas";
+      "status side"
+      "escala side";
     gap: 12px 16px;
     align-items: start;
     padding-top: 4px;
   }
   .bf-home-grid__status { grid-area: status; }
   .bf-home-grid__escala { grid-area: escala; min-width: 0; }
-  .bf-home-grid__proximas { grid-area: proximas; min-width: 0; }
+  .bf-home-grid__side {
+    grid-area: side;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-  /* === Status card vira banner horizontal — todos os blocos em row === */
+  /* === Saudação no topo do body === */
+  .bf-home-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 4px var(--bf-gutter) 12px;
+  }
+  .bf-home-head__greet h1 {
+    font-family: var(--bf-font-graffiti);
+    font-weight: 400;
+    font-size: 28px;
+    line-height: 1;
+    margin: 0;
+    color: var(--bf-fg-0);
+    text-shadow: 0 0 14px rgba(255, 255, 255, 0.08);
+  }
+  .bf-home-head__meta {
+    margin-top: 6px;
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--bf-fg-3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bf-home-head__meta strong {
+    color: var(--bf-lime);
+  }
+  .bf-home-head__sep {
+    color: var(--bf-line);
+  }
+
+  /* === Widget cards (Posição, Total, Próximos) === */
+  .bf-widget {
+    padding: 14px 14px;
+    background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
+    border: 1px solid var(--bf-line);
+    border-radius: var(--bf-radius-md);
+  }
+  .bf-widget__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .bf-widget__lbl {
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--bf-fg-3);
+  }
+  .bf-widget__count {
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--bf-fg-3);
+  }
+  .bf-widget__val-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .bf-widget__val {
+    font-family: var(--bf-font-display);
+    font-weight: 900;
+    font-size: 36px;
+    line-height: 1;
+    color: var(--bf-fg-0);
+    font-variant-numeric: tabular-nums;
+  }
+  .bf-widget__val--lime { color: var(--bf-lime); }
+  .bf-widget__suffix {
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--bf-fg-3);
+  }
+  .bf-widget__foot {
+    margin-top: 6px;
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bf-fg-3);
+  }
+  .bf-widget__foot--accent { color: var(--bf-magenta); }
+  .bf-widget__foot--lime { color: var(--bf-lime); }
+  .bf-widget__foot strong {
+    color: var(--bf-fg-1);
+    font-weight: 900;
+  }
+
+  /* Total da Temporada: número magenta como na referência */
+  .bf-widget--total .bf-widget__val {
+    color: var(--bf-magenta);
+  }
+
+  /* Próximos jogos: as game-rows ficam ainda mais compactas dentro
+     da coluna estreita */
+  .bf-widget--proximas .bf-games {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0;
+  }
+  .bf-widget--proximas .bf-game-row {
+    padding: 6px 10px;
+    grid-template-columns: 48px 1fr;
+    gap: 8px;
+  }
+
+  /* === Hero (status card): no desktop esconde as métricas duplicadas
+     (Posição e Total já aparecem nos widgets à direita). Só fica
+     "Esta rodada" — bem grande, drama central do card. === */
+  .bf-home-grid__status .bf-status-card__metric:not(:first-of-type),
+  .bf-home-grid__status .bf-status-card__divider {
+    display: none;
+  }
+  .bf-home-grid__status .bf-status-card__metrics {
+    display: block;
+    margin-top: 0;
+  }
+  .bf-home-grid__status .bf-status-card__metric:first-of-type {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .bf-home-grid__status .bf-status-card__metric-value {
+    font-size: 48px;
+    line-height: 1;
+  }
+
+  /* === Status card no desktop: greeting some (TopBar/home-head já tem),
+     padding apertado, splatter como decoração no fundo === */
   .bf-home-grid__status {
     margin: 0;
-    padding: 10px 18px;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 18px;
+    padding: 14px 18px;
   }
-  /* Splatter mantém posicionamento absolute, não conta no flex */
-  .bf-home-grid__status > .bf-status-card__splatter {
-    position: absolute;
-  }
-  /* Greeting some no desktop — info redundante com a TopBar */
   .bf-home-grid__status .bf-status-card__greeting {
     display: none;
   }
-  /* Top (crest + nome + pills) fica na esquerda, fixo */
   .bf-home-grid__status .bf-status-card__top {
-    margin-bottom: 0;
-    flex: 0 0 auto;
-    max-width: 360px;
-    padding-right: 18px;
-    border-right: 1px solid var(--bf-line);
-  }
-  /* Metrics ocupam o resto inline */
-  .bf-home-grid__status .bf-status-card__metrics {
-    margin-top: 0;
-    flex: 1 1 auto;
-    /* Re-arranja grid pra 3 cols mais juntas */
-    grid-template-columns: 1fr 1px 1fr 1px 1fr;
-    column-gap: 16px;
-  }
-  .bf-home-grid__status .bf-status-card__metric-value {
-    font-size: 26px;
-  }
-  .bf-home-grid__status .bf-status-card__metric-value--sm {
-    font-size: 22px;
+    margin-bottom: 14px;
   }
 
   /* === Escalação: campo cap, mostra bench na lateral se couber === */
@@ -6257,26 +6431,6 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     max-width: none;
     margin-left: 0;
     margin-right: 0;
-  }
-  /* === Próximas: grid 2-col denso === */
-  .bf-home-grid__proximas .bf-games {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    padding: 0;
-  }
-  /* Cada game-row: mais compacto, sem padding luxuoso */
-  .bf-home-grid__proximas .bf-game-row {
-    padding: 6px 10px;
-    grid-template-columns: 44px 1fr;
-    gap: 8px;
-  }
-  /* Section header dentro de coluna: bem mais discreto */
-  .bf-home-grid__proximas .bf-section-header {
-    padding: 4px var(--bf-gutter) 8px;
-  }
-  .bf-home-grid__proximas .bf-section-header__title {
-    font-size: 22px;
   }
 
   /* Outras páginas: cap campo (não sobrescrito pelo grid acima) */

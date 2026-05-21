@@ -107,6 +107,25 @@ interface HomeData {
       desktop usa primeiros 5; resto é usado pra calcular delta pra
       liderança. */
   rankingTop: SidebarRankingItem[];
+  /** Média histórica do meu time (total / rodadasJogadas). null se
+      sem histórico ainda. */
+  mediaTime: number | null;
+  /** Pontos que separam meu time da liderança (top1 - meu total).
+      0 se eu sou o líder, null se sem ranking. */
+  pontosAteLider: number | null;
+  /** Esquema do meu time — ex "4-3-3" derivado da contagem de
+      escalados por linha (DEF/MEI/ATA). */
+  esquema: string | null;
+  /** True quando o mercado está aberto (entre rodadas). */
+  mercadoAberto: boolean;
+}
+
+/** "sábado", "segunda-feira" etc — usado na saudação do dashboard. */
+function diaSemanaBR(d: Date): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    weekday: "long",
+    timeZone: "America/Sao_Paulo",
+  }).format(d);
 }
 
 function formatCountdown(unixSeconds: number): string | null {
@@ -425,6 +444,27 @@ export const handler: Handlers<HomeData, State> = {
         nome: t.nome,
         total: totaisPorChave.get(t.chave) ?? 0,
       })),
+      mediaTime: (() => {
+        const t = totalPontos(historico);
+        const r = rodadasJogadas(historico);
+        return r > 0 ? Math.round((t / r) * 10) / 10 : null;
+      })(),
+      pontosAteLider: (() => {
+        const meuTotal = totalPontos(historico);
+        const liderTotal = totaisPorChave.size > 0
+          ? Math.max(...Array.from(totaisPorChave.values()))
+          : null;
+        if (liderTotal === null) return null;
+        return Math.max(0, Math.round((liderTotal - meuTotal) * 10) / 10);
+      })(),
+      esquema: (() => {
+        if (!escalacao) return null;
+        const d = escalacao.def?.length ?? 0;
+        const m = escalacao.mid?.length ?? 0;
+        const a = escalacao.ata?.length ?? 0;
+        return `${d}-${m}-${a}`;
+      })(),
+      mercadoAberto,
     };
 
     mark("data", T0);
@@ -455,7 +495,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=153" />
+        <link rel="stylesheet" href="/bf-styles.css?v=154" />
       </Head>
       <DesktopSidebar
         active="home"
@@ -476,8 +516,29 @@ export default function Home({ data }: PageProps<HomeData>) {
           userPicture={data.userPicture}
         />
 
-        {/* Desktop (≥1024px): .bf-home-grid vira 3-col [status | escalação |
-            próximas]. Mobile: block normal, stack vertical como sempre. */}
+        {/* Saudação + meta no topo do body (desktop only, escondido em mobile
+            já que a TopBar já tem identidade). */}
+        <header class="bf-home-head">
+          <div class="bf-home-head__greet">
+            <h1>E aí, {meta?.dono ?? "—"}?</h1>
+            <div class="bf-home-head__meta">
+              <span>Rodada {data.rodada}</span>
+              <span class="bf-home-head__sep">·</span>
+              <span>{diaSemanaBR(new Date())}</span>
+              <span class="bf-home-head__sep">·</span>
+              <span>Mercado {data.mercadoAberto ? "aberto" : "fechado"}</span>
+            </div>
+          </div>
+          {data.aoVivoReal && (
+            <span class="bf-pill bf-pill--lime" title="Rodada em andamento">
+              <span class="bf-pill__dot" />
+              Ao Vivo · {data.partidas.length} jogos
+            </span>
+          )}
+        </header>
+
+        {/* Desktop (≥1024px): .bf-home-grid vira grid com hero, escalação
+            e widgets na direita. Mobile: block normal, stack vertical. */}
         <div class="bf-home-grid">
           <article
             class="bf-card bf-status-card bf-home-grid__status"
@@ -534,6 +595,21 @@ export default function Home({ data }: PageProps<HomeData>) {
               >
                 {data.exibidaParcial ? "parcial" : "final"}
               </span>
+              {data.mediaTime != null && data.pontuacaoExibida != null && (() => {
+                const delta = data.pontuacaoExibida - data.mediaTime;
+                const positivo = delta >= 0;
+                return (
+                  <div
+                    class={`bf-status-card__delta ${
+                      positivo
+                        ? "bf-status-card__delta--up"
+                        : "bf-status-card__delta--down"
+                    }`}
+                  >
+                    {positivo ? "↑" : "↓"} {Math.abs(delta).toFixed(1).replace(".", ",")} vs média
+                  </div>
+                );
+              })()}
             </div>
             <div class="bf-status-card__divider"></div>
             <div class="bf-status-card__metric">
@@ -590,14 +666,76 @@ export default function Home({ data }: PageProps<HomeData>) {
               )}
           </section>
 
-          <section class="bf-home-grid__proximas">
-            <SectionHeader>Proximos</SectionHeader>
-            <PartidasExpandable
-              partidas={data.partidas}
-              clubes={data.clubesPartidas}
-              limit={5}
-            />
-          </section>
+          <aside class="bf-home-grid__side">
+            {/* Posição */}
+            <div class="bf-widget bf-widget--posicao">
+              <div class="bf-widget__lbl">Posição</div>
+              <div class="bf-widget__val-wrap">
+                <span
+                  class={`bf-widget__val ${
+                    top3 ? "bf-widget__val--lime" : ""
+                  }`}
+                >
+                  {data.posicao ? `${data.posicao}º` : "—"}
+                </span>
+                <span class="bf-widget__suffix">/{data.totalTimes}</span>
+              </div>
+              {data.rodadasJogadas > 0 && (
+                <div class="bf-widget__foot">
+                  Top {Math.ceil((data.posicao ?? 1) / data.totalTimes * 100)}%
+                </div>
+              )}
+            </div>
+
+            {/* Total da temporada */}
+            <div class="bf-widget bf-widget--total">
+              <div class="bf-widget__lbl">Total da Temporada</div>
+              <div class="bf-widget__val">
+                {data.rodadasJogadas > 0
+                  ? data.total.toFixed(1).replace(".", ",")
+                  : "—"}
+              </div>
+              {data.rodadasJogadas > 0 && (
+                <div class="bf-widget__foot">
+                  {data.rodadasJogadas}{" "}
+                  rodadas{data.mediaTime != null && (
+                    <>
+                      {" · média "}
+                      <strong>
+                        {data.mediaTime.toFixed(1).replace(".", ",")}
+                      </strong>
+                    </>
+                  )}
+                </div>
+              )}
+              {data.pontosAteLider !== null && data.pontosAteLider > 0 && (
+                <div class="bf-widget__foot bf-widget__foot--accent">
+                  −{data.pontosAteLider.toFixed(1).replace(".", ",")} pts do
+                  líder
+                </div>
+              )}
+              {data.pontosAteLider === 0 && (
+                <div class="bf-widget__foot bf-widget__foot--lime">
+                  você é o líder 🏆
+                </div>
+              )}
+            </div>
+
+            {/* Próximos jogos */}
+            <div class="bf-widget bf-widget--proximas">
+              <div class="bf-widget__header">
+                <span class="bf-widget__lbl">Próximos jogos</span>
+                <span class="bf-widget__count">
+                  Rodada {data.rodada} · {data.partidas.length} jogos
+                </span>
+              </div>
+              <PartidasExpandable
+                partidas={data.partidas}
+                clubes={data.clubesPartidas}
+                limit={5}
+              />
+            </div>
+          </aside>
         </div>
 
         <BottomNav
