@@ -2318,14 +2318,15 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   object-position: center bottom;
   display: block;
   /* TheSportsDB serve cutouts PNG transparentes — não precisa de filtro
-     ou crop circular. drop-shadow dá separação visual sobre o campo. */
-  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.65));
+     ou crop circular. drop-shadow dá separação visual sobre o campo,
+     mas é CARO em GPU mobile (recomputado por pixel da imagem). Mobile
+     usa um shadow simulado via after pseudo / fica sem. Desktop reativa
+     via media query. */
 }
 .bf-pin__head-jersey {
   width: 100%;
   height: 100%;
   display: block;
-  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.6));
 }
 .bf-pin__head-placeholder {
   width: 100%;
@@ -5867,6 +5868,21 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   display: none;
 }
 
+/* Em devices touch (sem hover), desabilita transitions caras que só
+   servem visualmente em hover de mouse. O navegador ainda dispara
+   :hover por ~300ms após o tap (legacy) — sem transition, paint é
+   instantâneo e não causa jank no scroll. */
+@media (hover: none) {
+  .bf-team-row,
+  .bf-team-row__summary,
+  .bf-merc-card,
+  .bf-btn,
+  .bf-sidebar__nav-item,
+  .bf-bottom-nav__item {
+    transition: none !important;
+  }
+}
+
 /* SVG do campo em landscape some no mobile (visual portrait padrão) */
 .bf-field__lines--landscape {
   display: none;
@@ -5916,6 +5932,14 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
    desse breakpoint.
    ============================================================ */
 @media (min-width: 1024px) {
+  /* Desktop: pinos do campo recuperam drop-shadow (GPU dá conta) */
+  .bf-pin__head-img {
+    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.65));
+  }
+  .bf-pin__head-jersey {
+    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.6));
+  }
+
   /* === TopBar no desktop: logo some (sidebar já tem), UserMenu e
      NotifBell ficam nas pontas. Padding mais apertado. === */
   .bf-topbar {

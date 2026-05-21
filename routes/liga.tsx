@@ -196,11 +196,15 @@ export default function Liga({ data }: PageProps<Data>) {
     total: t.total,
     accent: timeLigaInfo(t.chave)?.accent ?? "var(--bf-fg-2)",
   }));
+  // Status pip (✓ provável / ? dúvida / ✕ suspenso / ✚ contundido /
+  // − nulo) só faz sentido fora da rodada — durante a rodada ao vivo
+  // o que importa é se entrou em campo / subbed.
+  const mostraStatus = !isRodadaEmAndamento(data.rodadaStatus);
   return (
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=163" />
+        <link rel="stylesheet" href="/bf-styles.css?v=164" />
       </Head>
       <DesktopSidebar
         active="liga"
@@ -259,7 +263,7 @@ export default function Liga({ data }: PageProps<Data>) {
                         <Field
                           jogadores={t.escalacao}
                           showPoints={false}
-                          showStatus={false}
+                          showStatus={mostraStatus}
                           showPosLabel={false}
                           accent={accent}
                         />
@@ -267,13 +271,13 @@ export default function Liga({ data }: PageProps<Data>) {
                           label="Banco"
                           jogadores={t.banco}
                           showPoints={false}
-                          showStatus={false}
+                          showStatus={mostraStatus}
                         />
                         <ReservasRow
                           label="Não escalados"
                           jogadores={t.naoEscalados}
                           showPoints={false}
-                          showStatus={false}
+                          showStatus={mostraStatus}
                         />
                       </>
                     )
