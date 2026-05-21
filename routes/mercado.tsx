@@ -9,6 +9,7 @@ import {
   TODAS_CHAVES,
 } from "../lib/kv.ts";
 import {
+  computeDraftMeta,
   type DraftMeta,
   getDiasResolucao,
   inicializarDraftSeNecessario,
@@ -84,7 +85,13 @@ export const handler: Handlers<Data, State> = {
     ]);
     mark("kv", T0);
     const qtdAVenda = minhaAVendaArr.length;
-    const draftMeta = draftInit.meta;
+    // Computa ciclo/rodadaCiclo a partir da rodada atual da liga —
+    // não depende mais de avancarRodadaDraft manual rodando a cada
+    // rodada (estado vivia defasado).
+    const draftMeta = computeDraftMeta(
+      draftInit.meta,
+      rodadaStatus?.rodada ?? 1,
+    );
     const chaveLogada = chaveLogadaAux;
 
     const posicaoDraft = chaveLogada
