@@ -439,7 +439,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=145" />
+        <link rel="stylesheet" href="/bf-styles.css?v=146" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -537,34 +537,42 @@ export default function Home({ data }: PageProps<HomeData>) {
           </div>
         </article>
 
-        {data.atletas.length > 0
-          ? (
-            <MeuTimeEditor
-              chave={data.chave}
-              atletas={data.atletas}
-              accent={visual?.accent ?? "#888"}
-              aoVivo={data.aoVivoReal}
-              subsUsadasInicial={data.subsUsadas}
-              subsAuto={data.subsAuto}
-              subsMax={data.subsMax}
-              showPoints={data.aoVivoReal}
-              edicaoBloqueada={data.edicaoBloqueada}
-              fechamentoTexto={data.fechamentoTexto}
-              aVendaIds={data.aVendaIds}
+        {/* No desktop (≥1024px), .bf-home-cols vira grid 2-col: escalação
+            à esquerda, próximas à direita. No mobile o wrapper é
+            transparente (display: contents) e segue stack vertical. */}
+        <div class="bf-home-cols">
+          <section class="bf-home-cols__col">
+            {data.atletas.length > 0
+              ? (
+                <MeuTimeEditor
+                  chave={data.chave}
+                  atletas={data.atletas}
+                  accent={visual?.accent ?? "#888"}
+                  aoVivo={data.aoVivoReal}
+                  subsUsadasInicial={data.subsUsadas}
+                  subsAuto={data.subsAuto}
+                  subsMax={data.subsMax}
+                  showPoints={data.aoVivoReal}
+                  edicaoBloqueada={data.edicaoBloqueada}
+                  fechamentoTexto={data.fechamentoTexto}
+                  aVendaIds={data.aVendaIds}
+                />
+              )
+              : (
+                <div class="bf-empty-state">
+                  Sem escalação ainda. Monte seu time no Mercado.
+                </div>
+              )}
+          </section>
+          <section class="bf-home-cols__col">
+            <SectionHeader>Proximos</SectionHeader>
+            <PartidasExpandable
+              partidas={data.partidas}
+              clubes={data.clubesPartidas}
+              limit={5}
             />
-          )
-          : (
-            <div class="bf-empty-state">
-              Sem escalação ainda. Monte seu time no Mercado.
-            </div>
-          )}
-
-        <SectionHeader>Proximos</SectionHeader>
-        <PartidasExpandable
-          partidas={data.partidas}
-          clubes={data.clubesPartidas}
-          limit={5}
-        />
+          </section>
+        </div>
 
         <BottomNav
           active="home"

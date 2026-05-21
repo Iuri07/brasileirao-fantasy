@@ -5896,16 +5896,56 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   /* Grid do mercado: cards um pouco maiores (cabem 6+ por linha
      em 1280px). */
   .bf-mercado__grid {
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
     padding-bottom: 32px;
   }
 
-  /* Section header com mais respiro vertical. */
-  .bf-section-header {
-    padding: 24px var(--bf-gutter) 18px;
+  /* ----- Home: contém o sprawl horizontal ----- */
+
+  /* Status card (hero da home): cap em 760px pra não esticar. */
+  .bf-status-card {
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
   }
-  .bf-section-header__title {
-    font-size: 36px;
+
+  /* Campo de futebol: aspect-ratio 5/8 estica vertical demais quando
+     deixado em 100%. Cap em 460px wide → ~736px tall. */
+  .bf-field {
+    max-width: 460px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Próximas partidas em grid 2-col — antes era flex column full-width
+     com escudos jogados nas extremidades. */
+  .bf-games {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 8px;
+  }
+
+  /* Layout 2-colunas da home: escalação à esquerda, próximas à
+     direita. .bf-home-cols vira grid; no mobile (regra base) é
+     transparent — vide bloco fora do media query. */
+  .bf-home-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 28px;
+    align-items: start;
+    padding-top: 8px;
+  }
+  .bf-home-cols .bf-field {
+    /* Dentro da coluna esquerda já é largura limitada — solta o cap
+       global e respeita gutter normal */
+    max-width: none;
+    margin-left: var(--bf-gutter);
+    margin-right: var(--bf-gutter);
+  }
+  .bf-home-cols .bf-games {
+    /* Coluna direita: 1 partida por linha (a coluna já é estreita) */
+    grid-template-columns: 1fr;
   }
 }
+
