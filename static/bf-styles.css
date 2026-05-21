@@ -134,7 +134,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px var(--bf-gutter);
+  padding: 8px var(--bf-gutter) 14px;
   /* Mobile: fundo sólido pra não usar backdrop-filter (gargalo de
      scroll em GPU modesta tipo Mali-G57). Desktop reativa blur via
      media query no fim do arquivo. */
@@ -1906,12 +1906,6 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 }
 .bf-status-card__metric-value--sm {
   font-size: 24px;
-  /* Posição + Total usam variante --sm e vão na cor do time
-     (--user-accent setado inline no .bf-status-card). Esta rodada
-     (o número grande) fica em branco mesmo pra contrastar. */
-  color: var(--user-accent, var(--bf-fg-0));
-  text-shadow: 0 0 14px
-    color-mix(in srgb, var(--user-accent, transparent) 35%, transparent);
 }
 .bf-status-card__live-dot {
   display: inline-block;
@@ -5964,7 +5958,8 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     flex-direction: column;
     gap: 14px;
     position: fixed;
-    left: max(16px, calc(50vw - 640px + 16px));
+    /* Anchorada à borda esquerda da JANELA (viewport ocupa tela toda). */
+    left: 16px;
     top: 16px;
     bottom: 16px;
     width: 248px;
@@ -6231,11 +6226,10 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     color: var(--bf-lime);
   }
 
-  /* Viewport pula a sidebar à esquerda */
-  /* Viewport cresce até 1280px e abre espaço pra sidebar à esquerda
-     (248px + 16px gap esquerdo + 8px folga = ~272px). */
+  /* Viewport ocupa a tela inteira; pula a sidebar fixa à esquerda
+     (248px + 16px gap + 8px folga = ~272px). */
   .bf-viewport {
-    max-width: 1280px;
+    max-width: none;
     padding-left: 272px;
     padding-right: 24px;
     padding-bottom: 32px;
@@ -6244,11 +6238,8 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   /* Bottom nav vira sidebar fixa, alinhada ao viewport. */
   .bf-bottom-nav {
     position: fixed;
-    /* Anchora à borda ESQUERDA do viewport centralizado.
-       calc = (50vw - half_max_width) + gutter. max() trava em 16px
-       pra quando a viewport ainda não tem largura suficiente pra
-       ficar com folga (1024-1280px). */
-    left: max(16px, calc(50vw - 640px + 16px));
+    /* Anchorada à borda esquerda da janela (viewport ocupa tela toda). */
+    left: 16px;
     top: 80px;
     bottom: 24px;
     right: auto;

@@ -492,12 +492,13 @@ export default function Home({ data }: PageProps<HomeData>) {
     : `Rodada ${data.rodadaExibida}`;
   // Splatter accent na cor do crest do usuário (visual?.color = "magenta")
   const splatterUrl = visual ? `/assets/splatter-${visual.color}.png` : null;
+  const top3 = data.posicao !== null && data.posicao <= 3;
 
   return (
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=165" />
+        <link rel="stylesheet" href="/bf-styles.css?v=166" />
       </Head>
       <DesktopSidebar
         active="home"
@@ -619,7 +620,11 @@ export default function Home({ data }: PageProps<HomeData>) {
             <div class="bf-status-card__divider"></div>
             <div class="bf-status-card__metric">
               <span class="bf-label-micro">Posição</span>
-              <span class="bf-status-card__metric-value bf-status-card__metric-value--sm">
+              <span
+                class={`bf-status-card__metric-value bf-status-card__metric-value--sm ${
+                  top3 ? "bf-status-card__metric-value--lime" : ""
+                }`}
+              >
                 {data.posicao ? `${data.posicao}º` : "—"}
               </span>
               <span class="bf-status-card__metric-foot">
