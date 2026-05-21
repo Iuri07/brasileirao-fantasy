@@ -5856,16 +5856,255 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   background: var(--bf-chassis);
 }
 
+/* Mobile: DesktopSidebar escondido — substituído pelo BottomNav clássico. */
+.bf-sidebar {
+  display: none;
+}
+
 /* ============================================================
    DESKTOP — sidebar nav, viewport mais largo, modais maiores.
    Aplicado a partir de 1024px. Mobile-first segue intacto abaixo
    desse breakpoint.
    ============================================================ */
 @media (min-width: 1024px) {
-  /* Viewport cresce até 1280px e abre espaço pra sidebar à esquerda. */
+  /* === DesktopSidebar visível, BottomNav oculto === */
+  .bf-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: fixed;
+    left: max(16px, calc(50vw - 640px + 16px));
+    top: 16px;
+    bottom: 16px;
+    width: 248px;
+    padding: 14px 12px;
+    background: rgba(20, 22, 30, 0.92);
+    border: 1px solid var(--bf-line);
+    border-radius: var(--bf-radius-lg);
+    overflow-y: auto;
+    z-index: var(--bf-z-header);
+  }
+  .bf-sidebar::-webkit-scrollbar { width: 4px; }
+  .bf-sidebar::-webkit-scrollbar-thumb {
+    background: var(--bf-line); border-radius: 2px;
+  }
+
+  /* Esconde a BottomNav transformada (já que tem nova sidebar) */
+  .bf-bottom-nav {
+    display: none;
+  }
+
+  /* Logo no topo da sidebar */
+  .bf-sidebar__logo {
+    padding: 4px 6px 8px;
+    border-bottom: 1px solid var(--bf-line);
+  }
+  .bf-sidebar__logo img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Card do meu time */
+  .bf-sidebar__team-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--bf-line);
+    border-radius: var(--bf-radius-md);
+  }
+  .bf-sidebar__team-meta {
+    min-width: 0;
+    flex: 1;
+  }
+  .bf-sidebar__team-name {
+    font-family: var(--bf-font-cond);
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--bf-fg-0);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bf-sidebar__team-sub {
+    font-family: var(--bf-font-body);
+    font-size: 10px;
+    color: var(--bf-fg-3);
+    margin-top: 2px;
+  }
+
+  /* Nav label compartilhado entre seções */
+  .bf-sidebar__nav-label {
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--bf-fg-3);
+    padding: 4px 6px 6px;
+  }
+
+  /* Nav principal */
+  .bf-sidebar__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .bf-sidebar__nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: var(--bf-radius-md);
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--bf-fg-2);
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    transition: background var(--bf-dur-normal) var(--bf-ease-out),
+      color var(--bf-dur-normal) var(--bf-ease-out);
+  }
+  .bf-sidebar__nav-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--bf-fg-1);
+  }
+  .bf-sidebar__nav-item--active {
+    background: color-mix(in srgb, var(--bf-lime) 18%, transparent);
+    color: var(--bf-lime);
+  }
+  .bf-sidebar__nav-item--active::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--bf-lime);
+    box-shadow: 0 0 8px var(--bf-lime-glow);
+  }
+  .bf-sidebar__nav-item--disabled {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  .bf-sidebar__nav-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  /* Mini-ranking */
+  .bf-sidebar__ranking {
+    display: flex;
+    flex-direction: column;
+  }
+  .bf-sidebar__ranking-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .bf-sidebar__ranking-row {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 6px;
+    font-family: var(--bf-font-cond);
+    font-size: 11px;
+    color: var(--bf-fg-2);
+    border-radius: var(--bf-radius-sm);
+  }
+  .bf-sidebar__ranking-row--mine {
+    background: color-mix(in srgb, var(--bf-magenta) 14%, transparent);
+    color: var(--bf-fg-0);
+  }
+  .bf-sidebar__ranking-row--mine .bf-sidebar__ranking-pos {
+    color: var(--bf-magenta);
+    font-weight: 900;
+  }
+  .bf-sidebar__ranking-pos {
+    font-weight: 800;
+    color: var(--bf-fg-3);
+    text-align: center;
+  }
+  .bf-sidebar__ranking-name {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bf-sidebar__ranking-pts {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--bf-fg-1);
+  }
+
+  /* Card de mercado no rodapé da sidebar */
+  .bf-sidebar__mercado-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: auto; /* empurra pra base da sidebar */
+    padding: 12px;
+    background: color-mix(in srgb, var(--bf-lime) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--bf-lime) 35%, transparent);
+    border-radius: var(--bf-radius-md);
+    text-decoration: none;
+    color: inherit;
+    transition: background var(--bf-dur-normal) var(--bf-ease-out);
+  }
+  .bf-sidebar__mercado-card:hover {
+    background: color-mix(in srgb, var(--bf-lime) 14%, transparent);
+  }
+  .bf-sidebar__mercado-lbl {
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--bf-yellow);
+  }
+  .bf-sidebar__mercado-tempo {
+    font-family: var(--bf-font-display);
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--bf-lime);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    margin: 2px 0 4px;
+  }
+  .bf-sidebar__mercado-aviso {
+    font-size: 11px;
+    color: var(--bf-fg-2);
+    font-style: italic;
+    margin-bottom: 4px;
+  }
+  .bf-sidebar__mercado-cta {
+    font-family: var(--bf-font-cond);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--bf-lime);
+  }
+
+  /* Viewport pula a sidebar à esquerda */
+  /* Viewport cresce até 1280px e abre espaço pra sidebar à esquerda
+     (248px + 16px gap esquerdo + 8px folga = ~272px). */
   .bf-viewport {
     max-width: 1280px;
-    padding-left: 240px;
+    padding-left: 272px;
     padding-right: 24px;
     padding-bottom: 32px;
   }

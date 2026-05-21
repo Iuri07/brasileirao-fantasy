@@ -9,6 +9,7 @@ import {
 import { getHistorico, totalPontos } from "../lib/historico.ts";
 import TopBar from "../components/TopBar.tsx";
 import BottomNav from "../components/BottomNav.tsx";
+import DesktopSidebar from "../components/DesktopSidebar.tsx";
 import TeamCrest from "../components/TeamCrest.tsx";
 import Field, {
   type BancoPino,
@@ -188,12 +189,28 @@ export const handler: Handlers<Data, State> = {
 };
 
 export default function Liga({ data }: PageProps<Data>) {
+  const meu = data.times.find((t) => t.chave === data.meuChave);
+  const ranking = data.times.map((t) => ({
+    chave: t.chave,
+    nome: t.nome,
+    total: t.total,
+  }));
   return (
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=152" />
+        <link rel="stylesheet" href="/bf-styles.css?v=153" />
       </Head>
+      <DesktopSidebar
+        active="liga"
+        liveDisabled={!isRodadaEmAndamento(data.rodadaStatus)}
+        meuChave={data.meuChave}
+        meuNomeTime={meu?.nome ?? null}
+        meuDono={meu?.dono ?? null}
+        totalTimes={data.times.length}
+        ranking={ranking}
+        fechamentoTexto={null}
+      />
       <div class="bf-viewport">
         <TopBar
           userEmail={data.userEmail}

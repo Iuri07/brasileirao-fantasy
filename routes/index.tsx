@@ -24,6 +24,7 @@ import {
 } from "../lib/cartola.ts";
 import TopBar from "../components/TopBar.tsx";
 import BottomNav from "../components/BottomNav.tsx";
+import DesktopSidebar from "../components/DesktopSidebar.tsx";
 import TeamCrest from "../components/TeamCrest.tsx";
 import SectionHeader from "../components/SectionHeader.tsx";
 import Pill from "../components/Pill.tsx";
@@ -51,6 +52,12 @@ interface TimeRanking {
   nome: string;
   dono: string;
   pontuacao: number;
+}
+
+interface SidebarRankingItem {
+  chave: string;
+  nome: string;
+  total: number;
 }
 
 interface HomeData {
@@ -96,6 +103,10 @@ interface HomeData {
   fechamentoTexto: string | null;
   partidas: CartolaPartida[];
   clubesPartidas: Record<string, CartolaClube>;
+  /** Ranking completo (top → bottom) por total acumulado. Sidebar
+      desktop usa primeiros 5; resto é usado pra calcular delta pra
+      liderança. */
+  rankingTop: SidebarRankingItem[];
 }
 
 function formatCountdown(unixSeconds: number): string | null {
@@ -409,6 +420,11 @@ export const handler: Handlers<HomeData, State> = {
       fechamentoTexto,
       partidas: partidasResp?.partidas ?? [],
       clubesPartidas,
+      rankingTop: ranking.map((t) => ({
+        chave: t.chave,
+        nome: t.nome,
+        total: totaisPorChave.get(t.chave) ?? 0,
+      })),
     };
 
     mark("data", T0);
@@ -439,8 +455,18 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=152" />
+        <link rel="stylesheet" href="/bf-styles.css?v=153" />
       </Head>
+      <DesktopSidebar
+        active="home"
+        liveDisabled={!isRodadaEmAndamento(data.status)}
+        meuChave={data.chave}
+        meuNomeTime={displayName}
+        meuDono={meta?.dono ?? null}
+        totalTimes={data.totalTimes}
+        ranking={data.rankingTop}
+        fechamentoTexto={data.fechamentoTexto}
+      />
       <div class="bf-viewport">
         <TopBar
           hasAlert

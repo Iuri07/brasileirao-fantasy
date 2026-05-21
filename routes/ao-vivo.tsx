@@ -11,6 +11,7 @@ import { getMelhorTimeCached } from "../lib/substituicao.ts";
 import { getHistorico, totalPontos } from "../lib/historico.ts";
 import TopBar from "../components/TopBar.tsx";
 import BottomNav from "../components/BottomNav.tsx";
+import DesktopSidebar from "../components/DesktopSidebar.tsx";
 import Field, {
   type BancoPino,
   type Escalacao,
@@ -264,12 +265,28 @@ export const handler: Handlers<Data, State> = {
 };
 
 export default function AoVivoPage({ data }: PageProps<Data>) {
+  const meu = data.times.find((t) => t.chave === data.meuChave);
+  const ranking = data.times.map((t) => ({
+    chave: t.chave,
+    nome: t.nome,
+    total: t.total,
+  }));
   return (
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=152" />
+        <link rel="stylesheet" href="/bf-styles.css?v=153" />
       </Head>
+      <DesktopSidebar
+        active="live"
+        liveDisabled={!data.aoVivo}
+        meuChave={data.meuChave}
+        meuNomeTime={meu?.nome ?? null}
+        meuDono={meu?.dono ?? null}
+        totalTimes={data.times.length}
+        ranking={ranking}
+        fechamentoTexto={null}
+      />
       <div class="bf-viewport">
         <TopBar
           userEmail={data.userEmail}

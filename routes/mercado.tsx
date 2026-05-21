@@ -18,6 +18,7 @@ import { fetchMercadoStatus } from "../lib/cartola.ts";
 import { getNomeTimeDisplay } from "../lib/time-visual.ts";
 import TopBar from "../components/TopBar.tsx";
 import BottomNav from "../components/BottomNav.tsx";
+import DesktopSidebar from "../components/DesktopSidebar.tsx";
 import SectionHeader from "../components/SectionHeader.tsx";
 import MercadoBrowser from "../islands/MercadoBrowser.tsx";
 import type { State } from "./_middleware.ts";
@@ -296,12 +297,26 @@ function renderTimingPills(data: Data) {
 }
 
 export default function MercadoPage({ data }: PageProps<Data>) {
+  // Texto compacto do fechamento pra mostrar na sidebar.
+  const fechamentoText = data.fechamentoTs && data.msAteFechamento != null
+    ? formatTiming(data.fechamentoTs, data.msAteFechamento).curto
+    : null;
   return (
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=152" />
+        <link rel="stylesheet" href="/bf-styles.css?v=153" />
       </Head>
+      <DesktopSidebar
+        active="mercado"
+        liveDisabled={!data.aoVivo}
+        meuChave={data.minhaChave}
+        meuNomeTime={null}
+        meuDono={null}
+        totalTimes={data.timesDisponiveis.length}
+        ranking={[]}
+        fechamentoTexto={fechamentoText}
+      />
       <div class="bf-viewport">
         <TopBar
           userEmail={data.userEmail}
