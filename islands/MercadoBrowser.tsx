@@ -498,7 +498,7 @@ export default function MercadoBrowser(
         />
       )}
 
-      {isAdmin && timesDisponiveis.length > 0 && (
+      {isAdmin && !minhaChaveProp && timesDisponiveis.length > 0 && (
         <div class="bf-mercado__admin-as">
           <span class="bf-label-micro">Visualizar como</span>
           <select
@@ -658,6 +658,8 @@ export default function MercadoBrowser(
         <ModalAtletaDetalhes
           base={detalhes}
           onClose={() => setDetalhes(null)}
+          isAdmin={isAdmin}
+          timesDisponiveis={timesDisponiveis}
         />
       )}
     </div>
@@ -1454,15 +1456,51 @@ interface HistoricoRes {
 }
 
 function ModalAtletaDetalhes(
-  { base, onClose }: {
+  { base, onClose, isAdmin, timesDisponiveis }: {
     base: AtletaMercado;
     onClose: () => void;
+    isAdmin?: boolean;
+    timesDisponiveis?: Array<{ chave: string; nome: string }>;
   },
 ) {
   const [data, setData] = useState<DetalheRes | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [historico, setHistorico] = useState<HistoricoRes | null>(null);
   const [rodadaSel, setRodadaSel] = useState<number | null>(null);
+  // Admin: estado das ações de transferência manual
+  const [adminTimeDestino, setAdminTimeDestino] = useState<string>("");
+  const [adminEnviando, setAdminEnviando] = useState(false);
+  const [adminErro, setAdminErro] = useState<string | null>(null);
+
+  async function adminTransferir(args: {
+    fromChave: string | null;
+    toChave: string | null;
+  }): Promise<void> {
+    setAdminEnviando(true);
+    setAdminErro(null);
+    try {
+      const r = await fetch("/api/admin/transferir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          atleta_id: base.atleta_id,
+          from_chave: args.fromChave,
+          to_chave: args.toChave,
+        }),
+      });
+      const d = await r.json();
+      if (!d.ok) {
+        setAdminErro(d.erro ?? "Erro desconhecido");
+        setAdminEnviando(false);
+        return;
+      }
+      // Reload pra refletir o elenco novo na grade
+      location.reload();
+    } catch (e) {
+      setAdminErro(String(e));
+      setAdminEnviando(false);
+    }
+  }
 
   useEffect(() => {
     let cancel = false;
@@ -1714,6 +1752,100 @@ function ModalAtletaDetalhes(
                     )}
                   </>
                 )}
+            </div>
+          )}
+
+          {/* Admin: transferir / remover / adicionar (bypass de ofertas) */}
+          {isAdmin && !carregando && data?.ok &&
+            timesDisponiveis && timesDisponiveis.length > 0 && (
+            <div class="bf-atleta-detalhes__admin">
+              <div class="bf-atleta-detalhes__admin-titulo">Admin · Mover</div>
+              {data.donoChave
+                ? (
+                  // Tem dono: pode transferir pra outro time OU remover
+                  <>
+                    <div class="bf-atleta-detalhes__admin-row">
+                      <select
+                        class="bf-atleta-detalhes__admin-select"
+                        value={adminTimeDestino}
+                        onChange={(e) =>
+                          setAdminTimeDestino(
+                            (e.target as HTMLSelectElement).value,
+                          )}
+                      >
+                        <option value="">— transferir para… —</option>
+                        {timesDisponiveis
+                          .filter((t) => t.chave !== data.donoChave)
+                          .map((t) => (
+                            <option key={t.chave} value={t.chave}>
+                              {t.nome}
+                            </option>
+                          ))}
+                      </select>
+                      <button
+                        type="button"
+                        class="bf-btn bf-btn--sm"
+                        disabled={!adminTimeDestino || adminEnviando}
+                        onClick={() =>
+                          adminTransferir({
+                            fromChave: data.donoChave!,
+                            toChave: adminTimeDestino,
+                          })}
+                      >
+                        {adminEnviando ? "..." : "transferir"}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      class="bf-btn bf-btn--ghost bf-btn--sm bf-atleta-detalhes__admin-remove"
+                      disabled={adminEnviando}
+                      onClick={() =>
+                        adminTransferir({
+                          fromChave: data.donoChave!,
+                          toChave: null,
+                        })}
+                    >
+                      remover do time (free agent)
+                    </button>
+                  </>
+                )
+                : (
+                  // Free agent: pode adicionar a um time
+                  <div class="bf-atleta-detalhes__admin-row">
+                    <select
+                      class="bf-atleta-detalhes__admin-select"
+                      value={adminTimeDestino}
+                      onChange={(e) =>
+                        setAdminTimeDestino(
+                          (e.target as HTMLSelectElement).value,
+                        )}
+                    >
+                      <option value="">— adicionar a… —</option>
+                      {timesDisponiveis.map((t) => (
+                        <option key={t.chave} value={t.chave}>
+                          {t.nome}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      class="bf-btn bf-btn--sm"
+                      disabled={!adminTimeDestino || adminEnviando}
+                      onClick={() =>
+                        adminTransferir({
+                          fromChave: null,
+                          toChave: adminTimeDestino,
+                        })}
+                    >
+                      {adminEnviando ? "..." : "adicionar"}
+                    </button>
+                  </div>
+                )}
+              {adminErro && (
+                <p class="bf-atleta-detalhes__admin-erro" role="alert">
+                  {adminErro}
+                </p>
+              )}
             </div>
           )}
 

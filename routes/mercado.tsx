@@ -300,7 +300,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=148" />
+        <link rel="stylesheet" href="/bf-styles.css?v=149" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -328,7 +328,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
           draftOrdem={data.draftOrdem}
           draftMeta={data.draftMeta}
           meusInteresses={[]}
-          isAdmin={data.userRole === "admin" && !data.minhaChave}
+          isAdmin={data.userRole === "admin"}
           timesDisponiveis={data.timesDisponiveis}
         />
         <BottomNav active="mercado" liveDisabled={!data.aoVivo} />
