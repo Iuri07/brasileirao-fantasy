@@ -122,15 +122,16 @@ export const handler: Handlers<Data, State> = {
       ) / 100;
       const historico = historicoPorChave.get(chave) ?? {};
 
-      // Escalação não mostra label de posição embaixo do nome — a posição
-      // já fica óbvia pela linha do pino no campo (GOL na base, ATA no
-      // topo). Mantemos `pos` só pro banco / não escalados (ReservasRow),
-      // onde fora do campo o label ajuda a scan.
+      // Escalação não mostra label de posição embaixo do nome (Field usa
+      // showPosLabel={false} aqui) — a posição já é óbvia pela linha do
+      // pino no campo. MAS `pos` precisa chegar no Field pra separar
+      // laterais (nas pontas) de zagueiros (no meio) no layout da defesa.
       const pino = (j: typeof escalados[number]): Pino => ({
         nome: j.apelido_api,
         pts: j.pontos,
         escudo: escudoUrl(j.clube),
         cores: coresClube(j.clube),
+        pos: POS_ABREV[j.posicao],
         statusId: j.status_id,
         foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
       });
@@ -240,6 +241,7 @@ export default function Liga({ data }: PageProps<Data>) {
                           jogadores={t.escalacao}
                           showPoints={false}
                           showStatus={false}
+                          showPosLabel={false}
                           accent={accent}
                         />
                         <ReservasRow

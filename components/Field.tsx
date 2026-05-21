@@ -142,6 +142,11 @@ interface Props {
       Default true. Em liveMode é forçado false. /liga histórica usa
       false pra ficar "limpa" — só escalação + posições, sem dados. */
   showStatus?: boolean;
+  /** Mostra label de posição (LAT/ZAG/etc) embaixo do nome no pino.
+      Default true. /liga usa false (a posição já é óbvia pela linha
+      do pino no campo), mas o campo `pos` ainda chega no Field pra
+      separar laterais de zagueiros no layout. */
+  showPosLabel?: boolean;
 }
 
 export interface BancoPino extends Pino {
@@ -169,6 +174,7 @@ function PlayerPin(
     compativel,
     liveMode = false,
     showStatus = true,
+    showPosLabel = true,
   }: {
     p: Pino;
     accent: keyof typeof COLOR_VAR;
@@ -179,6 +185,7 @@ function PlayerPin(
     compativel?: boolean;
     liveMode?: boolean;
     showStatus?: boolean;
+    showPosLabel?: boolean;
   },
 ) {
   const isEmpty = empty && !p.num && !p.cores && !p.foto;
@@ -313,7 +320,7 @@ function PlayerPin(
       {/* Corpo da carta */}
       <div class="bf-pin__card">
         {p.nome && <span class="bf-pin__card-name">{p.nome}</span>}
-        {p.pos && <div class="bf-pin__card-pos">{p.pos}</div>}
+        {showPosLabel && p.pos && <div class="bf-pin__card-pos">{p.pos}</div>}
         {pts != null && (
           <div
             class={`bf-pin__card-pts ${pts < 0 ? "bf-pin__card-pts--neg" : ""}`}
@@ -347,6 +354,7 @@ export default function Field(
     compativelCom,
     liveMode = false,
     showStatus = true,
+    showPosLabel = true,
   }: Props,
 ) {
   const gk = jogadores?.gk ?? {};
@@ -402,6 +410,7 @@ export default function Field(
             empty={empty}
             liveMode={liveMode}
             showStatus={showStatus}
+            showPosLabel={showPosLabel}
             {...pinProps(gk)}
           />
         </div>
@@ -415,6 +424,7 @@ export default function Field(
               empty={empty}
               liveMode={liveMode}
               showStatus={showStatus}
+              showPosLabel={showPosLabel}
               {...pinProps(p)}
             />
           ))}
@@ -429,6 +439,7 @@ export default function Field(
               empty={empty}
               liveMode={liveMode}
               showStatus={showStatus}
+              showPosLabel={showPosLabel}
               {...pinProps(p)}
             />
           ))}
@@ -443,6 +454,7 @@ export default function Field(
               empty={empty}
               liveMode={liveMode}
               showStatus={showStatus}
+              showPosLabel={showPosLabel}
               {...pinProps(p)}
             />
           ))}
