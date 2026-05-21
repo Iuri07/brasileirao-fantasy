@@ -498,7 +498,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=158" />
+        <link rel="stylesheet" href="/bf-styles.css?v=159" />
       </Head>
       <DesktopSidebar
         active="home"

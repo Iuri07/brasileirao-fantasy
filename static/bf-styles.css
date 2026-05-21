@@ -6114,9 +6114,13 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* Nome usa a cor do time — fallback pro fg-2 se accent não vier */
-    color: var(--row-accent, var(--bf-fg-2));
+    color: var(--bf-fg-2);
     font-weight: 700;
+  }
+  /* Cor do time aplicada SÓ na linha do meu time — destaca onde estou
+     no ranking sem poluir as outras com cores aleatórias. */
+  .bf-sidebar__ranking-row--mine .bf-sidebar__ranking-name {
+    color: var(--row-accent, var(--bf-fg-0));
   }
   .bf-sidebar__ranking-pts {
     font-variant-numeric: tabular-nums;
