@@ -1931,6 +1931,12 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   color: var(--bf-fg-3);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  /* Foot pode conter foot text + delta vs média empilhados (foot vira
+     div pra acomodar). Display flex column pra evitar overlap. */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
 }
 .bf-status-card__metric-foot--lime {
   color: var(--bf-lime);
@@ -5891,9 +5897,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   padding: 4px 0 8px;
 }
 
-/* Delta vs média no status card metric */
+/* Delta vs média no status card metric (renderizado dentro do foot,
+   logo abaixo do label 'final'/'parcial') */
 .bf-status-card__delta {
-  margin-top: 4px;
   font-family: var(--bf-font-cond);
   font-weight: 800;
   font-size: 11px;

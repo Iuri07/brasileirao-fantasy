@@ -498,7 +498,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=160" />
+        <link rel="stylesheet" href="/bf-styles.css?v=161" />
       </Head>
       <DesktopSidebar
         active="home"
@@ -591,28 +591,30 @@ export default function Home({ data }: PageProps<HomeData>) {
                   </span>
                 )}
               </span>
-              <span
+              <div
                 class={`bf-status-card__metric-foot ${
                   data.exibidaParcial ? "bf-status-card__metric-foot--lime" : ""
                 }`}
               >
-                {data.exibidaParcial ? "parcial" : "final"}
-              </span>
-              {data.mediaTime != null && data.pontuacaoExibida != null && (() => {
-                const delta = data.pontuacaoExibida - data.mediaTime;
-                const positivo = delta >= 0;
-                return (
-                  <div
-                    class={`bf-status-card__delta ${
-                      positivo
-                        ? "bf-status-card__delta--up"
-                        : "bf-status-card__delta--down"
-                    }`}
-                  >
-                    {positivo ? "↑" : "↓"} {Math.abs(delta).toFixed(1).replace(".", ",")} vs média
-                  </div>
-                );
-              })()}
+                <span>{data.exibidaParcial ? "parcial" : "final"}</span>
+                {data.mediaTime != null && data.pontuacaoExibida != null &&
+                  (() => {
+                    const delta = data.pontuacaoExibida - data.mediaTime;
+                    const positivo = delta >= 0;
+                    return (
+                      <span
+                        class={`bf-status-card__delta ${
+                          positivo
+                            ? "bf-status-card__delta--up"
+                            : "bf-status-card__delta--down"
+                        }`}
+                      >
+                        {positivo ? "↑" : "↓"}{" "}
+                        {Math.abs(delta).toFixed(1).replace(".", ",")} vs média
+                      </span>
+                    );
+                  })()}
+              </div>
             </div>
             <div class="bf-status-card__divider"></div>
             <div class="bf-status-card__metric">
