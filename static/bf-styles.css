@@ -5891,10 +5891,11 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   padding: 0;
   background: transparent;
   border: none;
-  margin: 0 var(--bf-gutter);
+  margin: 0;
 }
+/* Mobile: SectionHeader visível, widget__header escondido. */
 .bf-widget--proximas .bf-widget__header {
-  padding: 4px 0 8px;
+  display: none;
 }
 
 /* Delta vs média no status card metric (renderizado dentro do foot,
@@ -6060,6 +6061,26 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   .bf-sidebar__nav-item--disabled {
     opacity: 0.35;
     pointer-events: none;
+  }
+  /* Pip pulsante lime indicando mercado aberto. Não pisa no item
+     ativo (que tem outro pip já à direita). Quando o item Mercado
+     E também é o ativo, o pip do mkt-aberto ganha precedência:
+     escondemos o pip do ativo. */
+  .bf-sidebar__nav-item--mkt-aberto::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--bf-lime);
+    box-shadow: 0 0 8px var(--bf-lime-glow);
+    animation: bf-pulse 1.4s var(--bf-ease-in-out) infinite;
+  }
+  .bf-sidebar__nav-item--mkt-aberto.bf-sidebar__nav-item--active::before {
+    display: none;
   }
   .bf-sidebar__nav-icon {
     width: 18px;
@@ -6291,7 +6312,13 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     border-radius: var(--bf-radius-md);
     margin: 0;
   }
+  /* Desktop: SectionHeader escondido (graffiti seria grande demais
+     dentro da coluna estreita), widget__header inline aparece. */
+  .bf-widget--proximas > .bf-section-header {
+    display: none;
+  }
   .bf-widget--proximas .bf-widget__header {
+    display: flex;
     padding: 0;
   }
 

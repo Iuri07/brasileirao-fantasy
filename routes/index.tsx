@@ -498,7 +498,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=161" />
+        <link rel="stylesheet" href="/bf-styles.css?v=162" />
       </Head>
       <DesktopSidebar
         active="home"
@@ -509,6 +509,7 @@ export default function Home({ data }: PageProps<HomeData>) {
         totalTimes={data.totalTimes}
         ranking={data.rankingTop}
         fechamentoTexto={data.fechamentoTexto}
+        mercadoAberto={data.mercadoAberto}
       />
       <div class="bf-viewport">
         <TopBar
@@ -674,6 +675,9 @@ export default function Home({ data }: PageProps<HomeData>) {
           <aside class="bf-home-grid__side">
             {/* Próximos jogos */}
             <div class="bf-widget bf-widget--proximas">
+              {/* Mobile: usa SectionHeader (graffiti) — escondido no
+                  desktop via CSS. Desktop: usa widget__header inline. */}
+              <SectionHeader>Proximos</SectionHeader>
               <div class="bf-widget__header">
                 <span class="bf-widget__lbl">Próximos jogos</span>
                 <span class="bf-widget__count">

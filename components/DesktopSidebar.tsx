@@ -30,6 +30,9 @@ interface Props {
   fechamentoTexto: string | null;
   /** Mensagem opcional de aviso ("Cauly virou dúvida"). */
   aviso?: string | null;
+  /** True quando o mercado está aberto (entre rodadas). Mostra pip
+   *  pulsante lime no item Mercado da nav. */
+  mercadoAberto?: boolean;
 }
 
 const NAV_ITEMS: Array<
@@ -73,6 +76,7 @@ export default function DesktopSidebar(props: Props) {
     ranking,
     fechamentoTexto,
     aviso = null,
+    mercadoAberto = false,
   } = props;
   const top5 = ranking.slice(0, 5);
 
@@ -102,9 +106,13 @@ export default function DesktopSidebar(props: Props) {
         {NAV_ITEMS.map((it) => {
           const disabled = liveDisabled && it.id === "live";
           const isActive = it.id === active;
+          // Pip lime no item Mercado quando mercado aberto — mesmo padrão
+          // visual do pulsante "Ao Vivo" na bottom-nav antiga.
+          const aberto = mercadoAberto && it.id === "mercado";
           const cls = ["bf-sidebar__nav-item"];
           if (isActive) cls.push("bf-sidebar__nav-item--active");
           if (disabled) cls.push("bf-sidebar__nav-item--disabled");
+          if (aberto) cls.push("bf-sidebar__nav-item--mkt-aberto");
           const icon = (
             <svg
               class="bf-sidebar__nav-icon"
