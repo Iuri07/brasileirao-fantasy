@@ -1408,11 +1408,16 @@ const SCOUT_LABEL: Record<string, string> = {
   SG: "Sem sofrer gols",
 };
 
+// Scouts que somam pontos no Cartola — separados pra colorir lime
+// vs red no modal. Valores oficiais Cartola 2024+:
+//   G +8 · A +5 · FT +3 · FD +1.2 · FF +0.7 · FS +0.5 · DS +1.2 ·
+//   PS +1 · DD +3 · DP +7 · SG +5
 const SCOUT_POSITIVO = new Set([
   "G",
   "A",
   "FT",
   "FD",
+  "FF",
   "FS",
   "DS",
   "PS",
