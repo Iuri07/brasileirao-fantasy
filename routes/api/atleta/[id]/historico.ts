@@ -3,11 +3,18 @@ import { getRodadaStatus } from "../../../../lib/kv.ts";
 
 const H = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 
+interface PontuadosAtleta {
+  pontuacao: number;
+  entrou_em_campo: boolean;
+  scout?: Record<string, number>;
+}
 interface PontuadosResp {
-  atletas?: Record<
-    string,
-    { pontuacao: number; entrou_em_campo: boolean } | undefined
-  >;
+  atletas?: Record<string, PontuadosAtleta | undefined>;
+}
+
+interface RodadaEntry {
+  pontos: number;
+  scout: Record<string, number>;
 }
 
 // Cache em memória 1h: histórico de um atleta muda raramente (só ao
@@ -15,7 +22,11 @@ interface PontuadosResp {
 const HIST_TTL_MS = 60 * 60 * 1000;
 const cacheHistorico = new Map<
   number,
-  { at: number; data: Record<number, number>; rodadaAtual: number }
+  {
+    at: number;
+    data: Record<number, RodadaEntry>;
+    rodadaAtual: number;
+  }
 >();
 
 async function fetchPontuadosRodada(
@@ -34,7 +45,9 @@ async function fetchPontuadosRodada(
 }
 
 /** GET /api/atleta/[id]/historico
- *  Retorna { rodada: pontos } por rodada onde o atleta entrou em campo. */
+ *  Retorna { rodada: { pontos, scout } } por rodada onde o atleta entrou em
+ *  campo. O scout vem da Cartola por rodada (G, A, FF, etc.) — usado pra
+ *  detalhar a pontuação quando o usuário clica numa barra no chart. */
 export const handler: Handlers = {
   async GET(_req, ctx) {
     const id = Number(ctx.params.id);
@@ -66,12 +79,15 @@ export const handler: Handlers = {
       proms.push(fetchPontuadosRodada(r));
     }
     const results = await Promise.all(proms);
-    const historico: Record<number, number> = {};
+    const historico: Record<number, RodadaEntry> = {};
     results.forEach((resp, idx) => {
       if (!resp?.atletas) return;
       const a = resp.atletas[String(id)];
       if (a && a.entrou_em_campo) {
-        historico[idx + 1] = a.pontuacao;
+        historico[idx + 1] = {
+          pontos: a.pontuacao,
+          scout: a.scout ?? {},
+        };
       }
     });
     cacheHistorico.set(id, {

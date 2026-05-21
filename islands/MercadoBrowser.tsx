@@ -1400,9 +1400,13 @@ const SCOUT_POSITIVO = new Set([
   "SG",
 ]);
 
+interface HistoricoRodadaEntry {
+  pontos: number;
+  scout: Record<string, number>;
+}
 interface HistoricoRes {
   ok: boolean;
-  historico?: Record<string, number>;
+  historico?: Record<string, HistoricoRodadaEntry>;
   rodadaAtual?: number;
 }
 
@@ -1415,6 +1419,7 @@ function ModalAtletaDetalhes(
   const [data, setData] = useState<DetalheRes | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [historico, setHistorico] = useState<HistoricoRes | null>(null);
+  const [rodadaSel, setRodadaSel] = useState<number | null>(null);
 
   useEffect(() => {
     let cancel = false;
@@ -1544,10 +1549,82 @@ function ModalAtletaDetalhes(
 
           {/* Chart de pontos por rodada (lazy — chega depois do info) */}
           {historico?.ok && historico.historico && (
-            <AtletaPontosChart
-              historico={historico.historico}
-              maxRodada={historico.rodadaAtual}
-            />
+            <>
+              <AtletaPontosChart
+                historico={historico.historico}
+                maxRodada={historico.rodadaAtual}
+                selectedRodada={rodadaSel}
+                onSelectRodada={setRodadaSel}
+              />
+              {rodadaSel != null && historico.historico[String(rodadaSel)] &&
+                (() => {
+                  const ent = historico.historico![String(rodadaSel)];
+                  const entries = Object.entries(ent.scout).filter(([, v]) =>
+                    v > 0
+                  ).sort((x, y) => y[1] - x[1]);
+                  const pos = entries.filter(([k]) => SCOUT_POSITIVO.has(k));
+                  const neg = entries.filter(([k]) => !SCOUT_POSITIVO.has(k));
+                  return (
+                    <div class="bf-atleta-detalhes__rodada-scout">
+                      <div class="bf-atleta-detalhes__rodada-scout-head">
+                        <span class="bf-atleta-detalhes__rodada-scout-titulo">
+                          Rodada {rodadaSel}
+                        </span>
+                        <span class="bf-atleta-detalhes__rodada-scout-pts">
+                          {ent.pontos.toFixed(1).replace(".", ",")} pts
+                        </span>
+                        <button
+                          type="button"
+                          class="bf-atleta-detalhes__rodada-scout-close"
+                          onClick={() => setRodadaSel(null)}
+                          aria-label="Fechar detalhe da rodada"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      {entries.length === 0 && (
+                        <div class="bf-atleta-detalhes__rodada-scout-vazio">
+                          Sem scout registrado nesta rodada
+                        </div>
+                      )}
+                      {pos.length > 0 && (
+                        <div class="bf-atleta-detalhes__scout-grupo bf-atleta-detalhes__scout-grupo--pos">
+                          {pos.map(([k, v]) => (
+                            <div
+                              class="bf-atleta-detalhes__scout-item"
+                              key={k}
+                            >
+                              <span class="bf-atleta-detalhes__scout-qtd">
+                                {v}
+                              </span>
+                              <span class="bf-atleta-detalhes__scout-lbl">
+                                {SCOUT_LABEL[k] ?? k}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {neg.length > 0 && (
+                        <div class="bf-atleta-detalhes__scout-grupo bf-atleta-detalhes__scout-grupo--neg">
+                          {neg.map(([k, v]) => (
+                            <div
+                              class="bf-atleta-detalhes__scout-item"
+                              key={k}
+                            >
+                              <span class="bf-atleta-detalhes__scout-qtd">
+                                {v}
+                              </span>
+                              <span class="bf-atleta-detalhes__scout-lbl">
+                                {SCOUT_LABEL[k] ?? k}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+            </>
           )}
 
           {/* Status na liga: dono ou free agent */}
