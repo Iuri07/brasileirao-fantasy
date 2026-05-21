@@ -287,7 +287,7 @@ function renderTimingPills(data: Data) {
           class={`bf-pill bf-pill--timing-${tResol.severity}`}
           title={`Conflitos resolvem ${tResol.longo}`}
         >
-          <span class="bf-pill__lbl">Draft</span>
+          <span class="bf-pill__lbl">Draft resolve</span>
           <span class="bf-pill__val">{tResol.curto}</span>
         </span>
       )}
