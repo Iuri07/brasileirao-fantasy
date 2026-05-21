@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import JerseySvg from "../components/JerseySvg.tsx";
+import AtletaPontosChart from "../components/AtletaPontosChart.tsx";
 import type { CoresClube } from "../lib/cores.ts";
 
 export interface AtletaMercado {
@@ -1399,6 +1400,12 @@ const SCOUT_POSITIVO = new Set([
   "SG",
 ]);
 
+interface HistoricoRes {
+  ok: boolean;
+  historico?: Record<string, number>;
+  rodadaAtual?: number;
+}
+
 function ModalAtletaDetalhes(
   { base, onClose }: {
     base: AtletaMercado;
@@ -1407,9 +1414,11 @@ function ModalAtletaDetalhes(
 ) {
   const [data, setData] = useState<DetalheRes | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [historico, setHistorico] = useState<HistoricoRes | null>(null);
 
   useEffect(() => {
     let cancel = false;
+    // info (scout, dono na liga, etc.) e historico (pontos/rodada) em paralelo
     (async () => {
       try {
         const r = await fetch(`/api/atleta/${base.atleta_id}/info`);
@@ -1419,6 +1428,15 @@ function ModalAtletaDetalhes(
         if (!cancel) setData({ ok: false, erro: String(e) });
       } finally {
         if (!cancel) setCarregando(false);
+      }
+    })();
+    (async () => {
+      try {
+        const r = await fetch(`/api/atleta/${base.atleta_id}/historico`);
+        const d = await r.json() as HistoricoRes;
+        if (!cancel) setHistorico(d);
+      } catch {
+        // histórico opcional — não bloqueia modal
       }
     })();
     return () => {
@@ -1523,6 +1541,14 @@ function ModalAtletaDetalhes(
               </div>
             )}
           </div>
+
+          {/* Chart de pontos por rodada (lazy — chega depois do info) */}
+          {historico?.ok && historico.historico && (
+            <AtletaPontosChart
+              historico={historico.historico}
+              maxRodada={historico.rodadaAtual}
+            />
+          )}
 
           {/* Status na liga: dono ou free agent */}
           {!carregando && data?.ok && (

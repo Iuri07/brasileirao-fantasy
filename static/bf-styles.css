@@ -5588,6 +5588,98 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   color: var(--bf-fg-2);
 }
 
+/* Chart de pontos por rodada (modal de detalhes do atleta) */
+.bf-pontos-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 8px;
+  background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-md);
+}
+.bf-pontos-chart--vazio {
+  padding: 14px 12px;
+  text-align: center;
+  color: var(--bf-fg-3);
+  font-family: var(--bf-font-body);
+  font-style: italic;
+  font-size: 12px;
+}
+.bf-pontos-chart__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bf-pontos-chart__titulo {
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bf-fg-3);
+}
+.bf-pontos-chart__media {
+  font-family: var(--bf-font-body);
+  font-size: 11px;
+  color: var(--bf-fg-3);
+}
+.bf-pontos-chart__media strong {
+  color: var(--bf-yellow);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bf-pontos-chart__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.bf-pontos-chart__baseline {
+  stroke: var(--bf-fg-3);
+  stroke-width: 0.6;
+  opacity: 0.6;
+}
+.bf-pontos-chart__media-line {
+  stroke: var(--bf-yellow);
+  stroke-width: 0.6;
+  stroke-dasharray: 2 2;
+  opacity: 0.55;
+}
+.bf-pontos-chart__bar {
+  transition: opacity var(--dur-micro, 120ms) ease;
+}
+.bf-pontos-chart__bar:hover {
+  opacity: 0.78;
+}
+.bf-pontos-chart__bar--pos {
+  fill: var(--bf-lime);
+}
+.bf-pontos-chart__bar--neg {
+  fill: var(--bf-red);
+  opacity: 0.85;
+}
+.bf-pontos-chart__bar-val {
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 7.5px;
+  fill: var(--bf-fg-1);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+.bf-pontos-chart__tick {
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 7.5px;
+  fill: var(--bf-fg-3);
+  letter-spacing: 0.05em;
+}
+.bf-pontos-chart__dnp {
+  fill: var(--bf-fg-3);
+  opacity: 0.35;
+}
+
 /* Admin: dropdown "Visualizar como" no topo do mercado */
 .bf-mercado__admin-as {
   display: flex;
