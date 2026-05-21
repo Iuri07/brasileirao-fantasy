@@ -3806,11 +3806,21 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   letter-spacing: 0.02em;
 }
 .bf-merc-card__clube {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-family: var(--bf-font-cond);
   font-weight: 700;
   font-size: 10px;
   color: var(--bf-fg-3);
   letter-spacing: 0.08em;
+}
+.bf-merc-card__escudo {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 2px;
 }
 .bf-merc-card__pts {
   display: flex;
@@ -5465,7 +5475,17 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   font-weight: 700;
 }
 .bf-atleta-detalhes__clube {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   color: var(--bf-fg-2);
+}
+.bf-atleta-detalhes__clube-escudo {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 2px;
 }
 .bf-atleta-detalhes__status {
   color: var(--st-color, var(--bf-fg-2));

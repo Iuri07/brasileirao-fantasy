@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "preact/hooks";
 import JerseySvg from "../components/JerseySvg.tsx";
 import AtletaPontosChart from "../components/AtletaPontosChart.tsx";
 import type { CoresClube } from "../lib/cores.ts";
+import { escudoUrl } from "../lib/escudos.ts";
 
 export interface AtletaMercado {
   atleta_id: number;
@@ -1010,7 +1011,17 @@ function CardJogador(
         </button>
       </div>
       <div class="bf-merc-card__nome">{j.nome}</div>
-      <div class="bf-merc-card__clube">{j.clubeNome}</div>
+      <div class="bf-merc-card__clube">
+        {escudoUrl(j.clubeNome) && (
+          <img
+            class="bf-merc-card__escudo"
+            src={escudoUrl(j.clubeNome)!}
+            alt=""
+            aria-hidden="true"
+          />
+        )}
+        <span>{j.clubeNome}</span>
+      </div>
       <div class="bf-merc-card__pts">
         <div class="bf-merc-card__pts-cel">
           <span class="bf-label-micro">Última</span>
@@ -1119,7 +1130,17 @@ function CardMeu(
         </button>
       </div>
       <div class="bf-merc-card__nome">{j.nome}</div>
-      <div class="bf-merc-card__clube">{j.clubeNome}</div>
+      <div class="bf-merc-card__clube">
+        {escudoUrl(j.clubeNome) && (
+          <img
+            class="bf-merc-card__escudo"
+            src={escudoUrl(j.clubeNome)!}
+            alt=""
+            aria-hidden="true"
+          />
+        )}
+        <span>{j.clubeNome}</span>
+      </div>
       <div class="bf-merc-card__pts">
         <div class="bf-merc-card__pts-cel">
           <span class="bf-label-micro">Última</span>
@@ -1508,7 +1529,17 @@ function ModalAtletaDetalhes(
                 <span class="bf-atleta-detalhes__pos">
                   {POS_ABREV[base.posicao]}
                 </span>
-                <span class="bf-atleta-detalhes__clube">{base.clubeNome}</span>
+                <span class="bf-atleta-detalhes__clube">
+                  {escudoUrl(base.clubeNome) && (
+                    <img
+                      class="bf-atleta-detalhes__clube-escudo"
+                      src={escudoUrl(base.clubeNome)!}
+                      alt=""
+                      aria-hidden="true"
+                    />
+                  )}
+                  {base.clubeNome}
+                </span>
                 {st && (
                   <span
                     class="bf-atleta-detalhes__status"

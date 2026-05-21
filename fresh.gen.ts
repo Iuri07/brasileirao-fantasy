@@ -58,7 +58,6 @@ import * as $liga from "./routes/liga.tsx";
 import * as $login from "./routes/login.tsx";
 import * as $mercado from "./routes/mercado.tsx";
 import * as $ranking from "./routes/ranking.tsx";
-import * as $time_chave_ from "./routes/time/[chave].tsx";
 import * as $uploads_path_ from "./routes/uploads/[...path].ts";
 import * as $AdminDraftDias from "./islands/AdminDraftDias.tsx";
 import * as $AdminEmailMap from "./islands/AdminEmailMap.tsx";
@@ -142,7 +141,6 @@ const manifest = {
     "./routes/login.tsx": $login,
     "./routes/mercado.tsx": $mercado,
     "./routes/ranking.tsx": $ranking,
-    "./routes/time/[chave].tsx": $time_chave_,
     "./routes/uploads/[...path].ts": $uploads_path_,
   },
   islands: {
