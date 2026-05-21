@@ -439,7 +439,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=146" />
+        <link rel="stylesheet" href="/bf-styles.css?v=147" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -450,12 +450,15 @@ export default function Home({ data }: PageProps<HomeData>) {
           userPicture={data.userPicture}
         />
 
-        <article
-          class="bf-card bf-status-card"
-          style={visual?.accent
-            ? { "--user-accent": visual.accent } as Record<string, string>
-            : undefined}
-        >
+        {/* Desktop (≥1024px): .bf-home-grid vira 3-col [status | escalação |
+            próximas]. Mobile: block normal, stack vertical como sempre. */}
+        <div class="bf-home-grid">
+          <article
+            class="bf-card bf-status-card bf-home-grid__status"
+            style={visual?.accent
+              ? { "--user-accent": visual.accent } as Record<string, string>
+              : undefined}
+          >
           {splatterUrl && (
             <div
               class="bf-status-card__splatter"
@@ -535,13 +538,9 @@ export default function Home({ data }: PageProps<HomeData>) {
               </span>
             </div>
           </div>
-        </article>
+          </article>
 
-        {/* No desktop (≥1024px), .bf-home-cols vira grid 2-col: escalação
-            à esquerda, próximas à direita. No mobile o wrapper é
-            transparente (display: contents) e segue stack vertical. */}
-        <div class="bf-home-cols">
-          <section class="bf-home-cols__col">
+          <section class="bf-home-grid__escala">
             {data.atletas.length > 0
               ? (
                 <MeuTimeEditor
@@ -564,7 +563,8 @@ export default function Home({ data }: PageProps<HomeData>) {
                 </div>
               )}
           </section>
-          <section class="bf-home-cols__col">
+
+          <section class="bf-home-grid__proximas">
             <SectionHeader>Proximos</SectionHeader>
             <PartidasExpandable
               partidas={data.partidas}
