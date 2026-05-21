@@ -134,7 +134,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px var(--bf-gutter) 14px;
+  padding: 10px var(--bf-gutter) 24px;
   /* Mobile: fundo sólido pra não usar backdrop-filter (gargalo de
      scroll em GPU modesta tipo Mali-G57). Desktop reativa blur via
      media query no fim do arquivo. */
@@ -195,7 +195,7 @@ body {
   text-decoration: none;
 }
 .bf-minlogo__img {
-  height: 36px;
+  height: 48px;
   width: auto;
   display: block;
 }
