@@ -5949,11 +5949,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     font-size: 11px;
   }
 
-  /* Grid do mercado: cards um pouco maiores (cabem 6+ por linha
-     em 1280px). */
+  /* Padding bottom do grid do mercado (override do mobile que reserva
+     espaço pro bottom-nav inexistente no desktop) */
   .bf-mercado__grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 12px;
     padding-bottom: 32px;
   }
 
@@ -6127,25 +6125,41 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     margin-right: auto;
   }
 
-  /* ----- /mercado: filtros em linha (busca + chips + selects) ----- */
+  /* ----- /mercado: barra superior compacta + grid denso ----- */
 
+  /* Container principal: cap em 1200px e centralizar conteúdo */
+  .bf-mercado {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  /* Stats bar: cap pra não esticar full width */
+  .bf-mercado__stats {
+    max-width: 480px;
+    margin-left: var(--bf-gutter);
+    margin-right: var(--bf-gutter);
+  }
+  /* Filtros viram linha única horizontal sem wrap */
   .bf-mercado__filtros {
     flex-direction: row;
     align-items: center;
     flex-wrap: wrap;
     padding: 0 var(--bf-gutter);
+    gap: 10px;
   }
   .bf-mercado__busca {
-    flex: 1 1 260px;
-    max-width: 320px;
+    flex: 0 0 280px;
   }
   .bf-mercado__chips {
     flex: 1 1 auto;
   }
   .bf-mercado__selects {
     flex: 0 0 auto;
-    /* Selects horizontais — não stack */
     grid-template-columns: repeat(3, auto);
+  }
+  /* Grid: cards menores ainda, cabem mais por linha */
+  .bf-mercado__grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
   }
 
   /* ----- /ao-vivo: master-detail [tabela à esquerda | eventos sticky direita] ----- */
