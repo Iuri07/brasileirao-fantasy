@@ -134,7 +134,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px var(--bf-gutter) 24px;
+  padding: 10px var(--bf-gutter) 0;
+  margin-bottom: 20px;
   /* Mobile: fundo sólido pra não usar backdrop-filter (gargalo de
      scroll em GPU modesta tipo Mali-G57). Desktop reativa blur via
      media query no fim do arquivo. */
