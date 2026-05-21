@@ -54,14 +54,6 @@ interface Props {
   aVendaIds?: number[];
 }
 
-const POS_ABREV: Record<string, string> = {
-  Goleiro: "GOL",
-  Lateral: "LAT",
-  Zagueiro: "ZAG",
-  Meia: "MEI",
-  Atacante: "ATK",
-};
-
 function compativel(a: AtletaElenco, b: AtletaElenco): boolean {
   // Posição exata: zagueiro só troca com zagueiro, lateral só com lateral
   return a.posicao === b.posicao;
@@ -183,8 +175,8 @@ export default function MeuTimeEditor(
     if (!a || !b) return;
     if (!compativel(a, b)) {
       setErro(
-        `Posições incompatíveis: ${POS_ABREV[a.posicao]} ↔ ${
-          POS_ABREV[b.posicao]
+        `Posições incompatíveis: ${a.posicao} ↔ ${
+          b.posicao
         }`,
       );
       setSelecionado(atletaId);
@@ -290,7 +282,7 @@ export default function MeuTimeEditor(
         pts: j.pontos,
         escudo: escudoUrl(j.clube),
         cores: coresClube(j.clube),
-        pos: POS_ABREV[j.posicao],
+        pos: j.posicao,
         statusId: j.statusId,
         foto: j.foto,
         subEntrou: j.subEntrou,
@@ -569,7 +561,7 @@ function NaoSection(
             <button
               type="button"
               class={`bf-pool__item bf-pool__item--${
-                POS_ABREV[p.posicao].toLowerCase()
+                p.posicao.toLowerCase()
               } ${p.atleta_id === selecionado ? "bf-pool__item--sel" : ""} ${
                 desbotado ? "bf-pool__item--desbotado" : ""
               }`}
@@ -610,7 +602,7 @@ function NaoSection(
                     </span>
                   </div>
                 )}
-              <span class="bf-pool__pos">{POS_ABREV[p.posicao]}</span>
+              <span class="bf-pool__pos">{p.posicao}</span>
               <span class="bf-pool__name">{p.apelido}</span>
             </button>
           );

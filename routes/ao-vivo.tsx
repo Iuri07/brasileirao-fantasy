@@ -31,15 +31,6 @@ import type { State } from "./_middleware.ts";
 
 const CHAVE_FALLBACK_DEV = "aguiar";
 
-const POS_ABREV: Record<string, string> = {
-  "Goleiro": "GOL",
-  "Lateral": "LAT",
-  "Zagueiro": "ZAG",
-  "Meia": "MEI",
-  "Atacante": "ATK",
-  "Técnico": "TEC",
-};
-
 interface TimeLinha {
   chave: string;
   nome: string;
@@ -143,7 +134,7 @@ export const handler: Handlers<Data, State> = {
         pts: j.pontos,
         escudo: escudoUrl(j.clube),
         cores: coresClube(j.clube),
-        pos: POS_ABREV[j.posicao],
+        pos: j.posicao,
         posicao: j.posicao,
         statusId: j.status_id,
         foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
@@ -161,7 +152,7 @@ export const handler: Handlers<Data, State> = {
         pts: j.pontos,
         escudo: escudoUrl(j.clube),
         cores: coresClube(j.clube),
-        pos: POS_ABREV[j.posicao],
+        pos: j.posicao,
         statusId: j.status_id,
         foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
         subEntrou: j.substituido,
@@ -268,7 +259,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=144" />
+        <link rel="stylesheet" href="/bf-styles.css?v=145" />
       </Head>
       <div class="bf-viewport">
         <TopBar

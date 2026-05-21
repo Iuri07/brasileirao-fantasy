@@ -22,15 +22,6 @@ interface Props {
   outrosTimes: TimeDestino[];
 }
 
-const POS_ABREV: Record<string, string> = {
-  Goleiro: "GOL",
-  Lateral: "LAT",
-  Zagueiro: "ZAG",
-  Meia: "MEI",
-  Atacante: "ATK",
-  Técnico: "TEC",
-};
-
 export default function AdminTransferirPanel(
   { fromChave, jogadores, outrosTimes }: Props,
 ) {
@@ -106,7 +97,7 @@ export default function AdminTransferirPanel(
         {sorted.map((j) => (
           <div class="bf-admin-transferir__row" key={j.atleta_id}>
             <span class="bf-admin-transferir__pos">
-              {POS_ABREV[j.posicao] ?? "?"}
+              {j.posicao ?? "?"}
             </span>
             <span class="bf-admin-transferir__name">{j.apelido}</span>
             <span class="bf-admin-transferir__clube">{j.clube}</span>
