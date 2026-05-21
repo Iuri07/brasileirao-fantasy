@@ -6147,5 +6147,39 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     /* Selects horizontais — não stack */
     grid-template-columns: repeat(3, auto);
   }
+
+  /* ----- /ao-vivo: master-detail [tabela à esquerda | eventos sticky direita] ----- */
+
+  .bf-aovivo-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-areas:
+      "hero   events"
+      "rows   events";
+    gap: 8px 16px;
+    align-items: start;
+  }
+  .bf-aovivo-grid__hero { grid-area: hero; }
+  .bf-aovivo-grid__rows {
+    grid-area: rows;
+    margin: 0;
+    max-width: none;
+  }
+  .bf-aovivo-grid__events {
+    grid-area: events;
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  /* Scrollbar discreta no painel de eventos */
+  .bf-aovivo-grid__events::-webkit-scrollbar {
+    width: 6px;
+  }
+  .bf-aovivo-grid__events::-webkit-scrollbar-thumb {
+    background: var(--bf-line);
+    border-radius: 3px;
+  }
 }
 

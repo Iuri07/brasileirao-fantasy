@@ -268,7 +268,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=150" />
+        <link rel="stylesheet" href="/bf-styles.css?v=151" />
       </Head>
       <div class="bf-viewport">
         <TopBar
@@ -286,8 +286,8 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
 
 function AoVivoLiga({ data }: { data: Data }) {
   return (
-    <>
-      <header class="bf-liga-hero">
+    <div class="bf-aovivo-grid">
+      <header class="bf-liga-hero bf-aovivo-grid__hero">
         <span class="bf-label-micro">
           {data.aoVivo ? "Ao Vivo" : "Aguardando"}
         </span>
@@ -299,7 +299,7 @@ function AoVivoLiga({ data }: { data: Data }) {
         </div>
       </header>
 
-      <div class="bf-liga-list">
+      <div class="bf-liga-list bf-aovivo-grid__rows">
         {data.times.map((t, i) => {
           const pos = i + 1;
           const visual = timeLigaInfo(t.chave);
@@ -366,7 +366,9 @@ function AoVivoLiga({ data }: { data: Data }) {
         })}
       </div>
 
-      <AoVivoEventosPartidas ligaAtletas={data.ligaAtletas} />
-    </>
+      <div class="bf-aovivo-grid__events">
+        <AoVivoEventosPartidas ligaAtletas={data.ligaAtletas} />
+      </div>
+    </div>
   );
 }
