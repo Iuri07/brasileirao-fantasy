@@ -42,10 +42,6 @@ export const handler: Handlers = {
       const jogos = (a as any).jogos_num as number | undefined;
       // deno-lint-ignore no-explicit-any
       const media = (a as any).media_num as number | undefined;
-      // deno-lint-ignore no-explicit-any
-      const preco = (a as any).preco_num as number | undefined;
-      // deno-lint-ignore no-explicit-any
-      const variacao = (a as any).variacao_num as number | undefined;
       const ultima = a.pontos_num ?? null;
 
       // Dono na liga?
@@ -84,8 +80,6 @@ export const handler: Handlers = {
             jogos: jogos ?? 0,
             ultima,
             media: media ?? null,
-            preco: preco ?? null,
-            variacao: variacao ?? null,
             scout: scout ?? {},
           },
           donoChave,

@@ -1317,8 +1317,6 @@ interface DetalheRes {
     jogos: number;
     ultima: number | null;
     media: number | null;
-    preco: number | null;
-    variacao: number | null;
     scout: Record<string, number>;
   };
   donoChave?: string | null;
@@ -1488,14 +1486,6 @@ function ModalAtletaDetalhes(
               <div class="bf-atleta-detalhes__stat">
                 <span class="bf-label-micro">Jogos</span>
                 <span class="bf-atleta-detalhes__stat-val">{a.jogos}</span>
-              </div>
-            )}
-            {a?.preco != null && (
-              <div class="bf-atleta-detalhes__stat">
-                <span class="bf-label-micro">Preço (C$)</span>
-                <span class="bf-atleta-detalhes__stat-val">
-                  {a.preco.toFixed(2).replace(".", ",")}
-                </span>
               </div>
             )}
           </div>
