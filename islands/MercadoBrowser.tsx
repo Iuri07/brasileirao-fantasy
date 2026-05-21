@@ -1635,7 +1635,7 @@ function ModalAtletaDetalhes(
                   <>
                     <span class="bf-label-micro">Time na liga</span>
                     <a
-                      href={`/time/${data.donoChave}`}
+                      href={`/liga#time-${data.donoChave}`}
                       class="bf-atleta-detalhes__liga-link"
                     >
                       {data.donoNome ?? data.donoChave}

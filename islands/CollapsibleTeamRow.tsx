@@ -72,6 +72,29 @@ export default function CollapsibleTeamRow(
     return () => removeEventListener(OPEN_EVENT, onOpenElsewhere);
   }, [chave]);
 
+  // Deep-link via hash: /liga#time-<chave> abre essa row + scroll.
+  // Usado pela modal de detalhes do atleta (botão "Time na liga").
+  useEffect(() => {
+    function checkHash() {
+      if (typeof location === "undefined") return;
+      const h = location.hash.replace(/^#/, "");
+      if (h === `time-${chave}`) {
+        setOpen(true);
+        dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: chave }));
+        // Mesmo timing do toggle() — espera accordion fechar outras rows
+        setTimeout(() => {
+          rootRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 320);
+      }
+    }
+    checkHash();
+    addEventListener("hashchange", checkHash);
+    return () => removeEventListener("hashchange", checkHash);
+  }, [chave]);
+
   function toggle() {
     const next = !open;
     setOpen(next);
