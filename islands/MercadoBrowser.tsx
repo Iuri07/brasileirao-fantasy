@@ -1384,35 +1384,48 @@ interface DetalheRes {
 
 // Labels dos códigos de scout — keep self-contained no island pra
 // não importar /lib/scout.ts que tem icon emoji.
+// Validado contra /atletas/pontuados em 2026-05 — Cartola adicionou DE
+// e V depois da migração do scout antigo. DD/PI/PE ainda existem na
+// estrutura, mas raramente aparecem em rodadas recentes.
 const SCOUT_LABEL: Record<string, string> = {
+  // Linha de campo — ofensivo
   G: "Gols",
   A: "Assistências",
-  FT: "Na trave",
+  FT: "Finalização na trave",
   FD: "Finalização defendida",
   FF: "Finalização fora",
   FS: "Faltas sofridas",
-  FC: "Faltas cometidas",
-  DS: "Desarmes",
   PS: "Pênaltis sofridos",
+  // Linha de campo — defensivo (positivo)
+  DS: "Desarmes",
+  // Linha de campo — defensivo (negativo)
+  FC: "Faltas cometidas",
+  I: "Impedimentos",
+  PI: "Passes incompletos",
+  PE: "Passes errados",
+  GC: "Gols contra",
   PP: "Pênaltis perdidos",
   PC: "Pênaltis cometidos",
   CA: "Cartões amarelos",
   CV: "Cartões vermelhos",
-  GC: "Gols contra",
-  I: "Impedimentos",
-  PI: "Passes incompletos",
-  PE: "Passes errados",
+  // Goleiro
+  DE: "Defesas",
   DD: "Defesas difíceis",
   DP: "Defesa de pênalti",
-  GS: "Gols sofridos",
   SG: "Sem sofrer gols",
+  GS: "Gols sofridos",
+  // Técnico
+  V: "Vitória",
 };
 
 // Scouts que somam pontos no Cartola — separados pra colorir lime
-// vs red no modal. Valores oficiais Cartola 2024+:
-//   G +8 · A +5 · FT +3 · FD +1.2 · FF +0.7 · FS +0.5 · DS +1.2 ·
-//   PS +1 · DD +3 · DP +7 · SG +5
+// vs red no modal. Valores oficiais (validados via cálculo nas rodadas
+// reais — alguns mudaram em relação ao Cartola antigo):
+//   G +8 · A +5 · FT +3 · FD +1.2 · FF +0.7 · FS +0.5 · PS +1 ·
+//   DS +1.2 · DE +1.3 · DD +3 · DP +7 · SG +5 · V +5 (técnico)
+//   FC -0.5 · I -0.1 · GC -3 · PP -4 · PC -1 · CA -2 · CV -5 · GS -1
 const SCOUT_POSITIVO = new Set([
+  // Linha de campo
   "G",
   "A",
   "FT",
@@ -1421,9 +1434,13 @@ const SCOUT_POSITIVO = new Set([
   "FS",
   "DS",
   "PS",
+  // Goleiro
+  "DE",
   "DD",
   "DP",
   "SG",
+  // Técnico
+  "V",
 ]);
 
 interface HistoricoRodadaEntry {

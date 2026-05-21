@@ -28,10 +28,13 @@ export const SCOUT: Record<string, ScoutInfo> = {
   PI: { label: "Passe incompleto", icon: "→", tipo: "negativo" },
   PE: { label: "Passe errado", icon: "✗", tipo: "negativo" },
   // Goleiro
+  DE: { label: "Defesa", icon: "🧤", tipo: "positivo" },
   DD: { label: "Defesa difícil", icon: "🧤", tipo: "positivo", chave: true },
   DP: { label: "Defesa de pênalti", icon: "🦾", tipo: "positivo", chave: true },
   GS: { label: "Gol sofrido", icon: "😨", tipo: "negativo", chave: true },
-  SG: { label: "Jogo sem gols sofrer", icon: "🧤", tipo: "positivo" },
+  SG: { label: "Jogo sem sofrer gols", icon: "🧤", tipo: "positivo" },
+  // Técnico
+  V: { label: "Vitória", icon: "🏆", tipo: "positivo", chave: true },
 };
 
 export interface EventoScout {
