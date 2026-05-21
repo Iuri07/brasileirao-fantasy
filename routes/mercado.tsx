@@ -278,7 +278,7 @@ function renderTimingPills(data: Data) {
           class={`bf-pill bf-pill--timing-${tFech.severity}`}
           title={`Mercado fecha ${tFech.longo}`}
         >
-          <span class="bf-pill__lbl">Mkt</span>
+          <span class="bf-pill__lbl">Mercado</span>
           <span class="bf-pill__val">{tFech.curto}</span>
         </span>
       )}
