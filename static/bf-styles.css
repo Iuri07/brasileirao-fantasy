@@ -5799,3 +5799,113 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   flex: 1;
   background: var(--bf-chassis);
 }
+
+/* ============================================================
+   DESKTOP — sidebar nav, viewport mais largo, modais maiores.
+   Aplicado a partir de 1024px. Mobile-first segue intacto abaixo
+   desse breakpoint.
+   ============================================================ */
+@media (min-width: 1024px) {
+  /* Viewport cresce até 1280px e abre espaço pra sidebar à esquerda. */
+  .bf-viewport {
+    max-width: 1280px;
+    padding-left: 240px;
+    padding-right: 24px;
+    padding-bottom: 32px;
+  }
+
+  /* Bottom nav vira sidebar fixa, alinhada ao viewport. */
+  .bf-bottom-nav {
+    position: fixed;
+    /* Anchora à borda ESQUERDA do viewport centralizado.
+       calc = (50vw - half_max_width) + gutter. max() trava em 16px
+       pra quando a viewport ainda não tem largura suficiente pra
+       ficar com folga (1024-1280px). */
+    left: max(16px, calc(50vw - 640px + 16px));
+    top: 80px;
+    bottom: 24px;
+    right: auto;
+    width: 200px;
+    height: auto;
+    max-width: 200px;
+    margin: 0;
+    border-radius: var(--bf-radius-lg);
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    grid-auto-rows: auto;
+    align-content: start;
+    padding: 14px 10px;
+    gap: 4px;
+    background: rgba(20, 22, 30, 0.92);
+  }
+  .bf-bottom-nav__item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    border-radius: var(--bf-radius-md);
+  }
+  .bf-bottom-nav__item:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .bf-bottom-nav__item--active {
+    background: color-mix(in srgb, var(--bf-lime) 14%, transparent);
+  }
+  /* Pip do "ativo" — no mobile fica em cima da label, no desktop
+     no canto direito (estilo macOS sidebar). */
+  .bf-bottom-nav__item--active::before {
+    top: 50%;
+    left: auto;
+    right: 12px;
+    transform: translateY(-50%);
+  }
+  /* Pip "live" pulsante no item Ao Vivo — reposiciona pra direita. */
+  body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+  }
+  .bf-bottom-nav__icon {
+    flex-shrink: 0;
+  }
+
+  /* Modais ganham mais espaço — escalações, ofertas, detalhes
+     do atleta cabem melhor sem stack tão apertado. */
+  .bf-modal__card {
+    max-width: 720px;
+    max-height: 85vh;
+  }
+  /* Modal de detalhes do atleta — header com foto+meta vira layout
+     horizontal natural; mais espaço pro chart de pontos. */
+  .bf-modal__card--atleta {
+    max-width: 640px;
+  }
+
+  /* Pills de timing no mercado: agora cabem em uma linha — tira o
+     wrap forçado. */
+  .bf-mercado__timings {
+    max-width: none;
+    flex-wrap: nowrap;
+  }
+  .bf-mercado__timings .bf-pill {
+    font-size: 11px;
+  }
+
+  /* Grid do mercado: cards um pouco maiores (cabem 6+ por linha
+     em 1280px). */
+  .bf-mercado__grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 14px;
+    padding-bottom: 32px;
+  }
+
+  /* Section header com mais respiro vertical. */
+  .bf-section-header {
+    padding: 24px var(--bf-gutter) 18px;
+  }
+  .bf-section-header__title {
+    font-size: 36px;
+  }
+}
