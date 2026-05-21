@@ -5963,5 +5963,53 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 8px;
   }
+
+  /* ----- /liga e /ao-vivo: team rows em 2 colunas ----- */
+
+  .bf-liga-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  /* Row expandida ocupa as 2 colunas — campo + bench precisam de
+     largura inteira pra respirar. */
+  .bf-liga-list > .bf-team-row--open {
+    grid-column: 1 / -1;
+  }
+  /* Hero da liga (h1 GRAFFITI gigante) menor + padding apertado */
+  .bf-liga-hero {
+    padding: 12px var(--bf-gutter) 8px;
+  }
+  .bf-liga-hero__title {
+    font-size: 40px;
+  }
+
+  /* LeagueChart: cap em ~900px centrado pra não esticar full width */
+  .bf-league-chart {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ----- /mercado: filtros em linha (busca + chips + selects) ----- */
+
+  .bf-mercado__filtros {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 0 var(--bf-gutter);
+  }
+  .bf-mercado__busca {
+    flex: 1 1 260px;
+    max-width: 320px;
+  }
+  .bf-mercado__chips {
+    flex: 1 1 auto;
+  }
+  .bf-mercado__selects {
+    flex: 0 0 auto;
+    /* Selects horizontais — não stack */
+    grid-template-columns: repeat(3, auto);
+  }
 }
 
