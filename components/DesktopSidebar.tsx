@@ -158,6 +158,9 @@ export default function DesktopSidebar(props: Props) {
                   }`}
                 >
                   <span class="bf-sidebar__ranking-pos">{idx + 1}</span>
+                  <span class="bf-sidebar__ranking-crest">
+                    <TeamCrest chave={t.chave} size={22} />
+                  </span>
                   <span class="bf-sidebar__ranking-name">{t.nome}</span>
                   <span class="bf-sidebar__ranking-pts">
                     {t.total.toFixed(1).replace(".", ",")}

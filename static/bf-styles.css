@@ -5915,7 +5915,10 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     bottom: 16px;
     width: 248px;
     padding: 14px 12px;
-    background: rgba(20, 22, 30, 0.92);
+    /* Mesma transparência dos outros cards (status, mercado, widgets) */
+    background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--bf-line);
     border-radius: var(--bf-radius-lg);
     overflow-y: auto;
@@ -5942,13 +5945,13 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     display: block;
   }
 
-  /* Card do meu time */
+  /* Card do meu time — mesma transparência dos outros cards */
   .bf-sidebar__team-card {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 10px;
-    background: rgba(255, 255, 255, 0.025);
+    background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
     border: 1px solid var(--bf-line);
     border-radius: var(--bf-radius-md);
   }
@@ -6053,14 +6056,26 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   }
   .bf-sidebar__ranking-row {
     display: grid;
-    grid-template-columns: 18px 1fr auto;
+    grid-template-columns: 16px 22px 1fr auto;
     align-items: center;
     gap: 8px;
-    padding: 6px 6px;
+    padding: 5px 6px;
     font-family: var(--bf-font-cond);
     font-size: 11px;
     color: var(--bf-fg-2);
     border-radius: var(--bf-radius-sm);
+  }
+  .bf-sidebar__ranking-crest {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+  }
+  .bf-sidebar__ranking-crest .bf-team-crest {
+    width: 22px !important;
+    height: 22px !important;
+    object-fit: contain;
   }
   .bf-sidebar__ranking-row--mine {
     background: color-mix(in srgb, var(--bf-magenta) 14%, transparent);
