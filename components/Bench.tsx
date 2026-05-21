@@ -19,6 +19,15 @@ interface Props {
   empty?: string;
 }
 
+const POS_ABREV: Record<string, string> = {
+  Goleiro: "GOL",
+  Lateral: "LAT",
+  Zagueiro: "ZAG",
+  Meia: "MEI",
+  Atacante: "ATK",
+  Técnico: "TEC",
+};
+
 // Mesma lógica do Field: foto só vale quando é cutout transparente
 // (TheSportsDB ou ogol salvo em /atletas/).
 function isCutout(url: string | null | undefined): boolean {
@@ -35,7 +44,7 @@ export default function Bench({ jogadores, empty = "Sem reservas" }: Props) {
         const entrou = j.entrouEmCampo ??
           (j.pontos !== null && j.pontos !== undefined && j.pontos !== 0);
         const pts = j.pontos ?? 0;
-        const posAbrev = j.posicao ?? j.posicao;
+        const posAbrev = POS_ABREV[j.posicao] ?? j.posicao;
         const hasCutout = isCutout(j.foto);
         const faceStyle = !hasCutout && j.cores
           ? {

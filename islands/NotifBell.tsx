@@ -45,6 +45,15 @@ const TIPO_LABEL: Record<NotifPayload["tipo"], string> = {
   oferta_negada: "Oferta negada",
 };
 
+const POS_ABREV: Record<string, string> = {
+  "Goleiro": "GOL",
+  "Lateral": "LAT",
+  "Zagueiro": "ZAG",
+  "Meia": "MEI",
+  "Atacante": "ATK",
+  "Técnico": "TEC",
+};
+
 export default function NotifBell(_props: Props) {
   const [notifs, setNotifs] = useState<NotifPayload[]>([]);
   const [open, setOpen] = useState(false);
@@ -420,12 +429,12 @@ function ModalAceitarMulti(
               return (
                 <div key={s.idx} class="bf-notif__slot">
                   <div class="bf-notif__slot-head">
-                    Slot {s.idx + 1} · {s.posicao ?? s.posicao}
+                    Slot {s.idx + 1} · {POS_ABREV[s.posicao] ?? s.posicao}
                   </div>
                   {disponiveis.length === 0
                     ? (
                       <div class="bf-notif__slot-vazio">
-                        Sem {s.posicao ?? s.posicao} disponíveis
+                        Sem {POS_ABREV[s.posicao] ?? s.posicao} disponíveis
                       </div>
                     )
                     : (

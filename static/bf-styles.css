@@ -2484,7 +2484,7 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   font-family: var(--bf-font-cond);
   font-weight: 900;
   font-size: 8px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--pos-color, var(--bf-fg-2));
   line-height: 1;
@@ -3773,8 +3773,7 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   font-family: var(--bf-font-cond);
   font-weight: 900;
   font-size: 9px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.18em;
   color: var(--pos-color);
 }
 .bf-merc-card__status {
@@ -4442,8 +4441,7 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   font-family: var(--bf-font-cond);
   font-weight: 900;
   font-size: 9px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.18em;
   color: var(--pos-color);
 }
 .bf-pool__face {

@@ -110,6 +110,15 @@ function formatCountdown(unixSeconds: number): string | null {
   return `${mins}min`;
 }
 
+const POS_ABREV: Record<string, string> = {
+  "Goleiro": "GOL",
+  "Lateral": "LAT",
+  "Zagueiro": "ZAG",
+  "Meia": "MEI",
+  "Atacante": "ATK",
+  "Técnico": "TEC",
+};
+
 function montarEscalacao(
   jogadoresEscalados: Array<
     {
@@ -129,7 +138,7 @@ function montarEscalacao(
     pts: j.pontos,
     escudo: escudoUrl(j.clube),
     cores: coresClube(j.clube),
-    pos: j.posicao,
+    pos: POS_ABREV[j.posicao],
     statusId: j.status_id,
     // Prefere PNG transparente do TheSportsDB (cutout sem fundo);
     // cai pro busto local quando não tem cutout
@@ -301,7 +310,7 @@ export const handler: Handlers<HomeData, State> = {
           pts: liveP(j.atleta_id, j.pontos),
           escudo: escudoUrl(j.clube),
           cores: coresClube(j.clube),
-          pos: j.posicao,
+          pos: POS_ABREV[j.posicao],
           posicao: j.posicao,
           statusId: j.status_id,
           foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
@@ -430,7 +439,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=145" />
+        <link rel="stylesheet" href="/bf-styles.css?v=144" />
       </Head>
       <div class="bf-viewport">
         <TopBar

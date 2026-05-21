@@ -79,6 +79,14 @@ interface Props {
   timesDisponiveis?: Array<{ chave: string; nome: string }>;
 }
 
+const POS_ABREV: Record<string, string> = {
+  Goleiro: "GOL",
+  Lateral: "LAT",
+  Zagueiro: "ZAG",
+  Meia: "MEI",
+  Atacante: "ATK",
+};
+
 const STATUS_LABEL: Record<number, { sym: string; cor: string; txt: string }> =
   {
     7: { sym: "✓", cor: "var(--bf-lime)", txt: "Provável" },
@@ -813,13 +821,13 @@ function ModalOferta(
         <p class="bf-modal__txt">
           {modo === "interesse"
             ? `Ofereça um jogador da mesma posição (${
-              pedido.posicao
+              POS_ABREV[pedido.posicao]
             }). Se você ganhar o draft, ele entra no seu time e o oferecido vira free agent.`
             : (
               <>
                 Selecione <strong>até 3 jogadores</strong>{" "}
                 do seu elenco. Pelo menos 1 precisa ser{" "}
-                <strong>{pedido.posicao}</strong>{" "}
+                <strong>{POS_ABREV[pedido.posicao]}</strong>{" "}
                 (posição do pedido). Se você oferecer 2 ou 3, o destinatário
                 escolhe quantos jogadores do próprio elenco vão completar a
                 troca.
@@ -833,7 +841,7 @@ function ModalOferta(
               {selecionados.length}/3
               {!temPosDoPedido && (
                 <span class="bf-modal__resumo-warn">
-                  · falta {pedido.posicao}
+                  · falta {POS_ABREV[pedido.posicao]}
                 </span>
               )}
             </span>
@@ -843,7 +851,7 @@ function ModalOferta(
           {lista.length === 0 && (
             <div class="bf-empty-state" style="margin:8px 4px">
               {modo === "interesse"
-                ? `Você não tem nenhum ${pedido.posicao} no elenco`
+                ? `Você não tem nenhum ${POS_ABREV[pedido.posicao]} no elenco`
                 : "Seu elenco está vazio"}
             </div>
           )}
@@ -867,7 +875,7 @@ function ModalOferta(
                     posMatch ? "bf-modal__opt-pos--match" : ""
                   }`}
                 >
-                  {j.posicao}
+                  {POS_ABREV[j.posicao]}
                 </span>
                 <span class="bf-modal__opt-nome">{j.nome}</span>
                 <span class="bf-modal__opt-clube">{j.clubeNome}</span>
@@ -969,7 +977,7 @@ function CardJogador(
   return (
     <article
       class={`bf-merc-card bf-merc-card--${
-        j.posicao.toLowerCase()
+        POS_ABREV[j.posicao].toLowerCase()
       } ${hasFoto ? "bf-merc-card--cutout" : "bf-merc-card--jersey"}`}
     >
       <div class="bf-merc-card__foto">
@@ -978,7 +986,7 @@ function CardJogador(
           : <JerseySvg cores={j.cores} class="bf-merc-card__jersey" />}
       </div>
       <div class="bf-merc-card__top">
-        <span class="bf-merc-card__pos">{j.posicao}</span>
+        <span class="bf-merc-card__pos">{POS_ABREV[j.posicao]}</span>
         {st && (
           <span
             class="bf-merc-card__status"
@@ -1088,7 +1096,7 @@ function CardMeu(
   return (
     <article
       class={`bf-merc-card bf-merc-card--${
-        j.posicao.toLowerCase()
+        POS_ABREV[j.posicao].toLowerCase()
       } ${hasFoto ? "bf-merc-card--cutout" : "bf-merc-card--jersey"}`}
     >
       <div class="bf-merc-card__foto">
@@ -1097,7 +1105,7 @@ function CardMeu(
           : <JerseySvg cores={j.cores} class="bf-merc-card__jersey" />}
       </div>
       <div class="bf-merc-card__top">
-        <span class="bf-merc-card__pos">{j.posicao}</span>
+        <span class="bf-merc-card__pos">{POS_ABREV[j.posicao]}</span>
         {st && (
           <span
             class="bf-merc-card__status"
@@ -1283,7 +1291,7 @@ function ModalInteresses(
                       <div class="bf-int__nome">
                         {m.nome}
                         <span class="bf-int__poschip">
-                          {m.posicao}
+                          {POS_ABREV[m.posicao]}
                         </span>
                       </div>
                       <div class="bf-int__sub">
@@ -1541,7 +1549,7 @@ function ModalAtletaDetalhes(
               )}
               <div class="bf-atleta-detalhes__sub">
                 <span class="bf-atleta-detalhes__pos">
-                  {base.posicao}
+                  {POS_ABREV[base.posicao]}
                 </span>
                 <span class="bf-atleta-detalhes__clube">
                   {escudoUrl(base.clubeNome) && (

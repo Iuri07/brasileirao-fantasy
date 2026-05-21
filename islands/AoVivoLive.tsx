@@ -33,6 +33,14 @@ interface Props {
   banco: AtletaBase[];
 }
 
+const POS_ABREV: Record<string, string> = {
+  Goleiro: "GOL",
+  Lateral: "LAT",
+  Zagueiro: "ZAG",
+  Meia: "MEI",
+  Atacante: "ATK",
+};
+
 interface PontuadoLive {
   pontuacao?: number;
   scout?: Record<string, number>;
@@ -148,7 +156,7 @@ export default function AoVivoLive(
     pts: j.pontos,
     escudo: j.escudo,
     cores: coresClube(j.clube),
-    pos: j.posicao,
+    pos: POS_ABREV[j.posicao],
     foto: j.foto,
   });
   const gk = jogadores.find((j) => j.posicao === "Goleiro");
@@ -171,7 +179,7 @@ export default function AoVivoLive(
       pts: live?.pontuacao ?? null,
       escudo: j.escudo,
       cores: coresClube(j.clube),
-      pos: j.posicao,
+      pos: POS_ABREV[j.posicao],
       posicao: j.posicao,
       foto: j.foto,
       entrouEmCampo: !!live?.entrou_em_campo,
