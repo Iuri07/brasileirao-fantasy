@@ -6098,11 +6098,10 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     object-fit: contain;
   }
   .bf-sidebar__ranking-row--mine {
-    background: color-mix(in srgb, var(--bf-magenta) 14%, transparent);
-    color: var(--bf-fg-0);
+    background: color-mix(in srgb, var(--row-accent, var(--bf-magenta)) 14%, transparent);
   }
   .bf-sidebar__ranking-row--mine .bf-sidebar__ranking-pos {
-    color: var(--bf-magenta);
+    color: var(--row-accent, var(--bf-magenta));
     font-weight: 900;
   }
   .bf-sidebar__ranking-pos {
@@ -6115,6 +6114,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    /* Nome usa a cor do time — fallback pro fg-2 se accent não vier */
+    color: var(--row-accent, var(--bf-fg-2));
+    font-weight: 700;
   }
   .bf-sidebar__ranking-pts {
     font-variant-numeric: tabular-nums;
@@ -6427,25 +6429,24 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     grid-template-columns: 48px 1fr;
     gap: 8px;
   }
-
-  /* === Hero (status card): no desktop esconde as métricas duplicadas
-     (Posição e Total já aparecem nos widgets à direita). Só fica
-     "Esta rodada" — bem grande, drama central do card. === */
-  .bf-home-grid__status .bf-status-card__metric:not(:first-of-type),
-  .bf-home-grid__status .bf-status-card__divider {
+  /* No desktop, próximas não fica colapsado: força a região
+     "extras" do PartidasExpandable a sempre estar aberta e
+     esconde o botão "ver todos". */
+  .bf-widget--proximas .bf-partidas-expand {
+    grid-template-rows: 1fr !important;
+  }
+  .bf-widget--proximas .bf-section-footer {
     display: none;
   }
-  .bf-home-grid__status .bf-status-card__metrics {
-    display: block;
-    margin-top: 0;
+
+  /* === Hero (status card): 3 métricas inline com dividers — Esta
+     rodada / Posição / Total. Primeira em destaque maior. === */
+  .bf-home-grid__status .bf-status-card__metric:first-of-type
+    .bf-status-card__metric-value {
+    font-size: 42px;
   }
-  .bf-home-grid__status .bf-status-card__metric:first-of-type {
-    align-items: flex-start;
-    text-align: left;
-  }
-  .bf-home-grid__status .bf-status-card__metric-value {
-    font-size: 48px;
-    line-height: 1;
+  .bf-home-grid__status .bf-status-card__metric-value--sm {
+    font-size: 26px;
   }
 
   /* === Status card no desktop: greeting some (TopBar/home-head já tem),
@@ -6467,29 +6468,35 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     max-width: none;
     margin-left: 0;
     margin-right: 0;
+    /* Heads dos pinos extrapolam o card por design — overflow
+       visible deixa eles aparecerem (sem cortar o lateral). */
+    overflow: visible;
   }
   .bf-home-grid__escala .bf-field__pitch {
     /* Aspect 8/5 inverte de 5/8 portrait → landscape */
     aspect-ratio: 8 / 5;
+    /* Mesma razão acima — heads dos pinos top/bottom da coluna
+       precisam respirar fora do retângulo do gramado. */
+    overflow: visible;
   }
   /* Troca SVG: portrait some, landscape aparece */
   .bf-home-grid__escala .bf-field__lines--portrait { display: none; }
   .bf-home-grid__escala .bf-field__lines--landscape { display: block; }
-  /* Rows: agora se posicionam por LEFT em vez de TOP, ocupando
-     altura inteira, e os pinos stacam vertical. */
+  /* Rows: agora se posicionam por LEFT em vez de TOP. Top/bottom
+     com folga pros heads dos pinos topo/base aparecerem inteiros. */
   .bf-home-grid__escala .bf-field__row {
-    top: 0;
-    bottom: 0;
+    top: 8%;
+    bottom: 8%;
     left: auto;
     right: auto;
     width: 22%;
     flex-direction: column;
     justify-content: space-around;
   }
-  .bf-home-grid__escala .bf-field__row--gk { left: 1%; top: 0; }
-  .bf-home-grid__escala .bf-field__row--def { left: 24%; top: 0; }
-  .bf-home-grid__escala .bf-field__row--mid { left: 50%; top: 0; }
-  .bf-home-grid__escala .bf-field__row--ata { left: 76%; top: 0; }
+  .bf-home-grid__escala .bf-field__row--gk { left: 1%; }
+  .bf-home-grid__escala .bf-field__row--def { left: 24%; }
+  .bf-home-grid__escala .bf-field__row--mid { left: 50%; }
+  .bf-home-grid__escala .bf-field__row--ata { left: 76%; }
   /* Stripes do gramado também viram verticais pra parecer linhas
      laterais (canchas TV). */
   .bf-home-grid__escala .bf-field__pitch::before {

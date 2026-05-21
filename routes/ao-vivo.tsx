@@ -270,12 +270,13 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
     chave: t.chave,
     nome: t.nome,
     total: t.total,
+    accent: timeLigaInfo(t.chave)?.accent ?? "var(--bf-fg-2)",
   }));
   return (
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=156" />
+        <link rel="stylesheet" href="/bf-styles.css?v=157" />
       </Head>
       <DesktopSidebar
         active="live"

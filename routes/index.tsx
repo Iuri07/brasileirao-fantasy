@@ -58,6 +58,8 @@ interface SidebarRankingItem {
   chave: string;
   nome: string;
   total: number;
+  /** Cor accent do time (hex) — usada pra colorir o nome no ranking. */
+  accent: string;
 }
 
 interface HomeData {
@@ -443,6 +445,7 @@ export const handler: Handlers<HomeData, State> = {
         chave: t.chave,
         nome: t.nome,
         total: totaisPorChave.get(t.chave) ?? 0,
+        accent: timeLigaInfo(t.chave)?.accent ?? "var(--bf-fg-2)",
       })),
       mediaTime: (() => {
         const t = totalPontos(historico);
@@ -495,7 +498,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=156" />
+        <link rel="stylesheet" href="/bf-styles.css?v=157" />
       </Head>
       <DesktopSidebar
         active="home"
@@ -667,60 +670,6 @@ export default function Home({ data }: PageProps<HomeData>) {
           </section>
 
           <aside class="bf-home-grid__side">
-            {/* Posição */}
-            <div class="bf-widget bf-widget--posicao">
-              <div class="bf-widget__lbl">Posição</div>
-              <div class="bf-widget__val-wrap">
-                <span
-                  class={`bf-widget__val ${
-                    top3 ? "bf-widget__val--lime" : ""
-                  }`}
-                >
-                  {data.posicao ? `${data.posicao}º` : "—"}
-                </span>
-                <span class="bf-widget__suffix">/{data.totalTimes}</span>
-              </div>
-              {data.rodadasJogadas > 0 && (
-                <div class="bf-widget__foot">
-                  Top {Math.ceil((data.posicao ?? 1) / data.totalTimes * 100)}%
-                </div>
-              )}
-            </div>
-
-            {/* Total da temporada */}
-            <div class="bf-widget bf-widget--total">
-              <div class="bf-widget__lbl">Total da Temporada</div>
-              <div class="bf-widget__val">
-                {data.rodadasJogadas > 0
-                  ? data.total.toFixed(1).replace(".", ",")
-                  : "—"}
-              </div>
-              {data.rodadasJogadas > 0 && (
-                <div class="bf-widget__foot">
-                  {data.rodadasJogadas}{" "}
-                  rodadas{data.mediaTime != null && (
-                    <>
-                      {" · média "}
-                      <strong>
-                        {data.mediaTime.toFixed(1).replace(".", ",")}
-                      </strong>
-                    </>
-                  )}
-                </div>
-              )}
-              {data.pontosAteLider !== null && data.pontosAteLider > 0 && (
-                <div class="bf-widget__foot bf-widget__foot--accent">
-                  −{data.pontosAteLider.toFixed(1).replace(".", ",")} pts do
-                  líder
-                </div>
-              )}
-              {data.pontosAteLider === 0 && (
-                <div class="bf-widget__foot bf-widget__foot--lime">
-                  você é o líder 🏆
-                </div>
-              )}
-            </div>
-
             {/* Próximos jogos */}
             <div class="bf-widget bf-widget--proximas">
               <div class="bf-widget__header">

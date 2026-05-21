@@ -194,12 +194,13 @@ export default function Liga({ data }: PageProps<Data>) {
     chave: t.chave,
     nome: t.nome,
     total: t.total,
+    accent: timeLigaInfo(t.chave)?.accent ?? "var(--bf-fg-2)",
   }));
   return (
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=156" />
+        <link rel="stylesheet" href="/bf-styles.css?v=157" />
       </Head>
       <DesktopSidebar
         active="liga"

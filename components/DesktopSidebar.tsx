@@ -10,6 +10,8 @@ interface RankingItem {
   chave: string;
   nome: string;
   total: number;
+  /** Cor accent do time (hex/css). Aplicada no nome no ranking. */
+  accent?: string;
 }
 
 interface Props {
@@ -156,6 +158,9 @@ export default function DesktopSidebar(props: Props) {
                   class={`bf-sidebar__ranking-row ${
                     isMe ? "bf-sidebar__ranking-row--mine" : ""
                   }`}
+                  style={t.accent
+                    ? { "--row-accent": t.accent } as Record<string, string>
+                    : undefined}
                 >
                   <span class="bf-sidebar__ranking-pos">{idx + 1}</span>
                   <span class="bf-sidebar__ranking-crest">

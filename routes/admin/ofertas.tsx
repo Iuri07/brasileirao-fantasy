@@ -102,7 +102,7 @@ export default function AdminOfertasPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Negociáveis e Ofertas</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=156" />
+        <link rel="stylesheet" href="/bf-styles.css?v=157" />
       </Head>
       <div class="bf-viewport">
         <TopBar
