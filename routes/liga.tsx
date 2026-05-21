@@ -122,12 +122,15 @@ export const handler: Handlers<Data, State> = {
       ) / 100;
       const historico = historicoPorChave.get(chave) ?? {};
 
+      // Escalação não mostra label de posição embaixo do nome — a posição
+      // já fica óbvia pela linha do pino no campo (GOL na base, ATA no
+      // topo). Mantemos `pos` só pro banco / não escalados (ReservasRow),
+      // onde fora do campo o label ajuda a scan.
       const pino = (j: typeof escalados[number]): Pino => ({
         nome: j.apelido_api,
         pts: j.pontos,
         escudo: escudoUrl(j.clube),
         cores: coresClube(j.clube),
-        pos: POS_ABREV[j.posicao],
         statusId: j.status_id,
         foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
       });
