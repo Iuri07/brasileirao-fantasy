@@ -155,7 +155,7 @@ export async function handler(req: Request, ctx: FreshContext<State>) {
       const headers = new Headers(resp.headers);
       headers.set(
         "Cache-Control",
-        "private, max-age=30, stale-while-revalidate=60",
+        "private, max-age=0, stale-while-revalidate=30",
       );
       return new Response(resp.body, {
         status: resp.status,
