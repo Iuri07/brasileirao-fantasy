@@ -134,7 +134,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px var(--bf-gutter);
+  padding: 6px var(--bf-gutter);
   /* Mobile: fundo sólido pra não usar backdrop-filter (gargalo de
      scroll em GPU modesta tipo Mali-G57). Desktop reativa blur via
      media query no fim do arquivo. */
@@ -195,12 +195,9 @@ body {
   text-decoration: none;
 }
 .bf-minlogo__img {
-  height: 56px;
+  height: 36px;
   width: auto;
   display: block;
-  filter: drop-shadow(0 0 10px rgba(255, 27, 141, 0.4)) drop-shadow(
-    0 0 16px rgba(31, 168, 255, 0.22)
-  );
 }
 
 /* ============================================================
@@ -1909,6 +1906,12 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 }
 .bf-status-card__metric-value--sm {
   font-size: 24px;
+  /* Posição + Total usam variante --sm e vão na cor do time
+     (--user-accent setado inline no .bf-status-card). Esta rodada
+     (o número grande) fica em branco mesmo pra contrastar. */
+  color: var(--user-accent, var(--bf-fg-0));
+  text-shadow: 0 0 14px
+    color-mix(in srgb, var(--user-accent, transparent) 35%, transparent);
 }
 .bf-status-card__live-dot {
   display: inline-block;
