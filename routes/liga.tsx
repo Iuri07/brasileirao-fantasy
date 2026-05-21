@@ -255,6 +255,7 @@ export default function Liga({ data }: PageProps<Data>) {
                 accent={accent}
                 isMine={isMe}
                 historico={t.historico}
+                logoUrl={visual?.logo ?? null}
               >
                 <div class="bf-team-row__expanded">
                   {t.escalacao

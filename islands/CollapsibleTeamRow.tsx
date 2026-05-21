@@ -30,6 +30,9 @@ interface Props {
   /** Delta de posição vs ranking geral (acumulado da temporada).
       Positivo = subiu na rodada, negativo = caiu, 0 = igual. Só /ao-vivo. */
   posDelta?: number | null;
+  /** URL resolvida do logo (override admin ou base). O cliente não
+   *  tem o OVERRIDES Map, então precisa receber pronto. */
+  logoUrl?: string | null;
   /** Conteúdo que aparece colapsado/expandido (Field SSR) */
   children: ComponentChildren;
 }
@@ -51,6 +54,7 @@ export default function CollapsibleTeamRow(
     subsBadge = null,
     ptsLabel = "PTS",
     posDelta = null,
+    logoUrl,
     children,
   }: Props,
 ) {
@@ -165,7 +169,7 @@ export default function CollapsibleTeamRow(
             : `#${pos}`}
         </span>
         <div class="bf-team-row__crest">
-          <TeamCrest chave={chave} size={36} />
+          <TeamCrest chave={chave} size={36} logoUrl={logoUrl} />
         </div>
         <div class="bf-team-row__meta">
           <div class="bf-team-row__name">{displayName}</div>

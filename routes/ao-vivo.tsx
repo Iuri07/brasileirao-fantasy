@@ -343,6 +343,7 @@ function AoVivoLiga({ data }: { data: Data }) {
               posDelta={data.aoVivo ? posDelta : null}
               accent={accent}
               isMine={isMe}
+              logoUrl={visual?.logo ?? null}
               subsBadge={data.aoVivo
                 ? { aplicadas: t.subsAplicadas, max: data.subsMax }
                 : null}
