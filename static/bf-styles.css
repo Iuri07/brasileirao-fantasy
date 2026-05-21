@@ -5957,53 +5957,89 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     padding-bottom: 32px;
   }
 
-  /* ----- Home: 3-col grid [status | escalação | próximas] ----- */
+  /* ----- Home: dashboard horizontal + 2-col abaixo ----- */
 
+  /* Grid em template-areas: status banner full-width no topo,
+     escalação+próximas em 2-col abaixo. */
   .bf-home-grid {
     display: grid;
-    /* Status card e Próximas ocupam laterais finas; escalação no meio
-       (largura suficiente pro campo respirar). */
-    grid-template-columns: minmax(0, 1fr) minmax(360px, 440px) minmax(0, 1fr);
-    gap: 16px;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-areas:
+      "status status"
+      "escala proximas";
+    gap: 12px 16px;
     align-items: start;
     padding-top: 4px;
   }
+  .bf-home-grid__status { grid-area: status; }
+  .bf-home-grid__escala { grid-area: escala; min-width: 0; }
+  .bf-home-grid__proximas { grid-area: proximas; min-width: 0; }
+
+  /* === Status card vira banner horizontal — todos os blocos em row === */
   .bf-home-grid__status {
-    margin: 0; /* sobrescreve gutter do bf-status-card mobile */
-    padding: 14px; /* mais compacto que o 18px do .bf-card */
+    margin: 0;
+    padding: 10px 18px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 18px;
   }
-  /* Numeros das métricas menores quando a coluna é estreita */
+  /* Splatter mantém posicionamento absolute, não conta no flex */
+  .bf-home-grid__status > .bf-status-card__splatter {
+    position: absolute;
+  }
+  /* Greeting some no desktop — info redundante com a TopBar */
+  .bf-home-grid__status .bf-status-card__greeting {
+    display: none;
+  }
+  /* Top (crest + nome + pills) fica na esquerda, fixo */
+  .bf-home-grid__status .bf-status-card__top {
+    margin-bottom: 0;
+    flex: 0 0 auto;
+    max-width: 360px;
+    padding-right: 18px;
+    border-right: 1px solid var(--bf-line);
+  }
+  /* Metrics ocupam o resto inline */
+  .bf-home-grid__status .bf-status-card__metrics {
+    margin-top: 0;
+    flex: 1 1 auto;
+    /* Re-arranja grid pra 3 cols mais juntas */
+    grid-template-columns: 1fr 1px 1fr 1px 1fr;
+    column-gap: 16px;
+  }
   .bf-home-grid__status .bf-status-card__metric-value {
-    font-size: 22px;
+    font-size: 26px;
   }
   .bf-home-grid__status .bf-status-card__metric-value--sm {
-    font-size: 20px;
+    font-size: 22px;
   }
-  .bf-home-grid__status .bf-status-card__greeting,
-  .bf-home-grid__status .bf-status-card__top {
-    margin-bottom: 10px;
-  }
-  .bf-home-grid__status .bf-status-card__metrics {
-    margin-top: 10px;
-  }
-  .bf-home-grid__escala,
-  .bf-home-grid__proximas {
-    min-width: 0;
-  }
-  /* Campo dentro da coluna do meio: sem cap externo, usa toda a
-     coluna (que já é capada em 440px). */
+
+  /* === Escalação: campo cap, mostra bench na lateral se couber === */
   .bf-home-grid__escala .bf-field {
     max-width: none;
     margin-left: 0;
     margin-right: 0;
   }
-  /* Próximas: lista vertical compacta — a coluna é estreita, 1 por
-     linha cabe bem. */
+  /* === Próximas: grid 2-col denso === */
   .bf-home-grid__proximas .bf-games {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 6px;
     padding: 0;
+  }
+  /* Cada game-row: mais compacto, sem padding luxuoso */
+  .bf-home-grid__proximas .bf-game-row {
+    padding: 6px 10px;
+    grid-template-columns: 44px 1fr;
+    gap: 8px;
+  }
+  /* Section header dentro de coluna: bem mais discreto */
+  .bf-home-grid__proximas .bf-section-header {
+    padding: 4px var(--bf-gutter) 8px;
+  }
+  .bf-home-grid__proximas .bf-section-header__title {
+    font-size: 22px;
   }
 
   /* Outras páginas: cap campo (não sobrescrito pelo grid acima) */
@@ -6020,29 +6056,73 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     gap: 8px;
   }
 
-  /* ----- /liga e /ao-vivo: team rows em 2 colunas ----- */
+  /* ----- /liga e /ao-vivo: team rows table-style + chart hero inline -----
+     Layout single column (full width), mas cada row é COMPACTA (~44px) com
+     todos os dados inline em vez de stacked. Quando expande, abre painel
+     com campo de futebol mantendo o cap de 460px. */
 
   .bf-liga-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-  /* Row expandida ocupa as 2 colunas — campo + bench precisam de
-     largura inteira pra respirar. */
-  .bf-liga-list > .bf-team-row--open {
-    grid-column: 1 / -1;
-  }
-  /* Hero da liga (h1 GRAFFITI gigante) menor + padding apertado */
-  .bf-liga-hero {
-    padding: 12px var(--bf-gutter) 8px;
-  }
-  .bf-liga-hero__title {
-    font-size: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 var(--bf-gutter);
+    max-width: 1000px;
+    margin: 0 auto;
   }
 
-  /* LeagueChart: cap em ~900px centrado pra não esticar full width */
+  /* Summary da row vira table-row densa */
+  .bf-team-row__summary {
+    padding: 6px 12px;
+    gap: 12px;
+  }
+  .bf-team-row__summary > .bf-team-row__crest {
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+  }
+  .bf-team-row__summary > .bf-team-row__pos {
+    flex: 0 0 26px;
+    font-size: 14px;
+  }
+  /* Name + owner: inline (owner como subtítulo à direita) em vez de stack */
+  .bf-team-row__meta {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .bf-team-row__name {
+    font-size: 13px;
+    line-height: 1.2;
+  }
+  .bf-team-row__owner {
+    font-size: 11px;
+    color: var(--bf-fg-3);
+  }
+  /* Pts: inline com sparkline à esquerda do número, na mesma linha */
+  .bf-team-row__pts {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    min-width: auto;
+  }
+  .bf-team-row__sparkline {
+    margin-top: 0;
+  }
+  .bf-team-row__pts-value {
+    font-size: 17px;
+  }
+
+  /* Hero da liga (h1 GRAFFITI) menor + padding apertado */
+  .bf-liga-hero {
+    padding: 10px var(--bf-gutter) 6px;
+  }
+  .bf-liga-hero__title {
+    font-size: 32px;
+  }
+
+  /* LeagueChart: cap mais conservador, alinhado com lista */
   .bf-league-chart {
-    max-width: 900px;
+    max-width: 1000px;
     margin-left: auto;
     margin-right: auto;
   }
