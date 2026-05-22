@@ -204,7 +204,7 @@ export default function Liga({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=170" />
+        <link rel="stylesheet" href="/bf-styles.css?v=171" />
       </Head>
       <DesktopSidebar
         active="liga"
@@ -217,6 +217,10 @@ export default function Liga({ data }: PageProps<Data>) {
         fechamentoTexto={null}
         mercadoAberto={!isRodadaEmAndamento(data.rodadaStatus)}
         isAdmin={data.userRole === "admin"}
+        userEmail={data.userEmail}
+        userRole={data.userRole}
+        userNome={data.userNome}
+        userPicture={data.userPicture}
       />
       <div class="bf-viewport">
         <TopBar

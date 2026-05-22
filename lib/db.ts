@@ -298,6 +298,25 @@ function ensureIncrementalColumns(db: Database): void {
   db.exec(
     "CREATE INDEX IF NOT EXISTS idx_sessions_last_seen ON sessions(last_seen_at)",
   );
+  // Histórico de logins — 1 row por usuário, atualizada em cada
+  // login bem-sucedido. Usuário identificado por email (Google) ou
+  // 'admin:<username>' pra login local. Independente de sessions
+  // (que podem ser deletadas pra GC).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_logins (
+      user_key TEXT PRIMARY KEY,
+      role TEXT NOT NULL,
+      chave TEXT,
+      email TEXT,
+      name TEXT,
+      picture TEXT,
+      last_login_at INTEGER NOT NULL,
+      login_count INTEGER NOT NULL DEFAULT 1
+    )
+  `);
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_user_logins_last ON user_logins(last_login_at DESC)",
+  );
 }
 
 function hasTable(db: Database, name: string): boolean {

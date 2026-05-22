@@ -315,7 +315,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=170" />
+        <link rel="stylesheet" href="/bf-styles.css?v=171" />
       </Head>
       <DesktopSidebar
         active="mercado"
@@ -328,6 +328,10 @@ export default function MercadoPage({ data }: PageProps<Data>) {
         fechamentoTexto={fechamentoText}
         mercadoAberto={!data.aoVivo}
         isAdmin={data.userRole === "admin"}
+        userEmail={data.userEmail}
+        userRole={data.userRole}
+        userNome={data.userNome}
+        userPicture={data.userPicture}
       />
       <div class="bf-viewport">
         <TopBar

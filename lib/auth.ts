@@ -54,9 +54,9 @@ export function getSession(sessionId: string): Promise<SessionKV | null> {
   }>(sessionId);
   if (!r) return Promise.resolve(null);
   if (r.expires_at < Date.now()) {
-    // NÃO deleta — mantém sessões expiradas pra admin ver "último
-    // login" no histórico. GC periódico via cron limpa sessões muito
-    // antigas (>30d).
+    // Deleta — histórico de logins fica em user_logins, não precisa
+    // manter sessão expirada na tabela sessions.
+    db.prepare("DELETE FROM sessions WHERE id=?").run(sessionId);
     return Promise.resolve(null);
   }
   // Atualiza last_seen_at — usado pelo admin pra ver quem tá online.
@@ -79,9 +79,10 @@ export function createSession(
   const sessionId = genSessionId();
   const now = Date.now();
   const exp = now + SESSION_TTL_MS;
+  const db = getDb();
   // BigInt: timestamps de Date.now() são 13 dígitos (> 2^31), e
   // o @db/sqlite trunca pra int32 ao receber number direto.
-  getDb().prepare(
+  db.prepare(
     "INSERT INTO sessions (id, role, chave, email, name, picture, created_at, expires_at) " +
       "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
   ).run(
@@ -93,6 +94,26 @@ export function createSession(
     session.picture ?? null,
     BigInt(now),
     BigInt(exp),
+  );
+  // Upsert no histórico de logins (1 row por usuário). user_key =
+  // email (Google) ou 'admin:<chave>' pra login local sem email.
+  const userKey = session.email ?? `${session.role}:${session.chave ?? sessionId}`;
+  db.prepare(
+    "INSERT INTO user_logins (user_key, role, chave, email, name, picture, last_login_at, login_count) " +
+      "VALUES (?, ?, ?, ?, ?, ?, ?, 1) " +
+      "ON CONFLICT(user_key) DO UPDATE SET " +
+      "  role=excluded.role, chave=excluded.chave, email=excluded.email, " +
+      "  name=excluded.name, picture=excluded.picture, " +
+      "  last_login_at=excluded.last_login_at, " +
+      "  login_count=user_logins.login_count + 1",
+  ).run(
+    userKey,
+    session.role,
+    session.chave ?? null,
+    session.email ?? null,
+    session.name ?? null,
+    session.picture ?? null,
+    BigInt(now),
   );
   return Promise.resolve(sessionId);
 }

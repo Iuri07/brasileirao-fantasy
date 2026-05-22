@@ -6067,18 +6067,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.6));
   }
 
-  /* === TopBar no desktop: logo some (sidebar já tem), UserMenu e
-     NotifBell ficam nas pontas. Padding mais apertado. === */
+  /* === TopBar no desktop: oculta inteira. Logo, UserMenu e
+     NotifBell vão pra topo da DesktopSidebar. === */
   .bf-topbar {
-    padding: 10px var(--bf-gutter);
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-  .bf-topbar::after {
-    display: none;
-  }
-  .bf-topbar .bf-minlogo {
     display: none;
   }
 
@@ -6111,6 +6102,16 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   /* Esconde a BottomNav transformada (já que tem nova sidebar) */
   .bf-bottom-nav {
     display: none;
+  }
+
+  /* User actions (UserMenu + NotifBell) no topo da sidebar */
+  .bf-sidebar__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 2px 4px 8px;
+    border-bottom: 1px solid var(--bf-line);
   }
 
   /* Logo no topo da sidebar */

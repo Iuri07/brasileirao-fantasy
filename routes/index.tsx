@@ -498,7 +498,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=170" />
+        <link rel="stylesheet" href="/bf-styles.css?v=171" />
       </Head>
       <DesktopSidebar
         active="home"
@@ -511,6 +511,10 @@ export default function Home({ data }: PageProps<HomeData>) {
         fechamentoTexto={data.fechamentoTexto}
         mercadoAberto={data.mercadoAberto}
         isAdmin={data.userRole === "admin"}
+        userEmail={data.userEmail}
+        userRole={data.userRole}
+        userNome={data.userNome}
+        userPicture={data.userPicture}
       />
       <div class="bf-viewport">
         <TopBar

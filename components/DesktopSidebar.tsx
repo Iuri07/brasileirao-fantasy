@@ -3,6 +3,8 @@
 // no DOM mas só um é visível.
 
 import TeamCrest from "./TeamCrest.tsx";
+import UserMenu from "../islands/UserMenu.tsx";
+import NotifBell from "../islands/NotifBell.tsx";
 
 type NavId = "home" | "mercado" | "liga" | "live" | "admin";
 
@@ -35,6 +37,11 @@ interface Props {
   mercadoAberto?: boolean;
   /** True pra mostrar o item Admin na nav (visível só pra role=admin). */
   isAdmin?: boolean;
+  /** Identidade do usuário pra UserMenu/NotifBell no topo. */
+  userEmail?: string | null;
+  userRole?: "admin" | "user" | null;
+  userNome?: string | null;
+  userPicture?: string | null;
 }
 
 const NAV_ITEMS: Array<
@@ -89,12 +96,28 @@ export default function DesktopSidebar(props: Props) {
     aviso = null,
     mercadoAberto = false,
     isAdmin = false,
+    userEmail = null,
+    userRole = null,
+    userNome = null,
+    userPicture = null,
   } = props;
   const navItems = isAdmin ? [...NAV_ITEMS, ADMIN_NAV_ITEM] : NAV_ITEMS;
   const top5 = ranking.slice(0, 5);
 
   return (
     <aside class="bf-sidebar" aria-label="Navegação desktop">
+      {/* User actions: UserMenu (avatar) + NotifBell — substitui a
+          TopBar que sumiu no desktop. */}
+      <div class="bf-sidebar__actions">
+        <UserMenu
+          email={userEmail}
+          nome={userNome}
+          picture={userPicture}
+          role={userRole}
+        />
+        <NotifBell />
+      </div>
+
       {/* Logo */}
       <div class="bf-sidebar__logo">
         <img src="/logo_site.png" alt="Brasileirão Fantasy" />

@@ -28,9 +28,16 @@ interface SessaoAtiva {
   email: string | null;
   lastSeenAt: number;
   createdAt: number;
-  /** Session já passou de expires_at — sessão não vale mais pra
-   *  autenticar, mas serve pra mostrar "último login do usuário". */
-  expirada: boolean;
+}
+
+interface UltimoLogin {
+  userKey: string;
+  role: "user" | "admin";
+  chave: string | null;
+  name: string | null;
+  email: string | null;
+  lastLoginAt: number;
+  loginCount: number;
 }
 
 interface AtividadeRecente {
@@ -78,6 +85,7 @@ interface Data {
   ofertasPendentesCount: number;
   trocasConcluidasCount: number;
   sessoesAtivas: SessaoAtiva[];
+  ultimosLogins: UltimoLogin[];
   /** Atividade recente (trocas, ofertas), ordenado desc por ts. Top 10. */
   timeline: AtividadeRecente[];
   userEmail: string | null;
@@ -160,13 +168,11 @@ export const handler: Handlers<Data, State> = {
       };
     });
 
-    // Sessões: TODAS (ativas + expiradas) dedupadas por usuário
-    // (chave do time, ou email pra admin). UI distingue online
-    // agora (≤5min) / sessão ativa / expirada.
+    // Sessões ATIVAS (não expiradas) — dedupadas por usuário.
     const db = getDb();
     const sessoesRows = db.prepare(
-      "SELECT id, role, chave, name, email, last_seen_at, created_at, expires_at " +
-        "FROM sessions " +
+      "SELECT id, role, chave, name, email, last_seen_at, created_at " +
+        "FROM sessions WHERE expires_at > ? " +
         "ORDER BY COALESCE(last_seen_at, created_at) DESC",
     ).all<{
       id: string;
@@ -176,9 +182,7 @@ export const handler: Handlers<Data, State> = {
       email: string | null;
       last_seen_at: number | null;
       created_at: number;
-      expires_at: number;
-    }>();
-    const now = Date.now();
+    }>(Date.now());
     const seenUsers = new Set<string>();
     const sessoesAtivas: SessaoAtiva[] = [];
     for (const s of sessoesRows) {
@@ -193,9 +197,32 @@ export const handler: Handlers<Data, State> = {
         email: s.email,
         lastSeenAt: s.last_seen_at ?? s.created_at,
         createdAt: s.created_at,
-        expirada: s.expires_at < now,
       });
     }
+
+    // Últimos logins (tabela user_logins) — 1 row por usuário,
+    // independente de session expirar. Histórico permanente.
+    const loginsRows = db.prepare(
+      "SELECT user_key, role, chave, name, email, last_login_at, login_count " +
+        "FROM user_logins ORDER BY last_login_at DESC LIMIT 50",
+    ).all<{
+      user_key: string;
+      role: "user" | "admin";
+      chave: string | null;
+      name: string | null;
+      email: string | null;
+      last_login_at: number;
+      login_count: number;
+    }>();
+    const ultimosLogins: UltimoLogin[] = loginsRows.map((r) => ({
+      userKey: r.user_key,
+      role: r.role,
+      chave: r.chave,
+      name: r.name,
+      email: r.email,
+      lastLoginAt: r.last_login_at,
+      loginCount: r.login_count,
+    }));
 
     // Timeline: mistura trocas e ofertas recentes ordenadas por ts.
     const timeline: AtividadeRecente[] = [];
@@ -236,6 +263,7 @@ export const handler: Handlers<Data, State> = {
       ofertasPendentesCount: ofertas.length,
       trocasConcluidasCount: trocas.length,
       sessoesAtivas,
+      ultimosLogins,
       timeline: timelineTop,
       userEmail: ctx.state.session?.email ?? null,
       userRole: ctx.state.session?.role ?? null,
@@ -250,7 +278,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=170" />
+        <link rel="stylesheet" href="/bf-styles.css?v=171" />
       </Head>
       <DesktopSidebar
         active="admin"
@@ -341,7 +369,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
                 >
                   <span class="bf-admin-overview__num">
                     {data.sessoesAtivas.filter((s) =>
-                      !s.expirada && Date.now() - s.lastSeenAt < 5 * 60 * 1000
+                      Date.now() - s.lastSeenAt < 5 * 60 * 1000
                     ).length}
                   </span>
                   <span class="bf-admin-overview__lbl">Online agora</span>
@@ -359,22 +387,22 @@ export default function AdminPage({ data }: PageProps<Data>) {
               </header>
 
               <div class="bf-admin-atividade">
-                {/* Sessões */}
+                {/* Sessões ativas (online + idle) */}
                 <div class="bf-admin-atividade__col">
                   <div class="bf-admin-atividade__col-titulo">
-                    Usuários ({data.sessoesAtivas.length})
+                    Sessões ativas ({data.sessoesAtivas.length})
                   </div>
                   {data.sessoesAtivas.length === 0
                     ? (
                       <div class="bf-empty-state">
-                        Nenhuma sessão registrada.
+                        Nenhuma sessão ativa.
                       </div>
                     )
                     : (
                       <ul class="bf-admin-sessoes">
                         {data.sessoesAtivas.map((s) => {
                           const idle = Date.now() - s.lastSeenAt;
-                          const online = !s.expirada && idle < 5 * 60 * 1000;
+                          const online = idle < 5 * 60 * 1000;
                           const idleTxt = idle < 60_000
                             ? "agora"
                             : idle < 3600_000
@@ -382,26 +410,16 @@ export default function AdminPage({ data }: PageProps<Data>) {
                             : idle < 86400_000
                             ? `${Math.floor(idle / 3600_000)} h`
                             : `${Math.floor(idle / 86400_000)} d`;
-                          const stateLabel = online
-                            ? "online"
-                            : s.expirada
-                            ? `último login ${idleTxt} atrás`
-                            : `${idleTxt} atrás`;
-                          const rowMod = online
-                            ? "bf-admin-sessoes__row--online"
-                            : s.expirada
-                            ? "bf-admin-sessoes__row--off"
-                            : "";
                           return (
                             <li
                               key={s.id}
-                              class={`bf-admin-sessoes__row ${rowMod}`}
+                              class={`bf-admin-sessoes__row ${
+                                online ? "bf-admin-sessoes__row--online" : ""
+                              }`}
                             >
                               <span
                                 class={`bf-admin-sessoes__dot ${
                                   online ? "bf-admin-sessoes__dot--on" : ""
-                                } ${
-                                  s.expirada ? "bf-admin-sessoes__dot--off" : ""
                                 }`}
                               />
                               <span class="bf-admin-sessoes__name">
@@ -411,7 +429,54 @@ export default function AdminPage({ data }: PageProps<Data>) {
                                 {s.role === "admin" ? "admin" : (s.chave ?? "—")}
                               </span>
                               <span class="bf-admin-sessoes__idle">
-                                {stateLabel}
+                                {online ? "online" : `${idleTxt} atrás`}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+
+                  {/* Últimos logins (histórico permanente) */}
+                  <div
+                    class="bf-admin-atividade__col-titulo"
+                    style="margin-top: 16px"
+                  >
+                    Últimos logins ({data.ultimosLogins.length})
+                  </div>
+                  {data.ultimosLogins.length === 0
+                    ? (
+                      <div class="bf-empty-state">
+                        Nenhum login registrado.
+                      </div>
+                    )
+                    : (
+                      <ul class="bf-admin-sessoes">
+                        {data.ultimosLogins.map((u) => {
+                          const ago = Date.now() - u.lastLoginAt;
+                          const agoTxt = ago < 60_000
+                            ? "agora"
+                            : ago < 3600_000
+                            ? `${Math.floor(ago / 60_000)} min`
+                            : ago < 86400_000
+                            ? `${Math.floor(ago / 3600_000)} h`
+                            : `${Math.floor(ago / 86400_000)} d`;
+                          return (
+                            <li
+                              key={u.userKey}
+                              class="bf-admin-sessoes__row bf-admin-sessoes__row--off"
+                            >
+                              <span class="bf-admin-sessoes__dot bf-admin-sessoes__dot--off" />
+                              <span class="bf-admin-sessoes__name">
+                                {u.name ?? u.email ?? u.userKey}
+                              </span>
+                              <span class="bf-admin-sessoes__role">
+                                {u.role === "admin" ? "admin" : (u.chave ?? "—")}
+                                {" · "}
+                                {u.loginCount}x
+                              </span>
+                              <span class="bf-admin-sessoes__idle">
+                                {agoTxt} atrás
                               </span>
                             </li>
                           );
