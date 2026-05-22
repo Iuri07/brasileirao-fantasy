@@ -4,7 +4,7 @@
 
 import TeamCrest from "./TeamCrest.tsx";
 
-type NavId = "home" | "mercado" | "liga" | "live";
+type NavId = "home" | "mercado" | "liga" | "live" | "admin";
 
 interface RankingItem {
   chave: string;
@@ -33,6 +33,8 @@ interface Props {
   /** True quando o mercado está aberto (entre rodadas). Mostra pip
    *  pulsante lime no item Mercado da nav. */
   mercadoAberto?: boolean;
+  /** True pra mostrar o item Admin na nav (visível só pra role=admin). */
+  isAdmin?: boolean;
 }
 
 const NAV_ITEMS: Array<
@@ -65,6 +67,15 @@ const NAV_ITEMS: Array<
   },
 ];
 
+const ADMIN_NAV_ITEM: { id: NavId; label: string; href: string; iconPath: string } = {
+  id: "admin",
+  label: "Admin",
+  href: "/admin",
+  // Gear/cog ícone
+  iconPath:
+    "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
+};
+
 export default function DesktopSidebar(props: Props) {
   const {
     active,
@@ -77,7 +88,9 @@ export default function DesktopSidebar(props: Props) {
     fechamentoTexto,
     aviso = null,
     mercadoAberto = false,
+    isAdmin = false,
   } = props;
+  const navItems = isAdmin ? [...NAV_ITEMS, ADMIN_NAV_ITEM] : NAV_ITEMS;
   const top5 = ranking.slice(0, 5);
 
   return (
@@ -103,7 +116,7 @@ export default function DesktopSidebar(props: Props) {
       {/* Nav principal */}
       <nav class="bf-sidebar__nav">
         <div class="bf-sidebar__nav-label">Navegação</div>
-        {NAV_ITEMS.map((it) => {
+        {navItems.map((it) => {
           const disabled = liveDisabled && it.id === "live";
           const isActive = it.id === active;
           // Pip lime no item Mercado quando mercado aberto — mesmo padrão

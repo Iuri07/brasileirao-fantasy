@@ -54,7 +54,9 @@ export function getSession(sessionId: string): Promise<SessionKV | null> {
   }>(sessionId);
   if (!r) return Promise.resolve(null);
   if (r.expires_at < Date.now()) {
-    db.prepare("DELETE FROM sessions WHERE id=?").run(sessionId);
+    // NÃO deleta — mantém sessões expiradas pra admin ver "último
+    // login" no histórico. GC periódico via cron limpa sessões muito
+    // antigas (>30d).
     return Promise.resolve(null);
   }
   // Atualiza last_seen_at — usado pelo admin pra ver quem tá online.

@@ -276,7 +276,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=169" />
+        <link rel="stylesheet" href="/bf-styles.css?v=170" />
       </Head>
       <DesktopSidebar
         active="live"
@@ -288,6 +288,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
         ranking={ranking}
         fechamentoTexto={null}
         mercadoAberto={!data.aoVivo}
+        isAdmin={data.userRole === "admin"}
       />
       <div class="bf-viewport">
         <TopBar

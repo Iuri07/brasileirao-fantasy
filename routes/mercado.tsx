@@ -12,6 +12,7 @@ import {
   computeDraftMeta,
   type DraftMeta,
   getDiasResolucao,
+  getHoraResolucao,
   inicializarDraftSeNecessario,
   proximaResolucao,
 } from "../lib/draft.ts";
@@ -72,12 +73,14 @@ export const handler: Handlers<Data, State> = {
       rodadaStatus,
       draftOrdemKeys,
       diasResolucao,
+      horaResolucao,
       minhaAVendaArr,
       draftInit,
     ] = await Promise.all([
       getRodadaStatus(),
       getDraftOrdem(),
       getDiasResolucao(),
+      getHoraResolucao(),
       chaveLogadaAux
         ? getAVenda(chaveLogadaAux)
         : Promise.resolve([] as number[]),
@@ -122,7 +125,7 @@ export const handler: Handlers<Data, State> = {
 
     // Tempo até a próxima resolução de conflitos do draft (já temos
     // diasResolucao do round 1)
-    const prox = proximaResolucao(diasResolucao);
+    const prox = proximaResolucao(diasResolucao, new Date(), horaResolucao);
     const msAteResolucao = prox ? prox.getTime() - Date.now() : null;
 
     mark("data", T0);
@@ -312,7 +315,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=169" />
+        <link rel="stylesheet" href="/bf-styles.css?v=170" />
       </Head>
       <DesktopSidebar
         active="mercado"
@@ -324,6 +327,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
         ranking={[]}
         fechamentoTexto={fechamentoText}
         mercadoAberto={!data.aoVivo}
+        isAdmin={data.userRole === "admin"}
       />
       <div class="bf-viewport">
         <TopBar

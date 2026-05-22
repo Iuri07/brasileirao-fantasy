@@ -111,6 +111,7 @@ export async function avancarRodadaDraft(
 // ============================================================
 
 const DIAS_DEFAULT = [3]; // quarta-feira
+const HORA_DEFAULT = 23; // 23h
 
 export function getDiasResolucao(): Promise<number[]> {
   const stored = appStateGet<number[]>("draft_dias");
@@ -126,15 +127,30 @@ export function setDiasResolucao(dias: number[]): Promise<void> {
   return Promise.resolve();
 }
 
+/** Hora (0-23) do dia em que a resolução roda. Default 23h. */
+export function getHoraResolucao(): Promise<number> {
+  const stored = appStateGet<number>("draft_hora");
+  if (typeof stored !== "number") return Promise.resolve(HORA_DEFAULT);
+  return Promise.resolve(Math.max(0, Math.min(23, Math.trunc(stored))));
+}
+
+export function setHoraResolucao(hora: number): Promise<void> {
+  const h = Math.max(0, Math.min(23, Math.trunc(hora)));
+  appStateSet("draft_hora", h);
+  return Promise.resolve();
+}
+
 export function proximaResolucao(
   dias: number[],
   from: Date = new Date(),
+  hora: number = HORA_DEFAULT,
 ): Date | null {
   if (dias.length === 0) return null;
+  const h = Math.max(0, Math.min(23, Math.trunc(hora)));
   for (let i = 0; i < 8; i++) {
     const cand = new Date(from);
     cand.setDate(cand.getDate() + i);
-    cand.setHours(23, 59, 59, 999);
+    cand.setHours(h, 0, 0, 0);
     if (dias.includes(cand.getDay()) && cand.getTime() > from.getTime()) {
       return cand;
     }

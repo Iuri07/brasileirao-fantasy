@@ -2,7 +2,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
 import { getEmailMap } from "../lib/auth.ts";
 import { CHAVES_TIMES, getRodadaStatus, TODAS_CHAVES } from "../lib/kv.ts";
-import { getDiasResolucao } from "../lib/draft.ts";
+import { getDiasResolucao, getHoraResolucao } from "../lib/draft.ts";
 import { timeLigaInfo } from "../lib/times-liga.ts";
 import { getAllTimeVisuais, resolveTimeVisual } from "../lib/time-visual.ts";
 import { getAllHistoricos } from "../lib/historico.ts";
@@ -28,6 +28,9 @@ interface SessaoAtiva {
   email: string | null;
   lastSeenAt: number;
   createdAt: number;
+  /** Session já passou de expires_at — sessão não vale mais pra
+   *  autenticar, mas serve pra mostrar "último login do usuário". */
+  expirada: boolean;
 }
 
 interface AtividadeRecente {
@@ -69,6 +72,7 @@ interface Data {
   historicoTimes: HistoricoTimeItem[];
   historicos: Record<string, Record<string, number>>;
   diasResolucao: number[];
+  horaResolucao: number;
   simulando: boolean;
   rodadaAtual: number;
   ofertasPendentesCount: number;
@@ -91,6 +95,7 @@ export const handler: Handlers<Data, State> = {
       todosOverrides,
       historicos,
       diasResolucao,
+      horaResolucao,
       rodadaStatus,
       ofertas,
       trocas,
@@ -99,6 +104,7 @@ export const handler: Handlers<Data, State> = {
       getAllTimeVisuais(),
       getAllHistoricos(),
       getDiasResolucao(),
+      getHoraResolucao(),
       getRodadaStatus(),
       listarTodasOfertas({ status: "pendente" }),
       listarTrocas(),
@@ -154,31 +160,42 @@ export const handler: Handlers<Data, State> = {
       };
     });
 
-    // Sessões ativas (não expiradas, com algum last_seen). Mostra
-    // todas — UI separa "online agora" (≤5min) das outras.
+    // Sessões: TODAS (ativas + expiradas) dedupadas por usuário
+    // (chave do time, ou email pra admin). UI distingue online
+    // agora (≤5min) / sessão ativa / expirada.
     const db = getDb();
     const sessoesRows = db.prepare(
-      "SELECT id, role, chave, name, email, last_seen_at, created_at " +
-        "FROM sessions WHERE expires_at > ? AND last_seen_at IS NOT NULL " +
-        "ORDER BY last_seen_at DESC LIMIT 30",
+      "SELECT id, role, chave, name, email, last_seen_at, created_at, expires_at " +
+        "FROM sessions " +
+        "ORDER BY COALESCE(last_seen_at, created_at) DESC",
     ).all<{
       id: string;
       role: "user" | "admin";
       chave: string | null;
       name: string | null;
       email: string | null;
-      last_seen_at: number;
+      last_seen_at: number | null;
       created_at: number;
-    }>(Date.now());
-    const sessoesAtivas: SessaoAtiva[] = sessoesRows.map((s) => ({
-      id: s.id.slice(0, 8),
-      role: s.role,
-      chave: s.chave,
-      name: s.name,
-      email: s.email,
-      lastSeenAt: s.last_seen_at,
-      createdAt: s.created_at,
-    }));
+      expires_at: number;
+    }>();
+    const now = Date.now();
+    const seenUsers = new Set<string>();
+    const sessoesAtivas: SessaoAtiva[] = [];
+    for (const s of sessoesRows) {
+      const userKey = s.chave ?? s.email ?? s.id;
+      if (seenUsers.has(userKey)) continue;
+      seenUsers.add(userKey);
+      sessoesAtivas.push({
+        id: s.id.slice(0, 8),
+        role: s.role,
+        chave: s.chave,
+        name: s.name,
+        email: s.email,
+        lastSeenAt: s.last_seen_at ?? s.created_at,
+        createdAt: s.created_at,
+        expirada: s.expires_at < now,
+      });
+    }
 
     // Timeline: mistura trocas e ofertas recentes ordenadas por ts.
     const timeline: AtividadeRecente[] = [];
@@ -213,6 +230,7 @@ export const handler: Handlers<Data, State> = {
       historicoTimes,
       historicos,
       diasResolucao,
+      horaResolucao,
       simulando,
       rodadaAtual: rodadaStatus?.rodada ?? 1,
       ofertasPendentesCount: ofertas.length,
@@ -232,11 +250,12 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=169" />
+        <link rel="stylesheet" href="/bf-styles.css?v=170" />
       </Head>
       <DesktopSidebar
-        active="home"
+        active="admin"
         liveDisabled={false}
+        isAdmin
         meuChave={null}
         meuNomeTime={null}
         meuDono={null}
@@ -322,7 +341,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
                 >
                   <span class="bf-admin-overview__num">
                     {data.sessoesAtivas.filter((s) =>
-                      Date.now() - s.lastSeenAt < 5 * 60 * 1000
+                      !s.expirada && Date.now() - s.lastSeenAt < 5 * 60 * 1000
                     ).length}
                   </span>
                   <span class="bf-admin-overview__lbl">Online agora</span>
@@ -343,19 +362,19 @@ export default function AdminPage({ data }: PageProps<Data>) {
                 {/* Sessões */}
                 <div class="bf-admin-atividade__col">
                   <div class="bf-admin-atividade__col-titulo">
-                    Sessões ativas ({data.sessoesAtivas.length})
+                    Usuários ({data.sessoesAtivas.length})
                   </div>
                   {data.sessoesAtivas.length === 0
                     ? (
                       <div class="bf-empty-state">
-                        Nenhuma sessão recente.
+                        Nenhuma sessão registrada.
                       </div>
                     )
                     : (
                       <ul class="bf-admin-sessoes">
                         {data.sessoesAtivas.map((s) => {
                           const idle = Date.now() - s.lastSeenAt;
-                          const online = idle < 5 * 60 * 1000;
+                          const online = !s.expirada && idle < 5 * 60 * 1000;
                           const idleTxt = idle < 60_000
                             ? "agora"
                             : idle < 3600_000
@@ -363,16 +382,26 @@ export default function AdminPage({ data }: PageProps<Data>) {
                             : idle < 86400_000
                             ? `${Math.floor(idle / 3600_000)} h`
                             : `${Math.floor(idle / 86400_000)} d`;
+                          const stateLabel = online
+                            ? "online"
+                            : s.expirada
+                            ? `último login ${idleTxt} atrás`
+                            : `${idleTxt} atrás`;
+                          const rowMod = online
+                            ? "bf-admin-sessoes__row--online"
+                            : s.expirada
+                            ? "bf-admin-sessoes__row--off"
+                            : "";
                           return (
                             <li
                               key={s.id}
-                              class={`bf-admin-sessoes__row ${
-                                online ? "bf-admin-sessoes__row--online" : ""
-                              }`}
+                              class={`bf-admin-sessoes__row ${rowMod}`}
                             >
                               <span
                                 class={`bf-admin-sessoes__dot ${
                                   online ? "bf-admin-sessoes__dot--on" : ""
+                                } ${
+                                  s.expirada ? "bf-admin-sessoes__dot--off" : ""
                                 }`}
                               />
                               <span class="bf-admin-sessoes__name">
@@ -382,7 +411,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
                                 {s.role === "admin" ? "admin" : (s.chave ?? "—")}
                               </span>
                               <span class="bf-admin-sessoes__idle">
-                                {online ? "online" : `${idleTxt} atrás`}
+                                {stateLabel}
                               </span>
                             </li>
                           );
@@ -499,7 +528,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
                   Dias da semana em que conflitos são resolvidos.
                 </span>
               </header>
-              <AdminDraftDias iniciais={data.diasResolucao} />
+              <AdminDraftDias iniciais={data.diasResolucao} horaInicial={data.horaResolucao} />
             </section>
 
             <section id="simular" class="bf-admin-section">
@@ -614,7 +643,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
               resolvidos. Mostrado pro usuário como contagem regressiva no
               mercado.
             </p>
-            <AdminDraftDias iniciais={data.diasResolucao} />
+            <AdminDraftDias iniciais={data.diasResolucao} horaInicial={data.horaResolucao} />
           </article>
 
           <SectionHeader>Simular rodada ao vivo</SectionHeader>
