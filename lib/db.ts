@@ -124,11 +124,12 @@ function initSchema(db: Database): void {
       name TEXT,
       picture TEXT,
       created_at INTEGER NOT NULL,
-      expires_at INTEGER NOT NULL,
-      last_seen_at INTEGER
+      expires_at INTEGER NOT NULL
+      -- last_seen_at adicionada via ensureIncrementalColumns —
+      -- bancos antigos (v2) já existem com a tabela sem essa coluna;
+      -- declarar aqui faria CREATE INDEX abaixo falhar.
     );
     CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
-    CREATE INDEX IF NOT EXISTS idx_sessions_last_seen ON sessions(last_seen_at);
 
     -- Cache de atletas Cartola (1 row por atleta)
     CREATE TABLE IF NOT EXISTS atletas_cache (
@@ -291,6 +292,12 @@ function migrateIfNeeded(db: Database): void {
 
 function ensureIncrementalColumns(db: Database): void {
   addColumnIfMissing(db, "sessions", "last_seen_at", "INTEGER");
+  // Index criado AQUI (não em initSchema) porque depende da coluna
+  // acima — em bancos v2 antigos a tabela já existe sem ela, então
+  // a ordem importa: ALTER antes, CREATE INDEX depois.
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_sessions_last_seen ON sessions(last_seen_at)",
+  );
 }
 
 function hasTable(db: Database, name: string): boolean {
