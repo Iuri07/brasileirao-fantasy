@@ -168,11 +168,12 @@ export const handler: Handlers<Data, State> = {
       };
     });
 
-    // Sessões ATIVAS = quem realmente está online agora (last_seen
-    // dentro dos últimos 15 min). Sessões mais antigas (mesmo não
-    // expiradas) vão pra "Últimos logins". Dedup por usuário.
+    // Sessões ATIVAS = quem está ONLINE agora (last_seen dentro
+    // dos últimos 5 min — mesma janela do pip verde). Sessões mais
+    // antigas (mesmo não expiradas) vão pra "Últimos logins".
+    // Dedup por usuário.
     const db = getDb();
-    const ATIVO_MS = 15 * 60 * 1000; // 15 minutos
+    const ATIVO_MS = 5 * 60 * 1000; // 5 minutos (= online)
     const limiteAtivo = Date.now() - ATIVO_MS;
     const sessoesRows = db.prepare(
       "SELECT id, role, chave, name, email, last_seen_at, created_at " +
