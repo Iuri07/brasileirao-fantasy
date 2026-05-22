@@ -5185,18 +5185,6 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   );
   border-color: color-mix(in srgb, var(--accent) 30%, var(--line-1));
 }
-.bf-times-grid__card[data-customizado="1"]::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: -2px;
-  transform: translateY(-50%);
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
-}
 
 .bf-times-grid__header {
   display: flex;
