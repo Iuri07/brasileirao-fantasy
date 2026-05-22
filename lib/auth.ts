@@ -57,6 +57,10 @@ export function getSession(sessionId: string): Promise<SessionKV | null> {
     db.prepare("DELETE FROM sessions WHERE id=?").run(sessionId);
     return Promise.resolve(null);
   }
+  // Atualiza last_seen_at — usado pelo admin pra ver quem tá online.
+  // Throttle implícito: cada request bate aqui, mas custa <0.1ms.
+  db.prepare("UPDATE sessions SET last_seen_at=? WHERE id=?")
+    .run(Date.now(), sessionId);
   return Promise.resolve({
     role: r.role,
     chave: r.chave ?? undefined,

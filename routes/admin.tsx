@@ -7,8 +7,10 @@ import { timeLigaInfo } from "../lib/times-liga.ts";
 import { getAllTimeVisuais, resolveTimeVisual } from "../lib/time-visual.ts";
 import { getAllHistoricos } from "../lib/historico.ts";
 import { cdn } from "../lib/cdn.ts";
+import { getDb } from "../lib/db.ts";
 import SectionHeader from "../components/SectionHeader.tsx";
 import TopBar from "../components/TopBar.tsx";
+import DesktopSidebar from "../components/DesktopSidebar.tsx";
 import AdminEmailMap from "../islands/AdminEmailMap.tsx";
 import AdminDraftDias from "../islands/AdminDraftDias.tsx";
 import AdminSimularRodada from "../islands/AdminSimularRodada.tsx";
@@ -17,6 +19,23 @@ import AdminTimesGrid from "../islands/AdminTimesGrid.tsx";
 import { listarTodasOfertas } from "../lib/ofertas.ts";
 import { listarTrocas } from "../lib/historico-trocas.ts";
 import type { State } from "./_middleware.ts";
+
+interface SessaoAtiva {
+  id: string;
+  role: "user" | "admin";
+  chave: string | null;
+  name: string | null;
+  email: string | null;
+  lastSeenAt: number;
+  createdAt: number;
+}
+
+interface AtividadeRecente {
+  ts: number;
+  /** "troca" | "oferta" | "transferencia" */
+  tipo: string;
+  descricao: string;
+}
 
 interface AtribuicaoItem {
   chave: string;
@@ -54,6 +73,9 @@ interface Data {
   rodadaAtual: number;
   ofertasPendentesCount: number;
   trocasConcluidasCount: number;
+  sessoesAtivas: SessaoAtiva[];
+  /** Atividade recente (trocas, ofertas), ordenado desc por ts. Top 10. */
+  timeline: AtividadeRecente[];
   userEmail: string | null;
   userRole: "admin" | "user" | null;
   userNome: string | null;
@@ -132,6 +154,59 @@ export const handler: Handlers<Data, State> = {
       };
     });
 
+    // Sessões ativas (não expiradas, com algum last_seen). Mostra
+    // todas — UI separa "online agora" (≤5min) das outras.
+    const db = getDb();
+    const sessoesRows = db.prepare(
+      "SELECT id, role, chave, name, email, last_seen_at, created_at " +
+        "FROM sessions WHERE expires_at > ? AND last_seen_at IS NOT NULL " +
+        "ORDER BY last_seen_at DESC LIMIT 30",
+    ).all<{
+      id: string;
+      role: "user" | "admin";
+      chave: string | null;
+      name: string | null;
+      email: string | null;
+      last_seen_at: number;
+      created_at: number;
+    }>(Date.now());
+    const sessoesAtivas: SessaoAtiva[] = sessoesRows.map((s) => ({
+      id: s.id.slice(0, 8),
+      role: s.role,
+      chave: s.chave,
+      name: s.name,
+      email: s.email,
+      lastSeenAt: s.last_seen_at,
+      createdAt: s.created_at,
+    }));
+
+    // Timeline: mistura trocas e ofertas recentes ordenadas por ts.
+    const timeline: AtividadeRecente[] = [];
+    for (const t of trocas.slice(0, 10)) {
+      const cA = atribuicoes.find((a) => a.chave === t.chaveA)?.displayName ??
+        t.chaveA;
+      const cB = atribuicoes.find((a) => a.chave === t.chaveB)?.displayName ??
+        t.chaveB;
+      timeline.push({
+        ts: t.concluidaEm,
+        tipo: "troca",
+        descricao: `${cA} ↔ ${cB}: ${t.atletaA.apelido} ↔ ${t.atletaB.apelido}`,
+      });
+    }
+    for (const o of ofertas.slice(0, 10)) {
+      const cA = atribuicoes.find((a) => a.chave === o.deChave)?.displayName ??
+        o.deChave;
+      const cB = atribuicoes.find((a) => a.chave === o.paraChave)
+        ?.displayName ?? o.paraChave;
+      timeline.push({
+        ts: o.criadoEm,
+        tipo: "oferta",
+        descricao: `${cA} → ${cB} (${o.status})`,
+      });
+    }
+    timeline.sort((a, b) => b.ts - a.ts);
+    const timelineTop = timeline.slice(0, 12);
+
     return ctx.render({
       atribuicoes,
       visuais,
@@ -142,6 +217,8 @@ export const handler: Handlers<Data, State> = {
       rodadaAtual: rodadaStatus?.rodada ?? 1,
       ofertasPendentesCount: ofertas.length,
       trocasConcluidasCount: trocas.length,
+      sessoesAtivas,
+      timeline: timelineTop,
       userEmail: ctx.state.session?.email ?? null,
       userRole: ctx.state.session?.role ?? null,
       userNome: ctx.state.session?.name ?? null,
@@ -155,8 +232,24 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=168" />
+        <link rel="stylesheet" href="/bf-styles.css?v=169" />
       </Head>
+      <DesktopSidebar
+        active="home"
+        liveDisabled={false}
+        meuChave={null}
+        meuNomeTime={null}
+        meuDono={null}
+        totalTimes={data.atribuicoes.length}
+        ranking={data.atribuicoes.map((a) => ({
+          chave: a.chave,
+          nome: a.displayName,
+          total: 0,
+          accent: data.visuais.find((v) => v.chave === a.chave)?.accent ??
+            "var(--bf-fg-2)",
+        }))}
+        fechamentoTexto={null}
+      />
       <div class="bf-viewport bf-admin-viewport">
         <TopBar
           userEmail={data.userEmail}
@@ -165,21 +258,19 @@ export default function AdminPage({ data }: PageProps<Data>) {
           userPicture={data.userPicture}
         />
 
-        {/* ============ DESKTOP DASHBOARD (≥1024px) ============ */}
         <div class="bf-admin-desktop">
-          <aside class="bf-admin-desktop__sidebar">
-            <h2 class="bf-admin-desktop__sidebar-title">Admin</h2>
-            <nav class="bf-admin-desktop__nav">
-              <a href="#visao-geral">Visão geral</a>
-              <a href="#historico">Pontos por rodada</a>
-              <a href="#times">Times (visual + email)</a>
-              <a href="#ofertas">Ofertas pendentes</a>
-              <a href="#trocas">Histórico de trocas</a>
-              <a href="#draft">Draft</a>
-              <a href="#simular">Simular rodada</a>
-              <a href="#times-edit">Editar elencos</a>
-            </nav>
-          </aside>
+          {/* Section nav: barra horizontal no topo da main area */}
+          <nav class="bf-admin-tabs">
+            <a href="#visao-geral">Visão geral</a>
+            <a href="#atividade">Atividade</a>
+            <a href="#historico">Pontos por rodada</a>
+            <a href="#times">Times (visual + email)</a>
+            <a href="#ofertas">Ofertas pendentes</a>
+            <a href="#trocas">Histórico de trocas</a>
+            <a href="#draft">Draft</a>
+            <a href="#simular">Simular rodada</a>
+            <a href="#times-edit">Editar elencos</a>
+          </nav>
 
           <main class="bf-admin-desktop__main">
             <section id="visao-geral" class="bf-admin-section">
@@ -224,6 +315,119 @@ export default function AdminPage({ data }: PageProps<Data>) {
                     )}
                   </span>
                   <span class="bf-admin-overview__lbl">Pontos lançados</span>
+                </div>
+                <a
+                  class="bf-admin-overview__card bf-admin-overview__card--link"
+                  href="#atividade"
+                >
+                  <span class="bf-admin-overview__num">
+                    {data.sessoesAtivas.filter((s) =>
+                      Date.now() - s.lastSeenAt < 5 * 60 * 1000
+                    ).length}
+                  </span>
+                  <span class="bf-admin-overview__lbl">Online agora</span>
+                </a>
+              </div>
+            </section>
+
+            {/* ATIVIDADE: sessões + timeline */}
+            <section id="atividade" class="bf-admin-section">
+              <header class="bf-admin-section__header">
+                <h2>Atividade</h2>
+                <span class="bf-admin-section__sub">
+                  Sessões ativas e últimas trocas/ofertas.
+                </span>
+              </header>
+
+              <div class="bf-admin-atividade">
+                {/* Sessões */}
+                <div class="bf-admin-atividade__col">
+                  <div class="bf-admin-atividade__col-titulo">
+                    Sessões ativas ({data.sessoesAtivas.length})
+                  </div>
+                  {data.sessoesAtivas.length === 0
+                    ? (
+                      <div class="bf-empty-state">
+                        Nenhuma sessão recente.
+                      </div>
+                    )
+                    : (
+                      <ul class="bf-admin-sessoes">
+                        {data.sessoesAtivas.map((s) => {
+                          const idle = Date.now() - s.lastSeenAt;
+                          const online = idle < 5 * 60 * 1000;
+                          const idleTxt = idle < 60_000
+                            ? "agora"
+                            : idle < 3600_000
+                            ? `${Math.floor(idle / 60_000)} min`
+                            : idle < 86400_000
+                            ? `${Math.floor(idle / 3600_000)} h`
+                            : `${Math.floor(idle / 86400_000)} d`;
+                          return (
+                            <li
+                              key={s.id}
+                              class={`bf-admin-sessoes__row ${
+                                online ? "bf-admin-sessoes__row--online" : ""
+                              }`}
+                            >
+                              <span
+                                class={`bf-admin-sessoes__dot ${
+                                  online ? "bf-admin-sessoes__dot--on" : ""
+                                }`}
+                              />
+                              <span class="bf-admin-sessoes__name">
+                                {s.name ?? s.email ?? s.id}
+                              </span>
+                              <span class="bf-admin-sessoes__role">
+                                {s.role === "admin" ? "admin" : (s.chave ?? "—")}
+                              </span>
+                              <span class="bf-admin-sessoes__idle">
+                                {online ? "online" : `${idleTxt} atrás`}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                </div>
+
+                {/* Timeline de eventos */}
+                <div class="bf-admin-atividade__col">
+                  <div class="bf-admin-atividade__col-titulo">
+                    Últimos eventos
+                  </div>
+                  {data.timeline.length === 0
+                    ? (
+                      <div class="bf-empty-state">Nenhum evento recente.</div>
+                    )
+                    : (
+                      <ul class="bf-admin-timeline">
+                        {data.timeline.map((e) => {
+                          const dt = new Date(e.ts);
+                          const dtTxt = dt.toLocaleString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone: "America/Sao_Paulo",
+                          });
+                          return (
+                            <li
+                              key={`${e.ts}-${e.descricao}`}
+                              class={`bf-admin-timeline__item bf-admin-timeline__item--${e.tipo}`}
+                            >
+                              <span class="bf-admin-timeline__ts">{dtTxt}</span>
+                              <span class="bf-admin-timeline__tipo">
+                                {e.tipo}
+                              </span>
+                              <span class="bf-admin-timeline__desc">
+                                {e.descricao}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                 </div>
               </div>
             </section>

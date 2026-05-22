@@ -124,9 +124,11 @@ function initSchema(db: Database): void {
       name TEXT,
       picture TEXT,
       created_at INTEGER NOT NULL,
-      expires_at INTEGER NOT NULL
+      expires_at INTEGER NOT NULL,
+      last_seen_at INTEGER
     );
     CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+    CREATE INDEX IF NOT EXISTS idx_sessions_last_seen ON sessions(last_seen_at);
 
     -- Cache de atletas Cartola (1 row por atleta)
     CREATE TABLE IF NOT EXISTS atletas_cache (
@@ -275,11 +277,20 @@ function initSchema(db: Database): void {
 
 function migrateIfNeeded(db: Database): void {
   const version = getUserVersion(db);
-  if (version >= SCHEMA_VERSION) return;
-  console.log(`[db] migrating schema v${version} → v${SCHEMA_VERSION}…`);
-  migrateV1toV2(db);
-  setUserVersion(db, SCHEMA_VERSION);
-  console.log(`[db] migration done`);
+  if (version < SCHEMA_VERSION) {
+    console.log(`[db] migrating schema v${version} → v${SCHEMA_VERSION}…`);
+    migrateV1toV2(db);
+    setUserVersion(db, SCHEMA_VERSION);
+    console.log(`[db] migration done`);
+  }
+  // Adições incrementais (idempotentes) — rodam sempre, mesmo em
+  // bancos já no version atual. Útil pra columns adicionadas depois
+  // sem bumpar SCHEMA_VERSION.
+  ensureIncrementalColumns(db);
+}
+
+function ensureIncrementalColumns(db: Database): void {
+  addColumnIfMissing(db, "sessions", "last_seen_at", "INTEGER");
 }
 
 function hasTable(db: Database, name: string): boolean {
@@ -307,7 +318,8 @@ function addColumnIfMissing(
 
 function migrateV1toV2(db: Database): void {
   db.transaction(() => {
-    // 0. Garante que as novas colunas existem em elencos antes de popular
+    // 0. Garante que colunas adicionadas pós-criação inicial existem
+    addColumnIfMissing(db, "sessions", "last_seen_at", "INTEGER");
     addColumnIfMissing(db, "elencos", "nome_time_override", "TEXT");
     addColumnIfMissing(db, "elencos", "display_name_override", "TEXT");
     addColumnIfMissing(db, "elencos", "logo_override", "TEXT");

@@ -4600,66 +4600,169 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 
 @media (min-width: 1024px) {
   .bf-admin-desktop {
-    display: grid;
+    display: block;
   }
   .bf-admin-mobile {
     display: none;
   }
 
-  /* Topbar continua, mas viewport amplia */
-  .bf-admin-viewport {
-    max-width: none;
-    padding-left: 0;
-    padding-right: 0;
+  /* /admin compartilha o layout das outras pages: DesktopSidebar à
+     esquerda + viewport com padding-left: 272px. As seções fluem
+     no main, com tabs horizontais no topo pra navegação rápida. */
+  .bf-admin-desktop__main {
+    padding: 0 0 80px;
+    min-width: 0;
   }
-  .bf-admin-desktop {
-    grid-template-columns: 220px 1fr;
-    gap: 0;
-    max-width: 1440px;
-    margin: 0 auto;
-    padding: 0 24px 80px;
-  }
-  .bf-admin-desktop__sidebar {
+  .bf-admin-tabs {
     position: sticky;
-    top: 16px;
-    align-self: start;
-    padding: 16px 12px;
-    border-right: 1px solid var(--line-1);
-    height: calc(100vh - 80px);
-    overflow-y: auto;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 4px;
+    margin: 0 0 16px;
+    background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--bf-line);
+    border-radius: var(--bf-radius-md);
   }
-  .bf-admin-desktop__sidebar-title {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    letter-spacing: 0.2em;
+  .bf-admin-tabs a {
+    padding: 6px 12px;
+    border-radius: var(--bf-radius-sm);
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--fg-1);
-    margin: 0 0 12px;
-    padding: 0 8px;
+    color: var(--bf-fg-2);
+    text-decoration: none;
+    transition: background 120ms, color 120ms;
   }
-  .bf-admin-desktop__nav {
+  .bf-admin-tabs a:hover {
+    background: color-mix(in srgb, var(--bf-lime) 14%, transparent);
+    color: var(--bf-lime);
+  }
+
+  /* === Atividade: 2 colunas (sessões | timeline) === */
+  .bf-admin-atividade {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .bf-admin-atividade__col {
+    padding: 14px;
+    background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
+    border: 1px solid var(--bf-line);
+    border-radius: var(--bf-radius-md);
+  }
+  .bf-admin-atividade__col-titulo {
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--bf-fg-3);
+    margin-bottom: 10px;
+  }
+  .bf-admin-sessoes,
+  .bf-admin-timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
   }
-  .bf-admin-desktop__nav a {
-    display: block;
-    padding: 8px 10px;
-    border-radius: 6px;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--fg-0);
-    text-decoration: none;
-    border-left: 2px solid transparent;
-    transition: background 120ms;
+  .bf-admin-sessoes__row {
+    display: grid;
+    grid-template-columns: 10px 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: var(--bf-radius-sm);
+    font-family: var(--bf-font-cond);
+    font-size: 12px;
   }
-  .bf-admin-desktop__nav a:hover {
-    background: var(--bf-bg-elev);
-    border-left-color: var(--accent-soft);
+  .bf-admin-sessoes__row--online {
+    background: color-mix(in srgb, var(--bf-lime) 8%, transparent);
   }
-  .bf-admin-desktop__main {
-    padding: 16px 24px 0;
+  .bf-admin-sessoes__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--bf-fg-3);
+  }
+  .bf-admin-sessoes__dot--on {
+    background: var(--bf-lime);
+    box-shadow: 0 0 8px var(--bf-lime-glow);
+  }
+  .bf-admin-sessoes__name {
+    color: var(--bf-fg-0);
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bf-admin-sessoes__role {
+    color: var(--bf-fg-3);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .bf-admin-sessoes__idle {
+    color: var(--bf-fg-3);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .bf-admin-sessoes__row--online .bf-admin-sessoes__idle {
+    color: var(--bf-lime);
+  }
+
+  .bf-admin-timeline__item {
+    display: grid;
+    grid-template-columns: 84px 64px 1fr;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: var(--bf-radius-sm);
+    font-family: var(--bf-font-body);
+    font-size: 12px;
+    border-left: 2px solid var(--bf-fg-3);
+  }
+  .bf-admin-timeline__item--troca {
+    border-left-color: var(--bf-lime);
+  }
+  .bf-admin-timeline__item--oferta {
+    border-left-color: var(--bf-yellow);
+  }
+  .bf-admin-timeline__ts {
+    color: var(--bf-fg-3);
+    font-variant-numeric: tabular-nums;
+    font-family: var(--bf-font-cond);
+    font-size: 11px;
+  }
+  .bf-admin-timeline__tipo {
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--bf-fg-2);
+  }
+  .bf-admin-timeline__item--troca .bf-admin-timeline__tipo {
+    color: var(--bf-lime);
+  }
+  .bf-admin-timeline__item--oferta .bf-admin-timeline__tipo {
+    color: var(--bf-yellow);
+  }
+  .bf-admin-timeline__desc {
+    color: var(--bf-fg-1);
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .bf-admin-section {
     padding: 28px 0;
