@@ -348,7 +348,13 @@ function decodeJwtPayload(jwt: string): Record<string, unknown> | null {
     if (parts.length < 2) return null;
     const padded = parts[1].replace(/-/g, "+").replace(/_/g, "/");
     const pad = padded.length % 4 ? "=".repeat(4 - (padded.length % 4)) : "";
-    const json = atob(padded + pad);
+    // atob() devolve binary string (1 byte por char). Pra UTF-8 multi-byte
+    // (acentos: "João" = 5 bytes), parse direto via JSON.parse corrompe os
+    // chars não-ASCII. Decode via TextDecoder("utf-8") faz o byte→string
+    // corretamente — caracteres como "ã" voltam a ser 1 codepoint em vez
+    // de mojibake (Ã£).
+    const bytes = Uint8Array.from(atob(padded + pad), (c) => c.charCodeAt(0));
+    const json = new TextDecoder("utf-8").decode(bytes);
     return JSON.parse(json);
   } catch {
     return null;

@@ -200,11 +200,19 @@ export const handler: Handlers<Data, State> = {
       });
     }
 
-    // Últimos logins (tabela user_logins) — 1 row por usuário,
-    // independente de session expirar. Histórico permanente.
+    // Últimos logins (tabela user_logins) — 1 row por TIME (chave),
+    // EXCLUINDO usuários que estão em sessões ativas (já aparecem acima).
+    // Histórico permanente — sobrevive a expirar/deslogar.
+    const activeChaves = new Set<string>(
+      sessoesAtivas
+        .filter((s) => s.chave !== null)
+        .map((s) => s.chave as string),
+    );
     const loginsRows = db.prepare(
       "SELECT user_key, role, chave, name, email, last_login_at, login_count " +
-        "FROM user_logins ORDER BY last_login_at DESC LIMIT 50",
+        "FROM user_logins " +
+        "WHERE chave IS NOT NULL " +
+        "ORDER BY last_login_at DESC LIMIT 100",
     ).all<{
       user_key: string;
       role: "user" | "admin";
@@ -214,15 +222,24 @@ export const handler: Handlers<Data, State> = {
       last_login_at: number;
       login_count: number;
     }>();
-    const ultimosLogins: UltimoLogin[] = loginsRows.map((r) => ({
-      userKey: r.user_key,
-      role: r.role,
-      chave: r.chave,
-      name: r.name,
-      email: r.email,
-      lastLoginAt: r.last_login_at,
-      loginCount: r.login_count,
-    }));
+    // Dedup por chave (1 por time, mais recente) + exclui ativos.
+    const seenChaves = new Set<string>();
+    const ultimosLogins: UltimoLogin[] = [];
+    for (const r of loginsRows) {
+      if (!r.chave) continue;
+      if (activeChaves.has(r.chave)) continue;
+      if (seenChaves.has(r.chave)) continue;
+      seenChaves.add(r.chave);
+      ultimosLogins.push({
+        userKey: r.user_key,
+        role: r.role,
+        chave: r.chave,
+        name: r.name,
+        email: r.email,
+        lastLoginAt: r.last_login_at,
+        loginCount: r.login_count,
+      });
+    }
 
     // Timeline: mistura trocas e ofertas recentes ordenadas por ts.
     const timeline: AtividadeRecente[] = [];
