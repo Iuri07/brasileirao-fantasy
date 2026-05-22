@@ -4668,6 +4668,24 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     gap: 16px;
     align-items: start;
   }
+
+  /* === Ações rápidas: 3 cards lado-a-lado (ofertas | trocas | simular) === */
+  .bf-admin-acoes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+  .bf-admin-section--mini {
+    /* Reseta o margin-bottom da section pra não dobrar com o grid gap */
+    margin-bottom: 0;
+  }
+  .bf-admin-section--mini .bf-admin-section__header h2 {
+    font-size: 14px;
+  }
+  .bf-admin-section--mini .bf-admin-section__sub {
+    font-size: 11px;
+  }
   .bf-admin-atividade__col {
     padding: 14px;
     background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);

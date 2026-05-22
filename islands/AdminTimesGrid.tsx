@@ -233,10 +233,7 @@ export default function AdminTimesGrid({ times }: Props) {
                 <div class="bf-times-grid__name">
                   {r.displayName || cur.displayName}
                 </div>
-                <div class="bf-times-grid__dono">
-                  {cur.dono} ·{" "}
-                  <span class="bf-times-grid__chave">{cur.chave}</span>
-                </div>
+                <div class="bf-times-grid__dono">{cur.dono}</div>
                 {cur.customizado && (
                   <span class="bf-times-grid__badge">customizado</span>
                 )}

@@ -139,7 +139,7 @@ export default function AdminTimeEditor({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · {data.displayName}</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=172" />
+        <link rel="stylesheet" href="/bf-styles.css?v=173" />
       </Head>
       <div class="bf-viewport">
         <TopBar

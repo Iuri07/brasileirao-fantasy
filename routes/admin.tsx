@@ -304,7 +304,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=172" />
+        <link rel="stylesheet" href="/bf-styles.css?v=173" />
       </Head>
       <DesktopSidebar
         active="admin"
@@ -569,40 +569,64 @@ export default function AdminPage({ data }: PageProps<Data>) {
               <AdminTimesGrid times={data.visuais} />
             </section>
 
-            <section id="ofertas" class="bf-admin-section">
-              <header class="bf-admin-section__header">
-                <h2>Ofertas pendentes</h2>
-                <span class="bf-admin-section__sub">
-                  {data.ofertasPendentesCount}{" "}
-                  pendente(s) · cancela ofertas esquecidas e remove dos
-                  negociáveis.
-                </span>
-              </header>
-              <a
-                href="/admin/ofertas"
-                class="bf-btn bf-btn--primary"
-                style="display:inline-flex"
+            {/* Ações rápidas: 3 cards lado-a-lado pra economizar espaço */}
+            <div class="bf-admin-acoes">
+              <section
+                id="ofertas"
+                class="bf-admin-section bf-admin-section--mini"
               >
-                Gerenciar →
-              </a>
-            </section>
+                <header class="bf-admin-section__header">
+                  <h2>Ofertas pendentes</h2>
+                  <span class="bf-admin-section__sub">
+                    {data.ofertasPendentesCount}{" "}
+                    pendente(s) · cancela ofertas esquecidas.
+                  </span>
+                </header>
+                <a
+                  href="/admin/ofertas"
+                  class="bf-btn bf-btn--primary"
+                  style="display:inline-flex"
+                >
+                  Gerenciar →
+                </a>
+              </section>
 
-            <section id="trocas" class="bf-admin-section">
-              <header class="bf-admin-section__header">
-                <h2>Histórico de trocas</h2>
-                <span class="bf-admin-section__sub">
-                  {data.trocasConcluidasCount}{" "}
-                  troca(s) concluída(s) · pode desfazer.
-                </span>
-              </header>
-              <a
-                href="/admin/trocas"
-                class="bf-btn bf-btn--primary"
-                style="display:inline-flex"
+              <section
+                id="trocas"
+                class="bf-admin-section bf-admin-section--mini"
               >
-                Ver histórico →
-              </a>
-            </section>
+                <header class="bf-admin-section__header">
+                  <h2>Histórico de trocas</h2>
+                  <span class="bf-admin-section__sub">
+                    {data.trocasConcluidasCount}{" "}
+                    troca(s) · pode desfazer.
+                  </span>
+                </header>
+                <a
+                  href="/admin/trocas"
+                  class="bf-btn bf-btn--primary"
+                  style="display:inline-flex"
+                >
+                  Ver histórico →
+                </a>
+              </section>
+
+              <section
+                id="simular"
+                class="bf-admin-section bf-admin-section--mini"
+              >
+                <header class="bf-admin-section__header">
+                  <h2>Simular rodada</h2>
+                  <span class="bf-admin-section__sub">
+                    Pontos aleatórios + status ao_vivo (trava cron).
+                  </span>
+                </header>
+                <AdminSimularRodada
+                  ativoInicial={data.simulando}
+                  rodadaAtual={data.rodadaAtual}
+                />
+              </section>
+            </div>
 
             <section id="draft" class="bf-admin-section">
               <header class="bf-admin-section__header">
@@ -612,20 +636,6 @@ export default function AdminPage({ data }: PageProps<Data>) {
                 </span>
               </header>
               <AdminDraftDias iniciais={data.diasResolucao} horaInicial={data.horaResolucao} />
-            </section>
-
-            <section id="simular" class="bf-admin-section">
-              <header class="bf-admin-section__header">
-                <h2>Simular rodada ao vivo</h2>
-                <span class="bf-admin-section__sub">
-                  Gera pontos aleatórios e marca status como ao_vivo (trava
-                  cron).
-                </span>
-              </header>
-              <AdminSimularRodada
-                ativoInicial={data.simulando}
-                rodadaAtual={data.rodadaAtual}
-              />
             </section>
 
             <section id="times-edit" class="bf-admin-section">
