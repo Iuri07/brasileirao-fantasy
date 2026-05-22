@@ -168,11 +168,16 @@ export const handler: Handlers<Data, State> = {
       };
     });
 
-    // Sessões ATIVAS (não expiradas) — dedupadas por usuário.
+    // Sessões ATIVAS = quem realmente está online agora (last_seen
+    // dentro dos últimos 15 min). Sessões mais antigas (mesmo não
+    // expiradas) vão pra "Últimos logins". Dedup por usuário.
     const db = getDb();
+    const ATIVO_MS = 15 * 60 * 1000; // 15 minutos
+    const limiteAtivo = Date.now() - ATIVO_MS;
     const sessoesRows = db.prepare(
       "SELECT id, role, chave, name, email, last_seen_at, created_at " +
-        "FROM sessions WHERE expires_at > ? " +
+        "FROM sessions " +
+        "WHERE expires_at > ? AND COALESCE(last_seen_at, created_at) > ? " +
         "ORDER BY COALESCE(last_seen_at, created_at) DESC",
     ).all<{
       id: string;
@@ -182,11 +187,14 @@ export const handler: Handlers<Data, State> = {
       email: string | null;
       last_seen_at: number | null;
       created_at: number;
-    }>(Date.now());
+    }>(Date.now(), limiteAtivo);
     const seenUsers = new Set<string>();
     const sessoesAtivas: SessaoAtiva[] = [];
     for (const s of sessoesRows) {
-      const userKey = s.chave ?? s.email ?? s.id;
+      // Dedup: admin sem chave/email vira "admin:local" (todas as
+      // sessões admin contam como o mesmo usuário no UI).
+      const userKey = s.chave ?? s.email ??
+        (s.role === "admin" ? "admin:local" : s.id);
       if (seenUsers.has(userKey)) continue;
       seenUsers.add(userKey);
       sessoesAtivas.push({
@@ -313,6 +321,10 @@ export default function AdminPage({ data }: PageProps<Data>) {
             "var(--bf-fg-2)",
         }))}
         fechamentoTexto={null}
+        userEmail={data.userEmail}
+        userRole={data.userRole}
+        userNome={data.userNome}
+        userPicture={data.userPicture}
       />
       <div class="bf-viewport bf-admin-viewport">
         <TopBar
