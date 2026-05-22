@@ -4661,10 +4661,10 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     color: var(--bf-lime);
   }
 
-  /* === Atividade: 2 colunas (sessões | timeline) === */
+  /* === Atividade: 3 colunas (online | últimos logins | timeline) === */
   .bf-admin-atividade {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
     gap: 16px;
     align-items: start;
   }

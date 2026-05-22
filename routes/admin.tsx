@@ -304,7 +304,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=171" />
+        <link rel="stylesheet" href="/bf-styles.css?v=172" />
       </Head>
       <DesktopSidebar
         active="admin"
@@ -417,41 +417,30 @@ export default function AdminPage({ data }: PageProps<Data>) {
               </header>
 
               <div class="bf-admin-atividade">
-                {/* Sessões ativas (online + idle) */}
+                {/* Sessões ONLINE (last_seen < 5min) */}
                 <div class="bf-admin-atividade__col">
                   <div class="bf-admin-atividade__col-titulo">
-                    Sessões ativas ({data.sessoesAtivas.length})
+                    Sessões online ({data.sessoesAtivas.length})
                   </div>
                   {data.sessoesAtivas.length === 0
                     ? (
                       <div class="bf-empty-state">
-                        Nenhuma sessão ativa.
+                        Ninguém online agora.
                       </div>
                     )
                     : (
                       <ul class="bf-admin-sessoes">
                         {data.sessoesAtivas.map((s) => {
                           const idle = Date.now() - s.lastSeenAt;
-                          const online = idle < 5 * 60 * 1000;
                           const idleTxt = idle < 60_000
                             ? "agora"
-                            : idle < 3600_000
-                            ? `${Math.floor(idle / 60_000)} min`
-                            : idle < 86400_000
-                            ? `${Math.floor(idle / 3600_000)} h`
-                            : `${Math.floor(idle / 86400_000)} d`;
+                            : `${Math.floor(idle / 60_000)} min`;
                           return (
                             <li
                               key={s.id}
-                              class={`bf-admin-sessoes__row ${
-                                online ? "bf-admin-sessoes__row--online" : ""
-                              }`}
+                              class="bf-admin-sessoes__row bf-admin-sessoes__row--online"
                             >
-                              <span
-                                class={`bf-admin-sessoes__dot ${
-                                  online ? "bf-admin-sessoes__dot--on" : ""
-                                }`}
-                              />
+                              <span class="bf-admin-sessoes__dot bf-admin-sessoes__dot--on" />
                               <span class="bf-admin-sessoes__name">
                                 {s.name ?? s.email ?? s.id}
                               </span>
@@ -459,19 +448,18 @@ export default function AdminPage({ data }: PageProps<Data>) {
                                 {s.role === "admin" ? "admin" : (s.chave ?? "—")}
                               </span>
                               <span class="bf-admin-sessoes__idle">
-                                {online ? "online" : `${idleTxt} atrás`}
+                                {idleTxt}
                               </span>
                             </li>
                           );
                         })}
                       </ul>
                     )}
+                </div>
 
-                  {/* Últimos logins (histórico permanente) */}
-                  <div
-                    class="bf-admin-atividade__col-titulo"
-                    style="margin-top: 16px"
-                  >
+                {/* Últimos logins (1 por time, ex-online) */}
+                <div class="bf-admin-atividade__col">
+                  <div class="bf-admin-atividade__col-titulo">
                     Últimos logins ({data.ultimosLogins.length})
                   </div>
                   {data.ultimosLogins.length === 0
