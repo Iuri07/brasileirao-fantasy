@@ -6670,8 +6670,9 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     overflow: visible;
   }
   .bf-home-grid__escala .bf-field__pitch {
-    /* Aspect 8/5 inverte de 5/8 portrait → landscape */
-    aspect-ratio: 8 / 5;
+    /* Aspect 10/5 (=2/1) — mais largo achata o campo na vertical,
+       evita estourar a fold no desktop. */
+    aspect-ratio: 10 / 5;
     /* Mesma razão acima — heads dos pinos top/bottom da coluna
        precisam respirar fora do retângulo do gramado. */
     overflow: visible;

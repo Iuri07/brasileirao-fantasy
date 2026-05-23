@@ -276,7 +276,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=175" />
+        <link rel="stylesheet" href="/bf-styles.css?v=176" />
       </Head>
       <DesktopSidebar
         active="live"
