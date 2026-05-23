@@ -74,7 +74,7 @@ export default function AdminDraftDias(
         ))}
       </div>
       <div class="bf-draft-dias__hora">
-        <label class="bf-label-micro" for="draft-hora">Horário</label>
+        <label class="bf-label-micro" for="draft-hora">Horário (BR)</label>
         <select
           id="draft-hora"
           class="bf-draft-dias__hora-input"

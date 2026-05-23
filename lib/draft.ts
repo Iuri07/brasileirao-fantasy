@@ -140,6 +140,13 @@ export function setHoraResolucao(hora: number): Promise<void> {
   return Promise.resolve();
 }
 
+/** BR está 3h ATRÁS de UTC (sem DST desde 2019). */
+const BR_OFFSET_MS = 3 * 60 * 60 * 1000;
+
+/** Próxima data/hora de resolução do draft. `dias` (0-6, dom=0) e `hora`
+ *  (0-23) são interpretados em fuso BR (UTC-3) — o servidor roda em UTC,
+ *  então sem essa conversão "23h" virava 23h UTC = 20h BR. Retorna Date
+ *  em UTC (mesmo wall-clock instant). */
 export function proximaResolucao(
   dias: number[],
   from: Date = new Date(),
@@ -147,12 +154,20 @@ export function proximaResolucao(
 ): Date | null {
   if (dias.length === 0) return null;
   const h = Math.max(0, Math.min(23, Math.trunc(hora)));
+  // fromBR: deslocada 3h pra trás, então getUTCHours/getUTCDay refletem
+  // a hora/dia local BR.
+  const fromBR = new Date(from.getTime() - BR_OFFSET_MS);
   for (let i = 0; i < 8; i++) {
-    const cand = new Date(from);
-    cand.setDate(cand.getDate() + i);
-    cand.setHours(h, 0, 0, 0);
-    if (dias.includes(cand.getDay()) && cand.getTime() > from.getTime()) {
-      return cand;
+    const candBR = new Date(fromBR.getTime());
+    candBR.setUTCDate(candBR.getUTCDate() + i);
+    candBR.setUTCHours(h, 0, 0, 0);
+    // candBR representa "hora BR" como UTC — soma 3h pra obter UTC real.
+    const candUTC = new Date(candBR.getTime() + BR_OFFSET_MS);
+    if (
+      dias.includes(candBR.getUTCDay()) &&
+      candUTC.getTime() > from.getTime()
+    ) {
+      return candUTC;
     }
   }
   return null;
