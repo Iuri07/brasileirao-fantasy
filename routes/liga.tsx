@@ -204,7 +204,7 @@ export default function Liga({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=178" />
+        <link rel="stylesheet" href="/bf-styles.css?v=179" />
       </Head>
       <DesktopSidebar
         active="liga"
@@ -270,7 +270,10 @@ export default function Liga({ data }: PageProps<Data>) {
                           jogadores={t.escalacao}
                           showPoints={false}
                           showStatus={mostraStatus}
-                          showPosLabel={false}
+                          /* Mobile: sem pos label (limpa visual);
+                             desktop: CSS revela via .bf-team-row__expanded
+                             override pra mostrar GOL/ZAG/LAT/etc. */
+                          showPosLabel
                           accent={accent}
                         />
                         <ReservasRow

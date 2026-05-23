@@ -2428,6 +2428,12 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   color: var(--pos-color, var(--bf-fg-2));
   line-height: 1;
 }
+/* No mobile, escalação na /liga (dentro do .bf-team-row__expanded)
+   esconde pos label — visual mais limpo, posição já é óbvia pela linha
+   do pino no campo. Desktop revela via override em media query. */
+.bf-team-row__expanded .bf-pin__card-pos {
+  display: none;
+}
 .bf-pin--empty .bf-pin__head-placeholder {
   border-style: dashed;
   background: transparent;
@@ -6752,6 +6758,82 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     margin-left: auto;
     margin-right: auto;
   }
+
+  /* ===== /liga: time expandido vira layout 2 colunas =====
+     Campo à esquerda (portrait 8/9), banco + não-escalados empilhados
+     à direita pra aproveitar a largura desktop. */
+  .bf-team-row__expanded {
+    display: grid;
+    grid-template-columns: minmax(0, 0.55fr) minmax(0, 0.45fr);
+    grid-template-rows: auto auto;
+    gap: 12px 20px;
+    padding: 12px 8px 16px;
+    align-items: start;
+  }
+  .bf-team-row__expanded > .bf-field {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    margin: 0;
+    max-width: none;
+    width: 100%;
+    overflow: visible;
+    box-shadow: none;
+  }
+  .bf-team-row__expanded .bf-field__pitch {
+    /* Aspect 8/9 — quase quadrado, levemente portrait. Mantém lines
+       portrait (5/8) que se adaptam via preserveAspectRatio="none". */
+    aspect-ratio: 8 / 9;
+  }
+  /* Liga = layout portrait → reverter os overrides landscape do home */
+  .bf-team-row__expanded .bf-field__lines--portrait { display: block; }
+  .bf-team-row__expanded .bf-field__lines--landscape { display: none; }
+  .bf-team-row__expanded .bf-field__row {
+    /* Default mobile (portrait) já posiciona por TOP — não precisa
+       override aqui. Só limpa caso algum estilo desktop tenha vazado. */
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: auto;
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+  }
+  .bf-team-row__expanded .bf-field__row--gk  { top: 4%;  }
+  .bf-team-row__expanded .bf-field__row--def { top: 28%; }
+  .bf-team-row__expanded .bf-field__row--mid { top: 54%; }
+  .bf-team-row__expanded .bf-field__row--ata { top: 80%; }
+
+  /* Stripes do gramado: volta pra horizontal (portrait look) */
+  .bf-team-row__expanded .bf-field__pitch::before {
+    background: repeating-linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--field-tint) 5%, transparent) 0,
+      color-mix(in srgb, var(--field-tint) 5%, transparent) 9%,
+      transparent 9%,
+      transparent 18%
+    );
+  }
+
+  /* Banco + Não escalados na coluna direita — empilhados, sem border-top
+     dashed (mesma razão da home), wrap em grid pra cards caberem. */
+  .bf-team-row__expanded > .bf-pool {
+    grid-column: 2;
+    margin: 0;
+    padding: 0;
+    border-top: none;
+  }
+  .bf-team-row__expanded > .bf-pool .bf-pool__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+    gap: 8px;
+    overflow-x: visible;
+  }
+
+  /* Mostrar pos label nos cards do desktop (mobile mantém hidden) */
+  .bf-team-row__expanded .bf-pin__card-pos {
+    display: block;
+  }
+
 
   /* ----- /mercado: barra superior compacta + grid denso ----- */
 
