@@ -6364,11 +6364,14 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   }
 
   /* Viewport ocupa a tela inteira; pula a sidebar fixa à esquerda
-     (248px + 16px gap + 8px folga = ~272px). */
+     (248px + 16px gap + 8px folga = ~272px). padding-top dá respiro
+     pro topo da página (saudação não cola na borda — TopBar tá
+     escondida no desktop). */
   .bf-viewport {
     max-width: none;
     padding-left: 272px;
     padding-right: 24px;
+    padding-top: 24px;
     padding-bottom: 32px;
   }
 
@@ -6623,9 +6626,11 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   }
   /* No desktop, próximas não fica colapsado: força a região
      "extras" do PartidasExpandable a sempre estar aberta e
-     esconde o botão "ver todos". */
+     esconde o botão "ver todos". opacity: 1 é crítico — sem ele
+     os jogos extras ficam invisíveis mesmo com a row aberta. */
   .bf-widget--proximas .bf-partidas-expand {
     grid-template-rows: 1fr !important;
+    opacity: 1 !important;
   }
   .bf-widget--proximas .bf-section-footer {
     display: none;
