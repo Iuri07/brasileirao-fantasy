@@ -6602,6 +6602,19 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     /* Heads dos pinos extrapolam o card por design — overflow
        visible deixa eles aparecerem (sem cortar o lateral). */
     overflow: visible;
+    /* Sem glow no desktop — o box-shadow lime de 20px estava
+       sangrando pra área do banco logo abaixo, parecendo que a
+       borda do campo continuava. */
+    box-shadow: none;
+  }
+
+  /* Banco/Reservas abaixo do campo: sem dashed border-top (separator
+     visual sangrava como "linha cruzando pelo banco" no desktop) e
+     mais respiro entre campo e banco. */
+  .bf-home-grid__escala .bf-pool {
+    border-top: none;
+    margin-top: 16px;
+    padding-top: 0;
   }
   .bf-home-grid__escala .bf-field__pitch {
     /* Aspect 10/5 (=2/1) — mais largo achata o campo na vertical,
