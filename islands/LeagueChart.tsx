@@ -1,7 +1,8 @@
 // Bump chart — posição (rank) por rodada. Y invertido (1 = topo).
 // Cada time tem uma linha na cor accent dele. Mostra trocas de posição
-// dramaticamente ao longo das rodadas. Tap num ponto/crest mostra
-// tooltip com time/rodada/posição (compatível mobile).
+// dramaticamente ao longo das rodadas. Hover num ponto mostra tooltip
+// flutuante com time/rodada/posição/pontos. Sem painel de detalhe nem
+// legenda — visual mais limpo.
 
 import { useState } from "preact/hooks";
 
@@ -66,8 +67,8 @@ export default function LeagueChart({ times, destaque }: Props) {
   // Y invertido: rank 1 = topo (PAD_T), rank N = base
   const yFor = (rank: number) => PAD_T + ((rank - 1) / (N - 1)) * innerH;
 
-  const [active, setActive] = useState<
-    null | { chave: string; rodada: number }
+  const [hover, setHover] = useState<
+    null | { chave: string; rodada: number; x: number; y: number }
   >(null);
 
   // Ordem de renderização: destaque por último pra ficar por cima
@@ -77,209 +78,186 @@ export default function LeagueChart({ times, destaque }: Props) {
     return 0;
   });
 
+  const hoverTime = hover ? times.find((t) => t.chave === hover.chave) : null;
+  const hoverRank = hover && hoverTime
+    ? rankByTeamRound[hoverTime.chave][hover.rodada]
+    : null;
+  const hoverPts = hover && hoverTime
+    ? hoverTime.pontosPorRodada[String(hover.rodada)] ?? 0
+    : null;
+
   return (
     <div class="bf-league-chart">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        class="bf-league-chart__svg"
-        role="img"
-        aria-label="Evolução da posição no ranking por rodada"
-      >
-        {/* Linhas horizontais de cada posição (1 até N) */}
-        {Array.from({ length: N }, (_, i) => i + 1).map((rank) => (
-          <line
-            key={rank}
-            x1={PAD_L}
-            x2={W - PAD_R}
-            y1={yFor(rank)}
-            y2={yFor(rank)}
-            stroke="rgba(255,255,255,0.04)"
-            stroke-width="1"
-          />
-        ))}
+      <div class="bf-league-chart__plot">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          class="bf-league-chart__svg"
+          role="img"
+          aria-label="Evolução da posição no ranking por rodada"
+        >
+          {/* Linhas horizontais de cada posição (1 até N) */}
+          {Array.from({ length: N }, (_, i) => i + 1).map((rank) => (
+            <line
+              key={rank}
+              x1={PAD_L}
+              x2={W - PAD_R}
+              y1={yFor(rank)}
+              y2={yFor(rank)}
+              stroke="rgba(255,255,255,0.04)"
+              stroke-width="1"
+              vector-effect="non-scaling-stroke"
+            />
+          ))}
 
-        {/* Labels Y — número da posição à esquerda */}
-        {Array.from({ length: N }, (_, i) => i + 1).map((rank) => (
-          <text
-            key={rank}
-            x={PAD_L - 4}
-            y={yFor(rank) + 3}
-            text-anchor="end"
-            class="bf-league-chart__y-label"
-          >
-            {rank}
-          </text>
-        ))}
-
-        {/* Labels X — número da rodada */}
-        {rodadas.map((r, i) => (
-          <text
-            key={r}
-            x={xFor(i)}
-            y={H - PAD_B + 14}
-            text-anchor="middle"
-            class="bf-league-chart__x-label"
-          >
-            R{r}
-          </text>
-        ))}
-
-        {/* Linhas de cada time */}
-        {ordered.map((t) => {
-          const isDestaque = t.chave === destaque;
-          const pts = rodadas.map((r, i) => ({
-            x: xFor(i),
-            y: yFor(rankByTeamRound[t.chave][r] ?? N),
-            rank: rankByTeamRound[t.chave][r] ?? N,
-            rodada: r,
-          }));
-          const lastPt = pts[pts.length - 1];
-          return (
-            <g
-              key={t.chave}
-              opacity={destaque && !isDestaque ? "0.5" : "1"}
+          {/* Labels Y — número da posição à esquerda */}
+          {Array.from({ length: N }, (_, i) => i + 1).map((rank) => (
+            <text
+              key={rank}
+              x={PAD_L - 4}
+              y={yFor(rank) + 3}
+              text-anchor="end"
+              class="bf-league-chart__y-label"
             >
-              <polyline
-                points={pts.map((p) => `${p.x},${p.y}`).join(" ")}
-                fill="none"
-                stroke={t.accent}
-                stroke-width={isDestaque ? 3 : 1.5}
-                stroke-linejoin="round"
-                stroke-linecap="round"
-                vector-effect="non-scaling-stroke"
-              />
-              {pts.map((p) => (
-                <g key={p.rodada}>
-                  {/* Anel destacando ponto ativo */}
-                  {active && active.chave === t.chave &&
-                    active.rodada === p.rodada && (
-                    <circle
-                      cx={p.x}
-                      cy={p.y}
-                      r="7"
-                      fill="none"
-                      stroke={t.accent}
-                      stroke-width="2"
-                      opacity="0.5"
-                      vector-effect="non-scaling-stroke"
-                    />
-                  )}
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={isDestaque ? 4 : 3}
-                    fill={t.accent}
-                    stroke="var(--bf-chassis)"
-                    stroke-width={isDestaque ? 1.5 : 1}
-                    pointer-events="none"
-                    vector-effect="non-scaling-stroke"
-                  />
-                  {/* Hit target invisível — 12px radius pra tap confortável */}
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r="12"
-                    fill="transparent"
-                    style={{ cursor: "pointer" }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActive({ chave: t.chave, rodada: p.rodada });
-                    }}
-                  />
-                </g>
-              ))}
-              {/* Crest no fim da linha — tap mostra última rodada */}
-              {t.logo && (
-                <image
-                  href={t.logo}
-                  x={lastPt.x + 4}
-                  y={lastPt.y - 9}
-                  width="18"
-                  height="18"
-                  preserveAspectRatio="xMidYMid meet"
-                  style={{ cursor: "pointer" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActive({
-                      chave: t.chave,
-                      rodada: rodadas[rodadas.length - 1],
-                    });
-                  }}
-                />
-              )}
-            </g>
-          );
-        })}
-      </svg>
+              {rank}
+            </text>
+          ))}
 
-      {/* Painel de detalhe — sempre presente, atualiza no tap */}
-      <div class="bf-league-chart__detail">
-        {(() => {
-          if (!active) {
+          {/* Labels X — número da rodada */}
+          {rodadas.map((r, i) => (
+            <text
+              key={r}
+              x={xFor(i)}
+              y={H - PAD_B + 14}
+              text-anchor="middle"
+              class="bf-league-chart__x-label"
+            >
+              R{r}
+            </text>
+          ))}
+
+          {/* Linhas de cada time */}
+          {ordered.map((t) => {
+            const isDestaque = t.chave === destaque;
+            const pts = rodadas.map((r, i) => ({
+              x: xFor(i),
+              y: yFor(rankByTeamRound[t.chave][r] ?? N),
+              rank: rankByTeamRound[t.chave][r] ?? N,
+              rodada: r,
+            }));
+            const lastPt = pts[pts.length - 1];
             return (
-              <span class="bf-league-chart__detail-hint">
-                Toque num ponto pra ver detalhes
-              </span>
-            );
-          }
-          const t = times.find((x) => x.chave === active.chave);
-          if (!t) return null;
-          const rank = rankByTeamRound[t.chave][active.rodada];
-          const pts = t.pontosPorRodada[String(active.rodada)] ?? 0;
-          return (
-            <div
-              class="bf-league-chart__detail-card"
-              style={{ "--c": t.accent } as Record<string, string>}
-            >
-              {t.logo && (
-                <img
-                  class="bf-league-chart__detail-crest"
-                  src={t.logo}
-                  alt=""
+              <g
+                key={t.chave}
+                opacity={destaque && !isDestaque ? "0.5" : "1"}
+              >
+                <polyline
+                  points={pts.map((p) => `${p.x},${p.y}`).join(" ")}
+                  fill="none"
+                  stroke={t.accent}
+                  stroke-width={isDestaque ? 3 : 1.5}
+                  stroke-linejoin="round"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
                 />
-              )}
-              <div class="bf-league-chart__detail-meta">
-                <div class="bf-league-chart__detail-name">{t.nome}</div>
-                <div class="bf-league-chart__detail-sub">
-                  Rodada {active.rodada}
-                </div>
-              </div>
-              <div class="bf-league-chart__detail-rank">
-                {rank}º
-              </div>
-              <div class="bf-league-chart__detail-pts">
-                <span class="bf-league-chart__detail-pts-value">
-                  {pts.toFixed(1).replace(".", ",")}
-                </span>
-                <span class="bf-league-chart__detail-pts-foot">PTS</span>
+                {pts.map((p) => {
+                  const isHover = hover &&
+                    hover.chave === t.chave &&
+                    hover.rodada === p.rodada;
+                  return (
+                    <g key={p.rodada}>
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={isHover ? 3 : isDestaque ? 2.5 : 2}
+                        fill={t.accent}
+                        stroke="var(--bf-chassis)"
+                        stroke-width={isDestaque ? 1.5 : 1}
+                        pointer-events="none"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      {/* Hit target invisível — 10px radius pra hover/tap
+                          confortável sem disputar área com pontos vizinhos */}
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r="10"
+                        fill="transparent"
+                        style={{ cursor: "pointer" }}
+                        onMouseEnter={() =>
+                          setHover({
+                            chave: t.chave,
+                            rodada: p.rodada,
+                            x: p.x,
+                            y: p.y,
+                          })}
+                        onMouseLeave={() => setHover(null)}
+                        onClick={() =>
+                          setHover((h) =>
+                            h && h.chave === t.chave && h.rodada === p.rodada
+                              ? null
+                              : {
+                                chave: t.chave,
+                                rodada: p.rodada,
+                                x: p.x,
+                                y: p.y,
+                              }
+                          )}
+                      />
+                    </g>
+                  );
+                })}
+                {/* Crest no fim da linha */}
+                {t.logo && (
+                  <image
+                    href={t.logo}
+                    x={lastPt.x + 4}
+                    y={lastPt.y - 9}
+                    width="18"
+                    height="18"
+                    preserveAspectRatio="xMidYMid meet"
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={() =>
+                      setHover({
+                        chave: t.chave,
+                        rodada: rodadas[rodadas.length - 1],
+                        x: lastPt.x,
+                        y: lastPt.y,
+                      })}
+                    onMouseLeave={() => setHover(null)}
+                  />
+                )}
+              </g>
+            );
+          })}
+        </svg>
+
+        {/* Tooltip HTML posicionada por % do viewBox (SVG fill 100% width
+            → o container manda no espaço de coordenadas pro left/top). */}
+        {hover && hoverTime && hoverRank != null && (
+          <div
+            class="bf-league-chart__tooltip"
+            style={{
+              left: `${(hover.x / W) * 100}%`,
+              top: `${(hover.y / H) * 100}%`,
+              "--c": hoverTime.accent,
+            } as Record<string, string>}
+          >
+            {hoverTime.logo && (
+              <img
+                class="bf-league-chart__tooltip-crest"
+                src={hoverTime.logo}
+                alt=""
+              />
+            )}
+            <div class="bf-league-chart__tooltip-body">
+              <div class="bf-league-chart__tooltip-name">{hoverTime.nome}</div>
+              <div class="bf-league-chart__tooltip-sub">
+                R{hover.rodada} · {hoverRank}º ·{" "}
+                {(hoverPts as number).toFixed(1).replace(".", ",")} pts
               </div>
             </div>
-          );
-        })()}
-      </div>
-
-      {/* Legenda com crests + nomes */}
-      <div class="bf-league-chart__legend">
-        {times.map((t) => (
-          <span
-            key={t.chave}
-            class={`bf-league-chart__legend-item ${
-              destaque === t.chave ? "bf-league-chart__legend-item--active" : ""
-            }`}
-            style={{ "--c": t.accent } as Record<string, string>}
-          >
-            {t.logo
-              ? (
-                <img
-                  class="bf-league-chart__legend-crest"
-                  src={t.logo}
-                  alt=""
-                />
-              )
-              : <span class="bf-league-chart__legend-dot" />}
-            <span class="bf-league-chart__legend-name">{t.nome}</span>
-          </span>
-        ))}
+          </div>
+        )}
       </div>
     </div>
   );

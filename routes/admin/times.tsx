@@ -55,7 +55,7 @@ export default function AdminTimesIndex({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Times</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=176" />
+        <link rel="stylesheet" href="/bf-styles.css?v=177" />
       </Head>
       <div class="bf-viewport">
         <TopBar
