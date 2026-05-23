@@ -146,6 +146,7 @@ export default function LeagueChart({ times, destaque }: Props) {
                 stroke-width={isDestaque ? 3 : 1.5}
                 stroke-linejoin="round"
                 stroke-linecap="round"
+                vector-effect="non-scaling-stroke"
               />
               {pts.map((p) => (
                 <g key={p.rodada}>
@@ -160,6 +161,7 @@ export default function LeagueChart({ times, destaque }: Props) {
                       stroke={t.accent}
                       stroke-width="2"
                       opacity="0.5"
+                      vector-effect="non-scaling-stroke"
                     />
                   )}
                   <circle
@@ -170,6 +172,7 @@ export default function LeagueChart({ times, destaque }: Props) {
                     stroke="var(--bf-chassis)"
                     stroke-width={isDestaque ? 1.5 : 1}
                     pointer-events="none"
+                    vector-effect="non-scaling-stroke"
                   />
                   {/* Hit target invisível — 12px radius pra tap confortável */}
                   <circle
