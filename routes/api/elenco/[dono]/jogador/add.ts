@@ -21,12 +21,12 @@ export const handler: Handlers<unknown, State> = {
         { status: 404, headers: H },
       );
     }
-    const session = ctx.state.session;
-    const isAdmin = session?.role === "admin";
-    const isDono = session?.chave === chave;
-    if (!isAdmin && !isDono) {
+    // Endpoint admin-only. Usuários normais movimentam elenco SÓ via
+    // sistema de ofertas (que tem checks de mercado fechado, validação
+    // do destinatário, etc.). Mover direto pela API bypass todo isso.
+    if (ctx.state.session?.role !== "admin") {
       return new Response(
-        JSON.stringify({ ok: false, erro: "Só o dono do time (ou admin)" }),
+        JSON.stringify({ ok: false, erro: "Só admin" }),
         { status: 403, headers: H },
       );
     }

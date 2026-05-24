@@ -22,12 +22,14 @@ export const handler: Handlers<unknown, State> = {
         { status: 404, headers: H },
       );
     }
-    const session = ctx.state.session;
-    const isAdmin = session?.role === "admin";
-    const isDono = session?.chave === chave;
-    if (!isAdmin && !isDono) {
+    // Endpoint admin-only. Usuários normais trocam jogadores SÓ via
+    // sistema de ofertas (que tem checks de mercado fechado, aceite
+    // do destinatário, validação de elegibilidade). Swap direto na API
+    // bypass todo isso — antes qualquer dono podia esvaziar elenco
+    // alheio chamando esse endpoint na mão.
+    if (ctx.state.session?.role !== "admin") {
       return new Response(
-        JSON.stringify({ ok: false, erro: "Só o dono do time (ou admin)" }),
+        JSON.stringify({ ok: false, erro: "Só admin" }),
         { status: 403, headers: H },
       );
     }
