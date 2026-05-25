@@ -98,6 +98,22 @@ export const handler: Handlers<Data, State> = {
     // simular auto-subs). Aqui lemos elenco.jogadores direto: quem
     // o usuário marcou como "Sim" é titular, "Banco" é reserva ativa
     // (auto-sub elegível), "Não" é resto do elenco.
+    // Durante o ao vivo o cron grava o parcial da rodada corrente no
+    // historico — mas pra ranking da /liga isso não deve contar (posição
+    // muda durante o jogo confunde). Filtra rodada atual fora do total
+    // quando status é ao_vivo. Total = soma do PRE-LIVE; parcial fica
+    // só na coluna pontuacaoRodada (e no banner ao vivo).
+    const ehAoVivo = isRodadaEmAndamento(rodada?.status);
+    const rodadaAtual = rodada?.rodada ?? 0;
+    const stripAoVivo = (h: Record<string, number>): Record<string, number> => {
+      if (!ehAoVivo || rodadaAtual === 0) return h;
+      const out: Record<string, number> = {};
+      for (const [r, p] of Object.entries(h)) {
+        if (Number(r) !== rodadaAtual) out[r] = p;
+      }
+      return out;
+    };
+
     const times: TimeLinha[] = [];
     for (const [chave, elenco] of Object.entries(elencos)) {
       const todos = Object.values(elenco.jogadores);
@@ -151,23 +167,30 @@ export const handler: Handlers<Data, State> = {
         }
         : null;
 
+      const historicoStandings = stripAoVivo(historico);
       times.push({
         chave,
         nome: getNomeTimeDisplay(chave, elenco.nome_time),
         dono: elenco.dono,
         pontuacaoRodada: ptsRodada,
-        total: totalPontos(historico),
-        rodadasJogadas: Object.keys(historico).length,
+        total: totalPontos(historicoStandings),
+        rodadasJogadas: Object.keys(historicoStandings).length,
         escalacao,
         banco,
         naoEscalados,
-        historico,
+        historico: historicoStandings,
       });
     }
 
-    times.sort((a, b) =>
-      b.total - a.total || b.pontuacaoRodada - a.pontuacaoRodada
-    );
+    // Durante ao vivo NÃO usa parcial como tiebreak (parcial muda a cada
+    // request, ranking pingaria). Empate fica no total seco; se ainda
+    // empatar, a ordem segue alphabetic stable.
+    times.sort((a, b) => {
+      const dt = b.total - a.total;
+      if (dt !== 0) return dt;
+      if (!ehAoVivo) return b.pontuacaoRodada - a.pontuacaoRodada;
+      return a.chave.localeCompare(b.chave);
+    });
 
     mark("data", T0);
     const Trender = performance.now();
