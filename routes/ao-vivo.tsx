@@ -105,6 +105,20 @@ export const handler: Handlers<Data, State> = {
     mark("kv1", T0);
 
     const aoVivo = isRodadaEmAndamento(rodadaStatus?.status);
+    const rodadaAtual = rodadaStatus?.rodada ?? 0;
+
+    // Durante o ao vivo o cron escreve o parcial da rodada corrente no
+    // historico — pra ranking GERAL (matches /liga + home) isso não pode
+    // contar, senão o pos render JÁ inclui parcial e o delta vira double-
+    // count com o posLive. Filtra a rodada atual fora.
+    const stripAoVivo = (h: Record<string, number>): Record<string, number> => {
+      if (!aoVivo || rodadaAtual === 0) return h;
+      const out: Record<string, number> = {};
+      for (const [r, p] of Object.entries(h)) {
+        if (Number(r) !== rodadaAtual) out[r] = p;
+      }
+      return out;
+    };
 
     // === Monta a liga inteira sempre (mesmo fora de rodada ao vivo) ===
     // Fora do live: parcial = 0, delta = 0, eventos vazios. Mas a página
@@ -182,31 +196,35 @@ export const handler: Handlers<Data, State> = {
         }
         : null;
 
+      const historicoStandings = stripAoVivo(historico);
       times.push({
         chave,
         nome: getNomeTimeDisplay(chave, elenco.nome_time),
         dono: elenco.dono,
         pontuacaoRodada: ptsRodada,
-        total: totalPontos(historico),
-        rodadasJogadas: Object.keys(historico).length,
+        total: totalPontos(historicoStandings),
+        rodadasJogadas: Object.keys(historicoStandings).length,
         escalacao,
         banco,
         naoEscalados,
-        historico,
+        historico: historicoStandings,
         subsAplicadas,
       });
     }
 
-    // Ordem do card = ranking GERAL (total acumulado, mesma de /liga).
-    // O "ao vivo" do /ao-vivo vem do delta + parcial + eventos, não da
-    // ordem em si.
-    times.sort((a, b) =>
-      b.total - a.total || b.pontuacaoRodada - a.pontuacaoRodada
-    );
+    // Ordem do card = ranking CONFIRMADO (matches /liga + home). Durante
+    // ao vivo NÃO usa parcial como tiebreak — parcial muda a cada request,
+    // ranking pingaria. Empate fora do ao vivo decide pela rodada anterior.
+    times.sort((a, b) => {
+      const dt = b.total - a.total;
+      if (dt !== 0) return dt;
+      if (!aoVivo) return b.pontuacaoRodada - a.pontuacaoRodada;
+      return a.chave.localeCompare(b.chave);
+    });
 
-    // Ranking AO VIVO simulado = total + parcial (onde estaria SE a
-    // rodada terminasse agora). Comparado com a posição geral (i+1 na
-    // ordem acima) gera o delta de "mudança em tempo real".
+    // Ranking PROJETADO = onde cada time estaria SE a rodada fechasse
+    // agora (confirmado + parcial). Comparado com pos confirmado (i+1)
+    // gera o delta de "como a rodada está mexendo no ranking".
     const ordemLive = [...times].sort((a, b) =>
       (b.total + b.pontuacaoRodada) - (a.total + a.pontuacaoRodada) ||
       b.pontuacaoRodada - a.pontuacaoRodada
