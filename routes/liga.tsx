@@ -52,6 +52,10 @@ interface TimeLinha {
   /** Resto do elenco — marcados como "Não" (fora do banco). */
   naoEscalados: BancoPino[];
   historico: Record<string, number>;
+  /** Delta de posição projetada vs confirmada (só durante ao vivo).
+   *  Positivo = sobe N se rodada fechar agora, negativo = cai N,
+   *  0/null = igual. */
+  posDelta: number | null;
 }
 
 interface Data {
@@ -179,6 +183,7 @@ export const handler: Handlers<Data, State> = {
         banco,
         naoEscalados,
         historico: historicoStandings,
+        posDelta: null,
       });
     }
 
@@ -191,6 +196,25 @@ export const handler: Handlers<Data, State> = {
       if (!ehAoVivo) return b.pontuacaoRodada - a.pontuacaoRodada;
       return a.chave.localeCompare(b.chave);
     });
+
+    // Posição projetada: se a rodada fechasse agora (total + parcial),
+    // onde cada time ficaria. Calcula só durante ao vivo — fora dele
+    // projetado == confirmado, posDelta fica null.
+    if (ehAoVivo) {
+      const projetado = [...times].sort((a, b) => {
+        const totA = a.total + a.pontuacaoRodada;
+        const totB = b.total + b.pontuacaoRodada;
+        if (totA !== totB) return totB - totA;
+        return b.pontuacaoRodada - a.pontuacaoRodada;
+      });
+      const posProjMap = new Map<string, number>();
+      projetado.forEach((t, i) => posProjMap.set(t.chave, i + 1));
+      times.forEach((t, i) => {
+        const posConf = i + 1;
+        const posProj = posProjMap.get(t.chave) ?? posConf;
+        t.posDelta = posConf - posProj; // >0 sobe, <0 cai, 0 igual
+      });
+    }
 
     mark("data", T0);
     const Trender = performance.now();
@@ -284,6 +308,7 @@ export default function Liga({ data }: PageProps<Data>) {
                 isMine={isMe}
                 historico={t.historico}
                 logoUrl={visual?.logo ?? null}
+                posDelta={t.posDelta}
               >
                 <div class="bf-team-row__expanded">
                   {t.escalacao
