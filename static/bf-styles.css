@@ -5999,6 +5999,19 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 .bf-status-card__delta--up { color: var(--bf-lime); }
 .bf-status-card__delta--down { color: var(--bf-red); }
 
+/* Pos-delta: indicador ↑N / ↓N ao lado da posição quando a rodada
+   tá ao vivo e o ranking projetado difere do confirmado. */
+.bf-status-card__pos-delta {
+  font-family: var(--bf-font-cond);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.bf-status-card__pos-delta--up { color: var(--bf-lime); }
+.bf-status-card__pos-delta--down { color: var(--bf-red); }
+
 /* ============================================================
    DESKTOP — sidebar nav, viewport mais largo, modais maiores.
    Aplicado a partir de 1024px. Mobile-first segue intacto abaixo

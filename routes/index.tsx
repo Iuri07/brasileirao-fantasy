@@ -83,7 +83,12 @@ interface HomeData {
   /** True → label "parcial"; false → "final" */
   exibidaParcial: boolean;
   meu: TimeRanking | null;
+  /** Posição confirmada — só rodadas finalizadas no historico. Durante
+   *  ao vivo ignora o parcial da rodada corrente. */
   posicao: number | null;
+  /** Posição projetada SE a rodada corrente fechasse agora (confirmado
+   *  + parcial ao vivo). Só preenchido quando aoVivoReal. */
+  posicaoProjetada: number | null;
   totalTimes: number;
   escalacao: Escalacao | null;
   banco: BancoPino[];
@@ -228,6 +233,11 @@ export const handler: Handlers<HomeData, State> = {
         : Promise.resolve(null),
     ]);
     mark("cartola", Tcart);
+    // Hoisted up: precisamos de aoVivoReal/rodadaAtual ANTES de calcular
+    // totais (pra filtrar parcial). Antes ficava perto do data: { ... }.
+    const rodadaAtual = rodada?.rodada ?? mercado?.rodada_atual ?? 0;
+    const aoVivoReal = !!mercado?.bola_rolando ||
+      isRodadaEmAndamento(rodada?.status);
     const livePts = pontuadosResp?.atletas ?? {};
     const liveP = (id: number, kvPts: number | null): number | null => {
       const live = livePts[String(id)]?.pontuacao;
@@ -250,14 +260,29 @@ export const handler: Handlers<HomeData, State> = {
     > = {};
 
     // Pra ranking: usar TOTAL ACUMULADO do histórico (consistente com /liga).
-    // Fallback pra pontuação da rodada corrente quando histórico vazio.
-    const totaisPorChave = new Map<string, number>();
+    // Durante o ao vivo o cron escreve o parcial da rodada corrente no
+    // historico — ranking CONFIRMADO ignora isso (matches /liga); ranking
+    // PROJETADO inclui o parcial pra mostrar "vai subir/descer".
+    const historicoPorChave = new Map<string, Record<string, number>>();
     await Promise.all(
       Object.keys(elencos).map(async (chave) => {
-        const h = await getHistorico(chave);
-        totaisPorChave.set(chave, totalPontos(h));
+        historicoPorChave.set(chave, await getHistorico(chave));
       }),
     );
+    const stripAoVivo = (h: Record<string, number>): Record<string, number> => {
+      if (!aoVivoReal || rodadaAtual === 0) return h;
+      const out: Record<string, number> = {};
+      for (const [r, p] of Object.entries(h)) {
+        if (Number(r) !== rodadaAtual) out[r] = p;
+      }
+      return out;
+    };
+    const totaisPorChave = new Map<string, number>(); // confirmado
+    const totaisProjetadosPorChave = new Map<string, number>(); // confirmado + parcial
+    for (const [chave, h] of historicoPorChave.entries()) {
+      totaisPorChave.set(chave, totalPontos(stripAoVivo(h)));
+      totaisProjetadosPorChave.set(chave, totalPontos(h));
+    }
 
     // Melhor time de cada chave em paralelo (cache hit é instantâneo)
     const Tmelhor = performance.now();
@@ -290,13 +315,34 @@ export const handler: Handlers<HomeData, State> = {
         };
       })
       .sort((a, b) => {
+        // Ranking CONFIRMADO (matches /liga): no ao vivo NÃO usa parcial
+        // como tiebreak — evita ranking pingando. Fora do ao vivo,
+        // parcial = pontuação da rodada que ainda vai entrar, decide
+        // empate normalmente.
         const totA = totaisPorChave.get(a.chave) ?? 0;
         const totB = totaisPorChave.get(b.chave) ?? 0;
         if (totA !== totB) return totB - totA;
-        return b.pontuacao - a.pontuacao;
+        if (!aoVivoReal) return b.pontuacao - a.pontuacao;
+        return a.chave.localeCompare(b.chave);
       });
 
     const meuIdx = ranking.findIndex((t) => t.chave === CHAVE_USUARIO);
+
+    // Ranking PROJETADO: se a rodada fechasse agora, onde cada time
+    // ficaria. Só calcula durante o ao vivo — fora dele projetado ==
+    // confirmado, não tem o que mostrar.
+    let meuIdxProjetado: number | null = null;
+    if (aoVivoReal) {
+      const rankingProjetado = [...ranking].sort((a, b) => {
+        const totA = totaisProjetadosPorChave.get(a.chave) ?? 0;
+        const totB = totaisProjetadosPorChave.get(b.chave) ?? 0;
+        if (totA !== totB) return totB - totA;
+        return b.pontuacao - a.pontuacao;
+      });
+      meuIdxProjetado = rankingProjetado.findIndex(
+        (t) => t.chave === CHAVE_USUARIO,
+      );
+    }
     const meuEscalados = escaladosPorChave[CHAVE_USUARIO] ?? [];
     const escalacao = meuEscalados.length
       ? montarEscalacao(meuEscalados, fotos)
@@ -361,10 +407,7 @@ export const handler: Handlers<HomeData, State> = {
         : c;
     }
 
-    const rodadaAtual = rodada?.rodada ?? mercado?.rodada_atual ?? 0;
-    // Combina KV + Cartola: confia em qualquer fonte que diga ao vivo.
-    const aoVivoReal = !!mercado?.bola_rolando ||
-      isRodadaEmAndamento(rodada?.status);
+    // rodadaAtual + aoVivoReal: hoisted lá em cima (antes de calcular totais).
 
     // Countdown: usa fechamento do KV se tiver, senão da Cartola.
     // Durante o ao vivo esconde porque ações de mercado bloqueiam.
@@ -425,6 +468,9 @@ export const handler: Handlers<HomeData, State> = {
       exibidaParcial,
       meu: meuIdx >= 0 ? ranking[meuIdx] : null,
       posicao: meuIdx >= 0 ? meuIdx + 1 : null,
+      posicaoProjetada: meuIdxProjetado != null && meuIdxProjetado >= 0
+        ? meuIdxProjetado + 1
+        : null,
       totalTimes: ranking.length || TODAS_CHAVES.length,
       escalacao,
       banco,
@@ -498,7 +544,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=179" />
+        <link rel="stylesheet" href="/bf-styles.css?v=180" />
       </Head>
       <DesktopSidebar
         active="home"
@@ -631,6 +677,28 @@ export default function Home({ data }: PageProps<HomeData>) {
                 }`}
               >
                 {data.posicao ? `${data.posicao}º` : "—"}
+                {/* Delta projetado vs. confirmado durante o ao vivo:
+                    ↑ sobe X (verde), ↓ cai X (vermelho), nada se igual. */}
+                {data.posicaoProjetada != null && data.posicao != null &&
+                  data.posicaoProjetada !== data.posicao && (() => {
+                  // posicao menor = melhor (1º > 2º). Subir = posicaoProjetada
+                  // < posicao (vai pra cima na tabela).
+                  const sobe = data.posicaoProjetada < data.posicao;
+                  const diff = Math.abs(data.posicaoProjetada - data.posicao);
+                  return (
+                    <span
+                      class={`bf-status-card__pos-delta ${
+                        sobe
+                          ? "bf-status-card__pos-delta--up"
+                          : "bf-status-card__pos-delta--down"
+                      }`}
+                      title={`Se a rodada fechasse agora: ${data.posicaoProjetada}º`}
+                    >
+                      {sobe ? "↑" : "↓"}
+                      {diff}
+                    </span>
+                  );
+                })()}
               </span>
               <span class="bf-status-card__metric-foot">
                 de {data.totalTimes}
