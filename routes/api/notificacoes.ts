@@ -44,7 +44,11 @@ export const handler: Handlers<unknown, State> = {
     }
     const payload: NotifPayload[] = await Promise.all(
       notifs.map(async (n) => {
-        const oferta = await getOferta(n.ofertaId);
+        // troca_mercado usa ofertaId sintético (swap-<ts>) — pula o
+        // join que vai falhar.
+        const oferta = n.tipo === "troca_mercado"
+          ? null
+          : await getOferta(n.ofertaId);
         const oferecidos = oferta ? ofertaAtletasOferecidos(oferta) : [];
         return {
           ...n,

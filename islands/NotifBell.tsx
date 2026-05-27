@@ -20,8 +20,14 @@ interface Oferta {
 interface NotifPayload {
   id: string;
   chave: string;
-  tipo: "oferta_recebida" | "oferta_aceita" | "oferta_negada";
+  tipo:
+    | "oferta_recebida"
+    | "oferta_aceita"
+    | "oferta_negada"
+    | "troca_mercado";
   ofertaId: string;
+  /** Texto pré-renderizado pra tipos sem oferta (ex: troca_mercado). */
+  mensagem?: string;
   lida: boolean;
   criadoEm: number;
   oferta: Oferta | null;
@@ -45,6 +51,7 @@ const TIPO_LABEL: Record<NotifPayload["tipo"], string> = {
   oferta_recebida: "Nova oferta",
   oferta_aceita: "Oferta aceita",
   oferta_negada: "Oferta negada",
+  troca_mercado: "Resolução de draft",
 };
 
 const POS_ABREV: Record<string, string> = {
@@ -230,6 +237,10 @@ function NotifItem(
   return (
     <div class={`bf-notif__item ${n.lida ? "" : "bf-notif__item--nova"}`}>
       <div class="bf-notif__tipo">{TIPO_LABEL[n.tipo]}</div>
+      {/* troca_mercado não tem oferta — usa mensagem pré-renderizada. */}
+      {n.tipo === "troca_mercado" && n.mensagem && (
+        <div class="bf-notif__desc">{n.mensagem}</div>
+      )}
       {o && (
         <div class="bf-notif__desc">
           {n.tipo === "oferta_recebida"

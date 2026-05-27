@@ -337,6 +337,12 @@ function ensureIncrementalColumns(db: Database): void {
   // moeda extra (quem oferece passa N do seu saldo restante pro
   // destinatário). Coluna nova, default 0 = comportamento legacy.
   addColumnIfMissing(db, "ofertas", "trocas_oferecidas", "INTEGER NOT NULL DEFAULT 0");
+
+  // Notificações ganham coluna mensagem pra suportar tipos sem oferta_id
+  // (ex: troca_mercado broadcastada pra todos os times na resolução do
+  // draft). Pra tipos legacy (oferta_*), mensagem fica NULL e UI cai no
+  // join com ofertas.
+  addColumnIfMissing(db, "notificacoes", "mensagem", "TEXT");
 }
 
 function hasTable(db: Database, name: string): boolean {

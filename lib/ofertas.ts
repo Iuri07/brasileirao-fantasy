@@ -36,13 +36,24 @@ export function ofertaAtletasOferecidos(o: Oferta): number[] {
   return [];
 }
 
-export type TipoNotif = "oferta_recebida" | "oferta_aceita" | "oferta_negada";
+export type TipoNotif =
+  | "oferta_recebida"
+  | "oferta_aceita"
+  | "oferta_negada"
+  /** Broadcast pra todos os times quando admin executa resolução de
+   *  draft (swap envolvendo o pool de free agents). */
+  | "troca_mercado";
 
 export interface Notif {
   id: string;
   chave: string;
   tipo: TipoNotif;
+  /** ID da oferta correlacionada — pra tipos legacy (oferta_*).
+   *  Pra troca_mercado pode ser sintético (sem join com ofertas). */
   ofertaId: string;
+  /** Texto pré-renderizado pra tipos sem oferta_id real (troca_mercado).
+   *  null pros tipos legacy que resolvem via join. */
+  mensagem?: string;
   lida: boolean;
   criadoEm: number;
 }
@@ -247,8 +258,15 @@ export function criarNotif(
     ...data,
   };
   getDb().prepare(
-    "INSERT INTO notificacoes (id, chave, tipo, oferta_id, lida, criado_em) VALUES (?, ?, ?, ?, 0, ?)",
-  ).run(notif.id, notif.chave, notif.tipo, notif.ofertaId, i64(notif.criadoEm));
+    "INSERT INTO notificacoes (id, chave, tipo, oferta_id, mensagem, lida, criado_em) VALUES (?, ?, ?, ?, ?, 0, ?)",
+  ).run(
+    notif.id,
+    notif.chave,
+    notif.tipo,
+    notif.ofertaId,
+    notif.mensagem ?? null,
+    i64(notif.criadoEm),
+  );
   return Promise.resolve(notif);
 }
 
@@ -258,7 +276,7 @@ export function listarNotifs(
 ): Promise<Notif[]> {
   const where = apenasNaoLidas ? "WHERE chave=? AND lida=0" : "WHERE chave=?";
   const rows = getDb().prepare(
-    `SELECT id, chave, tipo, oferta_id, lida, criado_em
+    `SELECT id, chave, tipo, oferta_id, mensagem, lida, criado_em
        FROM notificacoes ${where}
    ORDER BY criado_em DESC`,
   ).all<{
@@ -266,6 +284,7 @@ export function listarNotifs(
     chave: string;
     tipo: TipoNotif;
     oferta_id: string;
+    mensagem: string | null;
     lida: number;
     criado_em: number;
   }>(chave);
@@ -274,6 +293,7 @@ export function listarNotifs(
     chave: r.chave,
     tipo: r.tipo,
     ofertaId: r.oferta_id,
+    mensagem: r.mensagem ?? undefined,
     lida: r.lida === 1,
     criadoEm: r.criado_em,
   })));

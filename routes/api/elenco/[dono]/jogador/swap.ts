@@ -16,6 +16,8 @@ import {
   incTrocasMercadoCount,
 } from "../../../../../lib/trocas-mercado.ts";
 import { registrarTroca } from "../../../../../lib/historico-trocas.ts";
+import { criarNotif } from "../../../../../lib/ofertas.ts";
+import { getNomeTimeDisplay } from "../../../../../lib/time-visual.ts";
 import type { State } from "../../../../_middleware.ts";
 
 const H = { "Content-Type": "application/json" };
@@ -211,6 +213,7 @@ export const handler: Handlers<unknown, State> = {
       // de elenco (incluindo resolução de draft). chaveB = "mercado" como
       // sentinel quando o atleta veio do pool de free agents. Desfazer
       // só funciona pra troca entre dois elencos reais (mercado é one-way).
+      const ofertaIdSintetico = `swap-${Date.now()}`;
       await registrarTroca({
         chaveA: chave,
         atletaA: {
@@ -224,8 +227,25 @@ export const handler: Handlers<unknown, State> = {
           apelido: jogadorEntra.apelido_api,
           escalacaoOriginal: elencoOrigem ? escalacaoEntraOrigem : "Não",
         },
-        ofertaId: `swap-${Date.now()}`, // sintetizado — não veio de oferta
+        ofertaId: ofertaIdSintetico,
       });
+
+      // Resolução de draft (atleta veio do mercado) — broadcast pra TODOS
+      // os times. User-to-user manual swap (entre 2 elencos) também é raro
+      // mas avisamos só os 2 envolvidos. Liga inteira fica sabendo de
+      // movimentos do mercado.
+      const nomeDeChave = getNomeTimeDisplay(chave);
+      if (ehTrocaMercado) {
+        const msg = `${nomeDeChave} pegou ${jogadorEntra.apelido_api} do mercado em troca de ${jogadorSai.apelido_api}`;
+        for (const c of TODAS_CHAVES) {
+          await criarNotif({
+            chave: c,
+            tipo: "troca_mercado",
+            ofertaId: ofertaIdSintetico,
+            mensagem: msg,
+          });
+        }
+      }
 
       return new Response(
         JSON.stringify({
