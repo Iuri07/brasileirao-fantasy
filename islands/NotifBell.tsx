@@ -10,6 +10,8 @@ interface Oferta {
   atletaOferecido?: number;
   atletaPedido: number;
   atletasExtra?: number[];
+  /** Trocas com mercado oferecidas como moeda extra (opcional). */
+  trocasOferecidas?: number;
   status: "pendente" | "aceita" | "negada" | "cancelada";
   criadoEm: number;
   respondidoEm?: number;
@@ -237,6 +239,16 @@ function NotifItem(
                 <strong>
                   {nomesOferecidos.join(N === 2 ? " e " : ", ")}
                 </strong>
+                {o.trocasOferecidas && o.trocasOferecidas > 0 && (
+                  <>
+                    {" "}+{" "}
+                    <strong>
+                      {o.trocasOferecidas} troca{o.trocasOferecidas > 1
+                        ? "s"
+                        : ""} c/ mercado
+                    </strong>
+                  </>
+                )}
                 {N > 1 && " (oferta múltipla)"} em troca de{" "}
                 <strong>{nomePedido}</strong>
                 {N > 1 && (

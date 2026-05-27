@@ -8,11 +8,17 @@ import {
 import {
   getAVenda,
   getElenco,
+  getRodadaStatus,
   isAoVivo,
   setAVenda,
   setElenco,
 } from "../../../../lib/kv.ts";
 import { registrarTroca } from "../../../../lib/historico-trocas.ts";
+import {
+  adjustTrocasMercadoCount,
+  getMaxTrocasMercado,
+  getTrocasMercadoCount,
+} from "../../../../lib/trocas-mercado.ts";
 import type { JogadorKV } from "../../../../lib/types.ts";
 import type { State } from "../../../_middleware.ts";
 
@@ -232,6 +238,38 @@ export const handler: Handlers<unknown, State> = {
 
       await setElenco(oferta.deChave, elencoDe);
       await setElenco(oferta.paraChave, elencoPara);
+
+      // Transfere trocas com mercado (se a oferta incluía). deChave
+      // passa N do seu saldo restante pro paraChave: deChave.count += N
+      // (saldo cai), paraChave.count -= N (saldo sobe, pode ficar
+      // negativo = bonus acima do max). Revalida saldo do ofertante —
+      // pode ter mudado entre criação e aceite.
+      const trocasOf = oferta.trocasOferecidas ?? 0;
+      if (trocasOf > 0) {
+        const rs = await getRodadaStatus();
+        const rodada = rs?.rodada ?? 0;
+        if (rodada > 0) {
+          const max = getMaxTrocasMercado();
+          const countDe = getTrocasMercadoCount(oferta.deChave, rodada);
+          const restanteDe = max - countDe;
+          if (trocasOf > restanteDe) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                erro:
+                  `${oferta.deChave} não tem mais ${trocasOf} troca(s) com mercado restantes — saldo caiu pra ${
+                    Math.max(0, restanteDe)
+                  } depois que a oferta foi criada`,
+              }),
+              { status: 423, headers: H },
+            );
+          }
+          // adjust* permite count negativo (= bônus acima do max
+          // pro paraChave). setTrocasMercadoCount clamparia em 0.
+          await adjustTrocasMercadoCount(oferta.deChave, rodada, +trocasOf);
+          await adjustTrocasMercadoCount(oferta.paraChave, rodada, -trocasOf);
+        }
+      }
 
       // Tira o atletaPedido do "negociável" do dono original (paraChave).
       // Extras não precisam tirar — eles não estavam negociáveis.

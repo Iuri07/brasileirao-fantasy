@@ -5616,6 +5616,65 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   margin-left: 4px;
 }
 
+/* Trocas com mercado no modal de oferta — input numérico com ± */
+.bf-modal__trocas {
+  margin: 6px 4px 0;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-sm);
+}
+.bf-modal__trocas-lbl {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--bf-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--bf-fg-2);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.bf-modal__trocas-saldo {
+  color: var(--bf-fg-3);
+  font-weight: 600;
+}
+.bf-modal__trocas-input {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+.bf-modal__trocas-btn {
+  width: 28px;
+  background: var(--bf-chassis);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-sm);
+  color: var(--bf-fg-0);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.bf-modal__trocas-btn:hover:not(:disabled) {
+  background: var(--bf-bg-2);
+}
+.bf-modal__trocas-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.bf-modal__trocas-input input {
+  flex: 1;
+  text-align: center;
+  background: var(--bf-chassis);
+  border: 1px solid var(--bf-line);
+  border-radius: var(--bf-radius-sm);
+  color: var(--bf-lime);
+  font-family: var(--bf-font-mono);
+  font-weight: 700;
+  font-size: 16px;
+  padding: 4px 8px;
+}
+
 /* Destaque pra posição que casa com o pedido na lista do modal */
 .bf-modal__opt-pos--match {
   color: var(--bf-lime);

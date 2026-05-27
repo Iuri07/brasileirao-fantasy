@@ -58,6 +58,24 @@ export function incTrocasMercadoCount(
   return Promise.resolve(getTrocasMercadoCount(chave, rodada));
 }
 
+/** Ajusta o count em ±delta (pode ser negativo). Usado por transferência
+ *  de trocas em ofertas aceitas — ofertante ganha delta (perde saldo),
+ *  destinatário leva -delta (ganha saldo). count pode ficar negativo,
+ *  representando "bônus" acima do max. */
+export function adjustTrocasMercadoCount(
+  chave: string,
+  rodada: number,
+  delta: number,
+): Promise<number> {
+  const d = Math.trunc(delta);
+  const db = getDb();
+  db.prepare(
+    "INSERT INTO trocas_mercado (chave, rodada, count) VALUES (?, ?, ?) " +
+      "ON CONFLICT (chave, rodada) DO UPDATE SET count=count + excluded.count",
+  ).run(chave, rodada, d);
+  return Promise.resolve(getTrocasMercadoCount(chave, rodada));
+}
+
 /** Snapshot completo de uma rodada — todas as chaves com count > 0.
  *  Times sem registro contam como 0 (não aparecem no retorno). */
 export function getTrocasMercadoRodada(

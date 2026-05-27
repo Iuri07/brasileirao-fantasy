@@ -351,7 +351,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=183" />
+        <link rel="stylesheet" href="/bf-styles.css?v=184" />
       </Head>
       <DesktopSidebar
         active="mercado"
@@ -397,6 +397,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
           meusInteresses={[]}
           isAdmin={data.userRole === "admin"}
           timesDisponiveis={data.timesDisponiveis}
+          trocasMercadoRestantes={data.trocasMercado?.restante ?? null}
         />
         <BottomNav active="mercado" liveDisabled={!data.aoVivo} />
       </div>

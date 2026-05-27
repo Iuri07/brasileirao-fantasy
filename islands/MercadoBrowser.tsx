@@ -77,6 +77,10 @@ interface Props {
   isAdmin?: boolean;
   /** Lista de times disponíveis pro admin escolher (ignorado se !isAdmin). */
   timesDisponiveis?: Array<{ chave: string; nome: string }>;
+  /** Quantas trocas com mercado o user ainda tem na rodada — usado no
+   *  modal de oferta pra deixar oferecer trocas como moeda. null se
+   *  não logado (admin sem chave). */
+  trocasMercadoRestantes?: number | null;
 }
 
 const POS_ABREV: Record<string, string> = {
@@ -114,6 +118,7 @@ export default function MercadoBrowser(
     meusInteresses = [],
     isAdmin = false,
     timesDisponiveis = [],
+    trocasMercadoRestantes = null,
   }: Props,
 ) {
   const [jogadores, setJogadores] = useState<AtletaMercado[]>(inicial);
@@ -202,6 +207,7 @@ export default function MercadoBrowser(
   async function enviarOferta(
     pedido: AtletaMercado,
     oferecidos: AtletaMeuTime[],
+    trocasOferecidas: number,
   ): Promise<{ ok: boolean; erro?: string }> {
     try {
       const r = await fetch("/api/ofertas", {
@@ -210,6 +216,7 @@ export default function MercadoBrowser(
         body: JSON.stringify({
           atleta_pedido: pedido.atleta_id,
           atletas_oferecidos: oferecidos.map((j) => j.atleta_id),
+          trocas_oferecidas: trocasOferecidas,
         }),
       });
       const d = await r.json();
@@ -635,6 +642,7 @@ export default function MercadoBrowser(
           modo={modal.modo}
           pedido={modal.pedido}
           meuElenco={meu}
+          trocasMercadoRestantes={trocasMercadoRestantes}
           onClose={() => setModal(null)}
           onEnviarOferta={enviarOferta}
           onEnviarInteresse={registrarInteresse}
@@ -701,14 +709,24 @@ function ModalConfirma(
 }
 
 function ModalOferta(
-  { modo, pedido, meuElenco, onClose, onEnviarOferta, onEnviarInteresse }: {
+  {
+    modo,
+    pedido,
+    meuElenco,
+    trocasMercadoRestantes,
+    onClose,
+    onEnviarOferta,
+    onEnviarInteresse,
+  }: {
     modo: "oferta" | "interesse";
     pedido: AtletaMercado;
     meuElenco: AtletaMeuTime[];
+    trocasMercadoRestantes: number | null;
     onClose: () => void;
     onEnviarOferta: (
       pedido: AtletaMercado,
       oferecidos: AtletaMeuTime[],
+      trocasOferecidas: number,
     ) => Promise<{ ok: boolean; erro?: string }>;
     onEnviarInteresse: (
       pedido: AtletaMercado,
@@ -719,6 +737,7 @@ function ModalOferta(
   // Modo oferta: até 3 jogadores selecionados (qualquer posição, mas pelo
   // menos 1 da posição do pedido). Modo interesse: 1 só (mesma posição).
   const [selecionados, setSelecionados] = useState<AtletaMeuTime[]>([]);
+  const [trocasOferecidas, setTrocasOferecidas] = useState(0);
   const [enviando, setEnviando] = useState(false);
   const [feito, setFeito] = useState<"ok" | string | null>(null);
 
@@ -762,7 +781,7 @@ function ModalOferta(
     setEnviando(true);
     const r = modo === "interesse"
       ? await onEnviarInteresse(pedido, selecionados[0])
-      : await onEnviarOferta(pedido, selecionados);
+      : await onEnviarOferta(pedido, selecionados, trocasOferecidas);
     setEnviando(false);
     if (r.ok) setFeito("ok");
     else setFeito(r.erro ?? "Erro desconhecido");
@@ -847,6 +866,59 @@ function ModalOferta(
                 </span>
               )}
             </span>
+          </div>
+        )}
+        {/* Trocas com mercado como moeda extra. Só aparece no modo
+            oferta e se o user tem saldo restante > 0. */}
+        {modo === "oferta" &&
+          trocasMercadoRestantes != null &&
+          trocasMercadoRestantes > 0 && (
+          <div class="bf-modal__trocas">
+            <label class="bf-modal__trocas-lbl">
+              <span>+ trocas com mercado</span>
+              <span class="bf-modal__trocas-saldo">
+                saldo {trocasMercadoRestantes}
+              </span>
+            </label>
+            <div class="bf-modal__trocas-input">
+              <button
+                type="button"
+                class="bf-modal__trocas-btn"
+                onClick={() =>
+                  setTrocasOferecidas((n) => Math.max(0, n - 1))}
+                disabled={trocasOferecidas === 0}
+                aria-label="Menos"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                min={0}
+                max={trocasMercadoRestantes}
+                value={String(trocasOferecidas)}
+                onInput={(e) => {
+                  const v = parseInt(
+                    (e.target as HTMLInputElement).value,
+                    10,
+                  ) || 0;
+                  setTrocasOferecidas(
+                    Math.max(0, Math.min(trocasMercadoRestantes, v)),
+                  );
+                }}
+              />
+              <button
+                type="button"
+                class="bf-modal__trocas-btn"
+                onClick={() =>
+                  setTrocasOferecidas((n) =>
+                    Math.min(trocasMercadoRestantes, n + 1)
+                  )}
+                disabled={trocasOferecidas >= trocasMercadoRestantes}
+                aria-label="Mais"
+              >
+                +
+              </button>
+            </div>
           </div>
         )}
         <div class="bf-modal__lista">

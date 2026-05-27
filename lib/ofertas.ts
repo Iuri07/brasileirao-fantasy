@@ -15,6 +15,10 @@ export interface Oferta {
   atletaPedido: number;
   /** Atletas extras escolhidos pelo destinatário (length = atletasOferecidos.length - 1). */
   atletasExtra?: number[];
+  /** Trocas com mercado oferecidas pelo deChave como moeda extra.
+   *  Quando aceita: deChave.count += N (saldo cai), paraChave.count -= N
+   *  (saldo sobe). Default 0 = oferta legacy (só atletas). */
+  trocasOferecidas?: number;
   status: StatusOferta;
   criadoEm: number;
   respondidoEm?: number;
@@ -58,6 +62,7 @@ interface OfertaRow {
   de_chave: string;
   para_chave: string;
   atleta_pedido: number;
+  trocas_oferecidas: number;
   status: StatusOferta;
   criado_em: number;
   respondido_em: number | null;
@@ -76,6 +81,7 @@ function rowToOferta(
     atletasOferecidos: oferecidos,
     atletaPedido: r.atleta_pedido,
     atletasExtra: extras.length > 0 ? extras : undefined,
+    trocasOferecidas: r.trocas_oferecidas > 0 ? r.trocas_oferecidas : undefined,
     status: r.status,
     criadoEm: r.criado_em,
     respondidoEm: r.respondido_em ?? undefined,
@@ -112,8 +118,8 @@ export function setOferta(oferta: Oferta): Promise<void> {
   const db = getDb();
   db.transaction(() => {
     db.prepare(
-      "INSERT INTO ofertas (id, de_chave, para_chave, atleta_pedido, status, criado_em, respondido_em, mensagem) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
+      "INSERT INTO ofertas (id, de_chave, para_chave, atleta_pedido, trocas_oferecidas, status, criado_em, respondido_em, mensagem) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
         "ON CONFLICT (id) DO UPDATE SET " +
         "  status=excluded.status, respondido_em=excluded.respondido_em, mensagem=excluded.mensagem",
     ).run(
@@ -121,6 +127,7 @@ export function setOferta(oferta: Oferta): Promise<void> {
       oferta.deChave,
       oferta.paraChave,
       oferta.atletaPedido,
+      oferta.trocasOferecidas ?? 0,
       oferta.status,
       i64(oferta.criadoEm),
       oferta.respondidoEm ? i64(oferta.respondidoEm) : null,

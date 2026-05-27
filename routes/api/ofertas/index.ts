@@ -1,6 +1,15 @@
 import { Handlers } from "$fresh/server.ts";
 import { criarOferta, listarOfertasRecebidas } from "../../../lib/ofertas.ts";
-import { getAllElencos, getAVendaGlobal, isAoVivo } from "../../../lib/kv.ts";
+import {
+  getAllElencos,
+  getAVendaGlobal,
+  getRodadaStatus,
+  isAoVivo,
+} from "../../../lib/kv.ts";
+import {
+  getMaxTrocasMercado,
+  getTrocasMercadoCount,
+} from "../../../lib/trocas-mercado.ts";
 import type { State } from "../../_middleware.ts";
 
 const H = { "Content-Type": "application/json" };
@@ -33,6 +42,8 @@ export const handler: Handlers<unknown, State> = {
       atleta_oferecido?: number; // compat com clients antigos (1:1)
       atleta_pedido?: number;
       mensagem?: string;
+      /** Trocas com mercado oferecidas como moeda extra. Default 0. */
+      trocas_oferecidas?: number;
     };
     try {
       body = await req.json();
@@ -180,12 +191,42 @@ export const handler: Handlers<unknown, State> = {
       }
     }
 
+    // Trocas com mercado como moeda extra (opcional). Valida que o
+    // ofertante tem saldo SUFICIENTE — não bloqueia se chega a 0, só
+    // se passa do saldo restante. Aceitação revalida (defesa em
+    // profundidade — saldo pode ter mudado entre criação e aceite).
+    const trocasOf = Math.max(0, Math.trunc(body.trocas_oferecidas ?? 0));
+    if (trocasOf > 0) {
+      const rs = await getRodadaStatus();
+      const rodada = rs?.rodada ?? 0;
+      if (rodada === 0) {
+        return new Response(
+          JSON.stringify({ ok: false, erro: "Sem rodada definida" }),
+          { status: 400, headers: H },
+        );
+      }
+      const max = getMaxTrocasMercado();
+      const meuCount = getTrocasMercadoCount(chave, rodada);
+      const meuRestante = Math.max(0, max - meuCount);
+      if (trocasOf > meuRestante) {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            erro:
+              `Você só tem ${meuRestante} troca(s) com mercado restantes nessa rodada — não dá pra oferecer ${trocasOf}`,
+          }),
+          { status: 400, headers: H },
+        );
+      }
+    }
+
     const oferta = await criarOferta({
       deChave: chave,
       paraChave,
       atletasOferecidos: oferecidos,
       atletaPedido: pedido,
       mensagem: body.mensagem,
+      trocasOferecidas: trocasOf > 0 ? trocasOf : undefined,
     });
     return new Response(JSON.stringify({ ok: true, oferta }), { headers: H });
   },

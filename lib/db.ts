@@ -332,6 +332,11 @@ function ensureIncrementalColumns(db: Database): void {
   db.exec(
     "CREATE INDEX IF NOT EXISTS idx_trocas_mercado_rodada ON trocas_mercado(rodada)",
   );
+
+  // Ofertas user-to-user agora podem incluir trocas com mercado como
+  // moeda extra (quem oferece passa N do seu saldo restante pro
+  // destinatário). Coluna nova, default 0 = comportamento legacy.
+  addColumnIfMissing(db, "ofertas", "trocas_oferecidas", "INTEGER NOT NULL DEFAULT 0");
 }
 
 function hasTable(db: Database, name: string): boolean {
