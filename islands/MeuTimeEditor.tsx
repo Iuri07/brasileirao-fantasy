@@ -518,12 +518,14 @@ export default function MeuTimeEditor(
               jogadores={bancoView}
               showPoints={showPoints}
               showStatus={!aoVivo}
+              liveMode={aoVivo}
             />
             <ReservasRow
               label="Não escalados"
               jogadores={naoEscaladosView}
               showPoints={showPoints}
               showStatus={!aoVivo}
+              liveMode={aoVivo}
             />
           </>
         )}

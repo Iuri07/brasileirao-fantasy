@@ -1,8 +1,11 @@
 // Bump chart — posição (rank) por rodada. Y invertido (1 = topo).
-// Cada time tem uma linha na cor accent dele. Mostra trocas de posição
-// dramaticamente ao longo das rodadas. Hover num ponto mostra tooltip
-// flutuante com time/rodada/posição/pontos. Sem painel de detalhe nem
-// legenda — visual mais limpo.
+// Cada time tem uma linha na cor accent dele.
+//
+// Mobile: detail panel + legenda fixos abaixo, tap num ponto preenche.
+// Desktop: tooltip flutuante no hover, sem painel nem legenda (limpo).
+// O state é o mesmo nos dois — CSS decide qual UI mostrar via media
+// query (.bf-league-chart__detail e __legend escondem em ≥1024px;
+// .bf-league-chart__tooltip esconde abaixo).
 
 import { useState } from "preact/hooks";
 
@@ -231,8 +234,8 @@ export default function LeagueChart({ times, destaque }: Props) {
           })}
         </svg>
 
-        {/* Tooltip HTML posicionada por % do viewBox (SVG fill 100% width
-            → o container manda no espaço de coordenadas pro left/top). */}
+        {/* DESKTOP-ONLY: tooltip flutuante posicionada por % do viewBox
+            (CSS esconde em <1024px). */}
         {hover && hoverTime && hoverRank != null && (
           <div
             class="bf-league-chart__tooltip"
@@ -258,6 +261,73 @@ export default function LeagueChart({ times, destaque }: Props) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* MOBILE-ONLY: painel de detalhe abaixo do gráfico, atualiza no tap.
+          CSS esconde em ≥1024px. */}
+      <div class="bf-league-chart__detail">
+        {(() => {
+          if (!hover || !hoverTime || hoverRank == null) {
+            return (
+              <span class="bf-league-chart__detail-hint">
+                Toque num ponto pra ver detalhes
+              </span>
+            );
+          }
+          return (
+            <div
+              class="bf-league-chart__detail-card"
+              style={{ "--c": hoverTime.accent } as Record<string, string>}
+            >
+              {hoverTime.logo && (
+                <img
+                  class="bf-league-chart__detail-crest"
+                  src={hoverTime.logo}
+                  alt=""
+                />
+              )}
+              <div class="bf-league-chart__detail-meta">
+                <div class="bf-league-chart__detail-name">{hoverTime.nome}</div>
+                <div class="bf-league-chart__detail-sub">
+                  Rodada {hover.rodada}
+                </div>
+              </div>
+              <div class="bf-league-chart__detail-rank">
+                {hoverRank}º
+              </div>
+              <div class="bf-league-chart__detail-pts">
+                <span class="bf-league-chart__detail-pts-value">
+                  {(hoverPts as number).toFixed(1).replace(".", ",")}
+                </span>
+                <span class="bf-league-chart__detail-pts-foot">PTS</span>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* MOBILE-ONLY: legenda com crests + nomes. CSS esconde em ≥1024px. */}
+      <div class="bf-league-chart__legend">
+        {times.map((t) => (
+          <span
+            key={t.chave}
+            class={`bf-league-chart__legend-item ${
+              destaque === t.chave ? "bf-league-chart__legend-item--active" : ""
+            }`}
+            style={{ "--c": t.accent } as Record<string, string>}
+          >
+            {t.logo
+              ? (
+                <img
+                  class="bf-league-chart__legend-crest"
+                  src={t.logo}
+                  alt=""
+                />
+              )
+              : <span class="bf-league-chart__legend-dot" />}
+            <span class="bf-league-chart__legend-name">{t.nome}</span>
+          </span>
+        ))}
       </div>
     </div>
   );

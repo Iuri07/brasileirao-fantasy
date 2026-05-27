@@ -1484,13 +1484,147 @@ body {
 .bf-league-chart__plot {
   position: relative;
 }
-/* Tooltip flutuante mostrado no hover — posicionado por % do viewBox
+
+/* Detail panel (mobile): atualiza no tap, mostra time/rodada/pts. */
+.bf-league-chart__detail {
+  margin: 8px 12px 0;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+}
+.bf-league-chart__detail-hint {
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bf-fg-3);
+  text-align: center;
+  width: 100%;
+  padding: 16px 0;
+  border: 1px dashed var(--bf-line-strong);
+  border-radius: var(--bf-radius-md);
+}
+.bf-league-chart__detail-card {
+  display: grid;
+  grid-template-columns: 36px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--c);
+  border-left-width: 4px;
+  border-radius: var(--bf-radius-md);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c) 22%, transparent);
+}
+.bf-league-chart__detail-crest {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+.bf-league-chart__detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.bf-league-chart__detail-name {
+  font-family: var(--bf-font-cond);
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bf-league-chart__detail-sub {
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bf-fg-3);
+}
+.bf-league-chart__detail-rank {
+  font-family: var(--bf-font-display);
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--c);
+  font-variant-numeric: tabular-nums;
+}
+.bf-league-chart__detail-pts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.bf-league-chart__detail-pts-value {
+  font-family: var(--bf-font-display);
+  font-weight: 900;
+  font-size: 14px;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.bf-league-chart__detail-pts-foot {
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  color: var(--bf-fg-3);
+}
+
+/* Legenda (mobile): grid de crests + nomes embaixo do gráfico. */
+.bf-league-chart__legend {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px 8px;
+  padding: 12px 12px 4px;
+}
+.bf-league-chart__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--bf-font-cond);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bf-fg-2);
+  min-width: 0;
+}
+.bf-league-chart__legend-item--active {
+  color: #fff;
+}
+.bf-league-chart__legend-crest {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+.bf-league-chart__legend-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--c);
+  box-shadow: 0 0 6px var(--c);
+}
+.bf-league-chart__legend-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tooltip flutuante mostrado no hover (desktop). Mobile esconde — sem
+   hover, tap usa o detail panel embaixo. Posicionado por % do viewBox
    (left/top relative ao container, valores vêm do JS). */
 .bf-league-chart__tooltip {
+  display: none;
   position: absolute;
-  /* Acima do ponto, centralizado horizontalmente */
   transform: translate(-50%, calc(-100% - 10px));
-  display: flex;
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
@@ -1503,6 +1637,9 @@ body {
   white-space: nowrap;
   z-index: 5;
   animation: bf-league-chart-tooltip-in 120ms var(--bf-ease-out);
+}
+@media (min-width: 1024px) {
+  .bf-league-chart__tooltip { display: flex; }
 }
 @keyframes bf-league-chart-tooltip-in {
   from {
@@ -6770,6 +6907,12 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     max-width: 1000px;
     margin-left: auto;
     margin-right: auto;
+  }
+  /* Desktop usa tooltip flutuante no hover — detail panel + legenda
+     viram redundantes embaixo, escondem. */
+  .bf-league-chart__detail,
+  .bf-league-chart__legend {
+    display: none;
   }
 
   /* ===== /liga: time expandido vira layout 2 colunas =====

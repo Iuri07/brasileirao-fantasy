@@ -14,6 +14,10 @@ interface Props {
       Field — /liga usa false pra limpar visual, /ao-vivo usa false
       implícito porque liveMode esconde status mesmo. */
   showStatus?: boolean;
+  /** Durante o ao vivo: revela sub badges (↑↓) e bolinha "em campo".
+      Fora do live, melhorTime ainda calcula substituido/descido como
+      preview — mostrar os pips confunde, então gateamos atrás disso. */
+  liveMode?: boolean;
 }
 
 const POS_TO_CLASS: Record<string, string> = {
@@ -36,6 +40,7 @@ export default function ReservasRow(
     label = "Reservas",
     showPoints = false,
     showStatus = false,
+    liveMode = false,
   }: Props,
 ) {
   if (!jogadores.length) return null;
@@ -75,10 +80,13 @@ export default function ReservasRow(
                 </span>
               )}
               {
-                /* Badges de auto-sub: ↑ entrou no lugar de titular,
-                  ↓ era titular e foi rebaixado (substituido pelo banco). */
+                /* Badges de auto-sub + em-campo: SÓ durante o ao vivo.
+                  ↑ entrou no lugar de titular, ↓ era titular e foi
+                  rebaixado, bolinha verde = em campo agora. Fora do
+                  live, melhorTime ainda calcula substituido/descido
+                  como preview, mas exibir confunde. */
               }
-              {p.subEntrou && (
+              {liveMode && p.subEntrou && (
                 <span
                   class="bf-pool__badge bf-pool__badge--sub-in"
                   title="Entrou na auto-substituição"
@@ -87,7 +95,7 @@ export default function ReservasRow(
                   ↑
                 </span>
               )}
-              {p.subSaiu && (
+              {liveMode && p.subSaiu && (
                 <span
                   class="bf-pool__badge bf-pool__badge--sub-out"
                   title="Saiu na auto-substituição"
@@ -96,11 +104,8 @@ export default function ReservasRow(
                   ↓
                 </span>
               )}
-              {
-                /* Bolinha verde "em campo" — só quando NÃO há sub badge.
-                  BancoPino usa `entrouEmCampo`; Pino base usa `emCampo`. */
-              }
-              {(p.emCampo || p.entrouEmCampo) && !p.subEntrou && !p.subSaiu && (
+              {liveMode && (p.emCampo || p.entrouEmCampo) &&
+                !p.subEntrou && !p.subSaiu && (
                 <span
                   class="bf-pool__badge bf-pool__badge--em-campo"
                   title="Em campo"

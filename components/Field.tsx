@@ -298,7 +298,11 @@ function PlayerPin(
           aria-label="Em campo"
         />
       )}
-      {p.subEntrou && (
+      {/* Sub badges só durante o ao vivo — fora dele, o melhorTime
+          ainda calcula substituido/descido pra preview, mas mostrar
+          os pips fora do live confunde (o usuário acha que rolou auto-
+          sub agora quando é só projeção). */}
+      {liveMode && p.subEntrou && (
         <span
           class="bf-pin__badge bf-pin__badge--sub-in"
           title="Entrou na auto-substituição"
@@ -307,7 +311,7 @@ function PlayerPin(
           ↑
         </span>
       )}
-      {p.subSaiu && (
+      {liveMode && p.subSaiu && (
         <span
           class="bf-pin__badge bf-pin__badge--sub-out"
           title="Saiu na auto-substituição"
