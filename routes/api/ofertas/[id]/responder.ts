@@ -12,7 +12,9 @@ import {
   isAoVivo,
   setAVenda,
   setElenco,
+  TODAS_CHAVES,
 } from "../../../../lib/kv.ts";
+import { getNomeTimeDisplay } from "../../../../lib/time-visual.ts";
 import { registrarTroca } from "../../../../lib/historico-trocas.ts";
 import {
   adjustTrocasMercadoCount,
@@ -289,6 +291,26 @@ export const handler: Handlers<unknown, State> = {
           atletaA: s.a,
           chaveB: oferta.paraChave,
           atletaB: s.b,
+        });
+      }
+
+      // Broadcast: liga inteira fica sabendo da troca (todos exceto os
+      // 2 envolvidos — eles já vão receber notif legacy oferta_aceita).
+      const nomesA = snapshots.map((s) => s.a.apelido).join(", ");
+      const nomesB = snapshots.map((s) => s.b.apelido).join(", ");
+      const trocasSuf = trocasOf > 0
+        ? ` (+ ${trocasOf} troca${trocasOf > 1 ? "s" : ""} c/ mercado)`
+        : "";
+      const msgTroca = `${getNomeTimeDisplay(oferta.deChave)} ↔ ${
+        getNomeTimeDisplay(oferta.paraChave)
+      }: ${nomesA} ↔ ${nomesB}${trocasSuf}`;
+      for (const c of TODAS_CHAVES) {
+        if (c === oferta.deChave || c === oferta.paraChave) continue;
+        await criarNotif({
+          chave: c,
+          tipo: "troca_mercado",
+          ofertaId: oferta.id,
+          mensagem: msgTroca,
         });
       }
 

@@ -230,14 +230,25 @@ export const handler: Handlers<unknown, State> = {
         ofertaId: ofertaIdSintetico,
       });
 
-      // Resolução de draft (atleta veio do mercado) — broadcast pra TODOS
-      // os times. User-to-user manual swap (entre 2 elencos) também é raro
-      // mas avisamos só os 2 envolvidos. Liga inteira fica sabendo de
-      // movimentos do mercado.
+      // Broadcast pra liga inteira — tanto resolução de draft (atleta
+      // veio do mercado) quanto swap manual entre dois elencos. Os
+      // envolvidos pulam (não precisam saber por broadcast).
       const nomeDeChave = getNomeTimeDisplay(chave);
       if (ehTrocaMercado) {
         const msg = `${nomeDeChave} pegou ${jogadorEntra.apelido_api} do mercado em troca de ${jogadorSai.apelido_api}`;
         for (const c of TODAS_CHAVES) {
+          await criarNotif({
+            chave: c,
+            tipo: "troca_mercado",
+            ofertaId: ofertaIdSintetico,
+            mensagem: msg,
+          });
+        }
+      } else if (elencoOrigem) {
+        const nomeOrigem = getNomeTimeDisplay(elencoOrigem);
+        const msg = `${nomeDeChave} ↔ ${nomeOrigem}: ${jogadorEntra.apelido_api} ↔ ${jogadorSai.apelido_api}`;
+        for (const c of TODAS_CHAVES) {
+          if (c === chave || c === elencoOrigem) continue;
           await criarNotif({
             chave: c,
             tipo: "troca_mercado",
