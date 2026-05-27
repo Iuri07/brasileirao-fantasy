@@ -16,6 +16,7 @@ import AdminDraftDias from "../islands/AdminDraftDias.tsx";
 import AdminSimularRodada from "../islands/AdminSimularRodada.tsx";
 import AdminHistoricoMatriz from "../islands/AdminHistoricoMatriz.tsx";
 import AdminTimesGrid from "../islands/AdminTimesGrid.tsx";
+import AdminTrocasMercado from "../islands/AdminTrocasMercado.tsx";
 import { listarTodasOfertas } from "../lib/ofertas.ts";
 import { listarTrocas } from "../lib/historico-trocas.ts";
 import type { State } from "./_middleware.ts";
@@ -304,7 +305,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=181" />
+        <link rel="stylesheet" href="/bf-styles.css?v=182" />
       </Head>
       <DesktopSidebar
         active="admin"
@@ -345,6 +346,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
             <a href="#ofertas">Ofertas pendentes</a>
             <a href="#trocas">Histórico de trocas</a>
             <a href="#draft">Draft</a>
+            <a href="#trocas-mercado">Trocas mercado</a>
             <a href="#simular">Simular rodada</a>
             <a href="#times-edit">Editar elencos</a>
           </nav>
@@ -636,6 +638,24 @@ export default function AdminPage({ data }: PageProps<Data>) {
                 </span>
               </header>
               <AdminDraftDias iniciais={data.diasResolucao} horaInicial={data.horaResolucao} />
+            </section>
+
+            <section id="trocas-mercado" class="bf-admin-section">
+              <header class="bf-admin-section__header">
+                <h2>Trocas com mercado</h2>
+                <span class="bf-admin-section__sub">
+                  Limite por time/rodada (default 10) — user-to-user não
+                  conta. Edite a contagem de cada time se precisar
+                  ajustar manualmente.
+                </span>
+              </header>
+              <AdminTrocasMercado
+                rodadaAtual={data.rodadaAtual}
+                nomesPorChave={data.atribuicoes.reduce((acc, a) => {
+                  acc[a.chave] = a.displayName;
+                  return acc;
+                }, {} as Record<string, string>)}
+              />
             </section>
 
             <section id="times-edit" class="bf-admin-section">

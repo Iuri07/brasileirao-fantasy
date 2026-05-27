@@ -4,11 +4,17 @@ import {
   getAtletasCache,
   getElenco,
   getPartidasCache,
+  getRodadaStatus,
   POSICAO_CHAVES_CACHE,
   setElenco,
   TODAS_CHAVES,
 } from "../../../../../lib/kv.ts";
 import type { JogadorKV } from "../../../../../lib/types.ts";
+import {
+  getMaxTrocasMercado,
+  getTrocasMercadoCount,
+  incTrocasMercadoCount,
+} from "../../../../../lib/trocas-mercado.ts";
 import type { State } from "../../../../_middleware.ts";
 
 const H = { "Content-Type": "application/json" };
@@ -38,6 +44,9 @@ export const handler: Handlers<unknown, State> = {
       atleta_id_sai: number;
       atleta_id_entra: number;
       escalacao: "Sim" | "Banco" | "Não";
+      /** Admin pode forçar o swap mesmo se o time já atingiu o limite
+       *  de trocas com mercado da rodada. Default false. */
+      bypass_limite_mercado?: boolean;
     };
     try {
       body = await req.json();
@@ -112,6 +121,32 @@ export const handler: Handlers<unknown, State> = {
         }
       }
 
+      // Limite de trocas com mercado por rodada. elencoOrigem === null
+      // significa que o atleta veio do pool de free agents — conta como
+      // troca com mercado. Trocas entre dois elencos (user-to-user) são
+      // ilimitadas. Admin pode forçar via bypass_limite_mercado=true.
+      const ehTrocaMercado = elencoOrigem === null;
+      let trocasMercadoNovo: number | null = null;
+      if (ehTrocaMercado && !body.bypass_limite_mercado) {
+        const rodadaStatus = await getRodadaStatus();
+        const rodadaAtual = rodadaStatus?.rodada ?? 0;
+        if (rodadaAtual > 0) {
+          const max = getMaxTrocasMercado();
+          const atual = getTrocasMercadoCount(chave, rodadaAtual);
+          if (atual >= max) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                erro:
+                  `Limite de ${max} trocas com mercado já atingido para ${chave} na rodada ${rodadaAtual}. ` +
+                  `Use bypass_limite_mercado=true pra forçar.`,
+              }),
+              { status: 423, headers: H },
+            );
+          }
+        }
+      }
+
       // Monta JogadorKV para o atleta que entra
       const sid = atletaCache.status_id ?? null;
       const partidasCache = await getPartidasCache();
@@ -160,11 +195,23 @@ export const handler: Handlers<unknown, State> = {
         }
       }
 
+      // Incrementa contador de trocas com mercado (só se swap envolveu
+      // o pool de free agents). Pega rodada de novo aqui — barato e
+      // garante consistência se rodada virou entre o check e o apply.
+      if (ehTrocaMercado) {
+        const rodadaStatus = await getRodadaStatus();
+        const rodadaAtual = rodadaStatus?.rodada ?? 0;
+        if (rodadaAtual > 0) {
+          trocasMercadoNovo = await incTrocasMercadoCount(chave, rodadaAtual);
+        }
+      }
+
       return new Response(
         JSON.stringify({
           ok: true,
           tipo: elencoOrigem ? "swap-inter-elenco" : "free-agent",
           elencoOrigem,
+          trocasMercadoNovo,
         }),
         { headers: H },
       );

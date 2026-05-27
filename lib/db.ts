@@ -317,6 +317,21 @@ function ensureIncrementalColumns(db: Database): void {
   db.exec(
     "CREATE INDEX IF NOT EXISTS idx_user_logins_last ON user_logins(last_login_at DESC)",
   );
+  // Contador de trocas com o mercado por (chave, rodada). User-to-user
+  // trocas são ilimitadas e não entram aqui — só swaps onde uma das
+  // pontas é o pool de free agents (resolução de draft). Auto-reset
+  // implícito: nova rodada → nova chave composta, count começa em 0.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS trocas_mercado (
+      chave TEXT NOT NULL,
+      rodada INTEGER NOT NULL,
+      count INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (chave, rodada)
+    )
+  `);
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_trocas_mercado_rodada ON trocas_mercado(rodada)",
+  );
 }
 
 function hasTable(db: Database, name: string): boolean {
