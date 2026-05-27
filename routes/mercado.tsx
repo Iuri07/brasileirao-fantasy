@@ -18,6 +18,10 @@ import {
 } from "../lib/draft.ts";
 import { fetchMercadoStatus } from "../lib/cartola.ts";
 import { getNomeTimeDisplay } from "../lib/time-visual.ts";
+import {
+  getMaxTrocasMercado,
+  getTrocasMercadoCount,
+} from "../lib/trocas-mercado.ts";
 import TopBar from "../components/TopBar.tsx";
 import BottomNav from "../components/BottomNav.tsx";
 import DesktopSidebar from "../components/DesktopSidebar.tsx";
@@ -52,6 +56,9 @@ interface Data {
   userPicture: string | null;
   /** Admin sem chave própria — lista de times pra escolher "visualizar como". */
   timesDisponiveis: Array<{ chave: string; nome: string }>;
+  /** Trocas com mercado já feitas / limite na rodada atual.
+   *  null pra admin sem chave própria. */
+  trocasMercado: { count: number; max: number; restante: number } | null;
 }
 
 export const handler: Handlers<Data, State> = {
@@ -128,6 +135,15 @@ export const handler: Handlers<Data, State> = {
     const prox = proximaResolucao(diasResolucao, new Date(), horaResolucao);
     const msAteResolucao = prox ? prox.getTime() - Date.now() : null;
 
+    // Contador de trocas com mercado (só pra users com chave; admin sem
+    // time não aparece). Limite global vem do app_state.
+    let trocasMercado: Data["trocasMercado"] = null;
+    if (chaveLogada && rodadaStatus?.rodada) {
+      const max = getMaxTrocasMercado();
+      const count = getTrocasMercadoCount(chaveLogada, rodadaStatus.rodada);
+      trocasMercado = { count, max, restante: Math.max(0, max - count) };
+    }
+
     mark("data", T0);
     const Trender = performance.now();
     const resp = await ctx.render({
@@ -149,6 +165,7 @@ export const handler: Handlers<Data, State> = {
         chave: c,
         nome: getNomeTimeDisplay(c, CHAVES_TIMES[c]?.nome_time),
       })),
+      trocasMercado,
     });
     mark("render", Trender);
     mark("total", T0);
@@ -281,7 +298,15 @@ function renderTimingPills(data: Data) {
   const tResol = data.resolucaoTs != null && data.msAteResolucao != null
     ? formatTiming(data.resolucaoTs, data.msAteResolucao)
     : null;
-  if (!tFech && !tResol) return null;
+  const tm = data.trocasMercado;
+  // Severity da pill de trocas: danger se esgotou, warn se >=80% do max,
+  // normal caso contrário. Mesmo vocabulário das outras pills (timing-*).
+  const tmSev = tm
+    ? (tm.restante === 0
+      ? "danger"
+      : (tm.count / tm.max >= 0.8 ? "warn" : "normal"))
+    : null;
+  if (!tFech && !tResol && !tm) return null;
   return (
     <div class="bf-mercado__timings">
       {tFech && (
@@ -302,6 +327,17 @@ function renderTimingPills(data: Data) {
           <span class="bf-pill__val">{tResol.curto}</span>
         </span>
       )}
+      {tm && (
+        <span
+          class={`bf-pill bf-pill--timing-${tmSev}`}
+          title={tm.restante === 0
+            ? "Você atingiu o limite de trocas com mercado da rodada"
+            : `Você fez ${tm.count} de ${tm.max} trocas com mercado essa rodada`}
+        >
+          <span class="bf-pill__lbl">Trocas mercado</span>
+          <span class="bf-pill__val">{tm.count}/{tm.max}</span>
+        </span>
+      )}
     </div>
   );
 }
@@ -315,7 +351,7 @@ export default function MercadoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Mercado · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=182" />
+        <link rel="stylesheet" href="/bf-styles.css?v=183" />
       </Head>
       <DesktopSidebar
         active="mercado"
