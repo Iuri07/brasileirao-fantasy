@@ -23,6 +23,7 @@ import AdminSimularRodada from "../islands/AdminSimularRodada.tsx";
 import AdminHistoricoMatriz from "../islands/AdminHistoricoMatriz.tsx";
 import AdminTimesGrid from "../islands/AdminTimesGrid.tsx";
 import AdminTrocasMercado from "../islands/AdminTrocasMercado.tsx";
+import AdminResolverDraftBtn from "../islands/AdminResolverDraftBtn.tsx";
 import { listarTodasOfertas } from "../lib/ofertas.ts";
 import { listarTrocas } from "../lib/historico-trocas.ts";
 import type { State } from "./_middleware.ts";
@@ -420,7 +421,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=186" />
+        <link rel="stylesheet" href="/bf-styles.css?v=187" />
       </Head>
       <DesktopSidebar
         active="admin"
@@ -773,8 +774,10 @@ export default function AdminPage({ data }: PageProps<Data>) {
                       com 2+ interessados.
                     </>
                   )}
+                  {" "}Auto-resolução roda nos dias/hora configurados.
                 </span>
               </header>
+              <AdminResolverDraftBtn />
               {data.conflitos.length === 0
                 ? (
                   <div class="bf-empty-state">

@@ -294,4 +294,29 @@ export function registrarCrons(): void {
       console.error("[cron] atualizar erro:", e);
     }
   });
+
+  // Resolução de draft: checa 1× por minuto se passou do horário
+  // configurado e ainda não rodou nesse slot. Trigger lazy — bem mais
+  // simples que cron por dia/hora dinâmica (admin pode mudar o
+  // schedule a qualquer momento).
+  Deno.cron("resolver-draft", "* * * * *", async () => {
+    try {
+      const { appStateGet } = await import("./app-state.ts");
+      const { getDiasResolucao, getHoraResolucao, proximaResolucao } =
+        await import("./draft.ts");
+      const lastMs = appStateGet<number>("draft_last_resolution_at") ?? 0;
+      const dias = await getDiasResolucao();
+      const hora = await getHoraResolucao();
+      // Próximo slot DEPOIS do último processado. Se já passou → roda.
+      const proximo = proximaResolucao(dias, new Date(lastMs), hora);
+      if (!proximo || Date.now() < proximo.getTime()) return;
+      const { resolverDraft } = await import("./draft-resolver.ts");
+      const res = await resolverDraft();
+      console.log(
+        `[cron] resolver-draft: ${res.vencedores.length} vencedor(es), ${res.perdedores.length} perdedor(es), ${res.errosCount} erro(s) em ${res.duracaoMs}ms`,
+      );
+    } catch (e) {
+      console.error("[cron] resolver-draft erro:", e);
+    }
+  });
 }

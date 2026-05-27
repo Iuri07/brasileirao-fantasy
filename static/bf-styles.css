@@ -4921,6 +4921,52 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     gap: 16px;
   }
 
+  /* Botão Resolver agora — fica no topo da section #conflitos */
+  .bf-admin-resolver {
+    margin-bottom: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .bf-admin-resolver__erro {
+    color: var(--bf-red);
+    font-family: var(--bf-font-cond);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .bf-admin-resolver__out {
+    width: 100%;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--bf-lime) 8%, var(--bf-chassis));
+    border: 1px solid color-mix(in srgb, var(--bf-lime) 40%, var(--bf-line));
+    border-radius: var(--bf-radius-sm);
+  }
+  .bf-admin-resolver__resumo {
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bf-lime);
+    margin-bottom: 6px;
+  }
+  .bf-admin-resolver__lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-family: var(--bf-font-cond);
+    font-size: 12px;
+    color: var(--bf-fg-1);
+  }
+  .bf-admin-resolver__lista strong {
+    color: var(--bf-fg-0);
+  }
+
   /* === Conflitos pendentes (interesses do draft) === */
   .bf-admin-conflitos {
     list-style: none;
