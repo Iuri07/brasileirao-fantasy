@@ -41,6 +41,10 @@ import { getNomeTimeDisplay } from "../lib/time-visual.ts";
 import { fotoUrl } from "../lib/fotos.ts";
 import { timeLigaInfo } from "../lib/times-liga.ts";
 import { getHistorico, rodadasJogadas, totalPontos } from "../lib/historico.ts";
+import {
+  getMaxTrocasMercado,
+  getTrocasMercadoCount,
+} from "../lib/trocas-mercado.ts";
 
 import type { State } from "./_middleware.ts";
 
@@ -99,6 +103,9 @@ interface HomeData {
   subsAuto: number;
   /** Limite de substituições no ao vivo */
   subsMax: number;
+  /** Trocas com mercado já feitas / limite na rodada atual.
+   *  null pra admin sem chave própria. */
+  trocasMercado: { count: number; max: number; restante: number } | null;
   /** Edição da escalação bloqueada (mercado fechado / rodada rolando) */
   edicaoBloqueada: boolean;
   /** atleta_ids marcados como "à venda" pelo dono */
@@ -478,6 +485,12 @@ export const handler: Handlers<HomeData, State> = {
       subsUsadas,
       subsAuto,
       subsMax: MAX_SUBS_AO_VIVO,
+      trocasMercado: (() => {
+        if (!CHAVE_USUARIO || rodadaAtual === 0) return null;
+        const max = getMaxTrocasMercado();
+        const count = getTrocasMercadoCount(CHAVE_USUARIO, rodadaAtual);
+        return { count, max, restante: Math.max(0, max - count) };
+      })(),
       // Edição: bloqueada durante a rodada ao vivo OU quando mercado
       // fechado (sem fonte dizendo "aguardando").
       edicaoBloqueada: aoVivoReal || !mercadoAberto,
@@ -544,7 +557,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=184" />
+        <link rel="stylesheet" href="/bf-styles.css?v=185" />
       </Head>
       <DesktopSidebar
         active="home"
@@ -584,12 +597,31 @@ export default function Home({ data }: PageProps<HomeData>) {
               <span>Mercado {data.mercadoAberto ? "aberto" : "fechado"}</span>
             </div>
           </div>
-          {data.aoVivoReal && (
-            <span class="bf-pill bf-pill--lime" title="Rodada em andamento">
-              <span class="bf-pill__dot" />
-              Ao Vivo · {data.partidas.length} jogos
-            </span>
-          )}
+          <div class="bf-home-head__pills">
+            {data.trocasMercado && (() => {
+              const tm = data.trocasMercado;
+              const sev = tm.restante === 0
+                ? "danger"
+                : (tm.count / tm.max >= 0.8 ? "warn" : "normal");
+              return (
+                <span
+                  class={`bf-pill bf-pill--timing-${sev}`}
+                  title={tm.restante === 0
+                    ? "Você atingiu o limite de trocas com mercado da rodada"
+                    : `Você fez ${tm.count} de ${tm.max} trocas com mercado essa rodada`}
+                >
+                  <span class="bf-pill__lbl">Trocas mercado</span>
+                  <span class="bf-pill__val">{tm.count}/{tm.max}</span>
+                </span>
+              );
+            })()}
+            {data.aoVivoReal && (
+              <span class="bf-pill bf-pill--lime" title="Rodada em andamento">
+                <span class="bf-pill__dot" />
+                Ao Vivo · {data.partidas.length} jogos
+              </span>
+            )}
+          </div>
         </header>
 
         {/* Desktop (≥1024px): .bf-home-grid vira grid com hero, escalação

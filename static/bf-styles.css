@@ -6752,6 +6752,13 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     gap: 16px;
     padding: 4px var(--bf-gutter) 12px;
   }
+  .bf-home-head__pills {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
   .bf-home-head__greet h1 {
     font-family: var(--bf-font-graffiti);
     font-weight: 400;
