@@ -1,7 +1,13 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
 import { getEmailMap } from "../lib/auth.ts";
-import { CHAVES_TIMES, getRodadaStatus, TODAS_CHAVES } from "../lib/kv.ts";
+import {
+  CHAVES_TIMES,
+  getAllElencos,
+  getRodadaStatus,
+  getTodosInteresses,
+  TODAS_CHAVES,
+} from "../lib/kv.ts";
 import { getDiasResolucao, getHoraResolucao } from "../lib/draft.ts";
 import { timeLigaInfo } from "../lib/times-liga.ts";
 import { getAllTimeVisuais, resolveTimeVisual } from "../lib/time-visual.ts";
@@ -20,6 +26,15 @@ import AdminTrocasMercado from "../islands/AdminTrocasMercado.tsx";
 import { listarTodasOfertas } from "../lib/ofertas.ts";
 import { listarTrocas } from "../lib/historico-trocas.ts";
 import type { State } from "./_middleware.ts";
+
+const POS_ABREV_ADMIN: Record<string, string> = {
+  "Goleiro": "GOL",
+  "Lateral": "LAT",
+  "Zagueiro": "ZAG",
+  "Meia": "MEI",
+  "Atacante": "ATK",
+  "Técnico": "TEC",
+};
 
 interface SessaoAtiva {
   id: string;
@@ -46,6 +61,22 @@ interface AtividadeRecente {
   /** "troca" | "oferta" | "transferencia" */
   tipo: string;
   descricao: string;
+}
+
+interface ConflitoItem {
+  atletaAlvoId: number;
+  atletaAlvoApelido: string;
+  atletaAlvoClube: string;
+  atletaAlvoPosicao: string;
+  /** Lista de interessados (chave + nome do time + atleta oferecido). */
+  interessados: Array<{
+    chave: string;
+    displayName: string;
+    accent: string;
+    oferecidoId: number;
+    oferecidoApelido: string;
+    oferecidoPosicao: string;
+  }>;
 }
 
 interface AtribuicaoItem {
@@ -89,6 +120,8 @@ interface Data {
   ultimosLogins: UltimoLogin[];
   /** Atividade recente (trocas, ofertas), ordenado desc por ts. Top 10. */
   timeline: AtividadeRecente[];
+  /** Conflitos pendentes do draft (atletas com 1+ interessados). */
+  conflitos: ConflitoItem[];
   userEmail: string | null;
   userRole: "admin" | "user" | null;
   userNome: string | null;
@@ -278,6 +311,87 @@ export const handler: Handlers<Data, State> = {
     timeline.sort((a, b) => b.ts - a.ts);
     const timelineTop = timeline.slice(0, 12);
 
+    // Conflitos pendentes do draft — atletas com ≥1 interessado.
+    // Resolve apelido/clube/posicao tanto do alvo (atletas_cache via
+    // todos os elencos, ou cache direto) quanto do oferecido (que
+    // SEMPRE está em algum elenco do ofertante).
+    const interessesMap = await getTodosInteresses();
+    const conflitos: ConflitoItem[] = [];
+    if (Object.keys(interessesMap).length > 0) {
+      const elencosAll = await getAllElencos();
+      // Lookup atleta_id → {apelido, clube, posicao} a partir dos elencos
+      // (oferecidos vivem aqui). Pros alvos, pegamos do atletas_cache via
+      // sqlite direto (mais rápido que getAtletasCache por posição).
+      const lookupElenco = new Map<
+        number,
+        { apelido: string; clube: string; posicao: string }
+      >();
+      for (const e of Object.values(elencosAll)) {
+        for (const j of Object.values(e.jogadores)) {
+          lookupElenco.set(j.atleta_id, {
+            apelido: j.apelido_api,
+            clube: j.clube,
+            posicao: j.posicao,
+          });
+        }
+      }
+      // Alvos: query direto na atletas_cache
+      const alvoIds = Object.keys(interessesMap).map(Number);
+      const placeholders = alvoIds.map(() => "?").join(",");
+      const alvoRows = alvoIds.length > 0
+        ? db.prepare(
+          `SELECT atleta_id, apelido, clube, posicao
+             FROM atletas_cache WHERE atleta_id IN (${placeholders})`,
+        ).all<{
+          atleta_id: number;
+          apelido: string;
+          clube: string;
+          posicao: string;
+        }>(...alvoIds)
+        : [];
+      const lookupAlvo = new Map<
+        number,
+        { apelido: string; clube: string; posicao: string }
+      >();
+      for (const r of alvoRows) {
+        lookupAlvo.set(r.atleta_id, {
+          apelido: r.apelido,
+          clube: r.clube,
+          posicao: r.posicao,
+        });
+      }
+      for (const [alvoIdStr, lista] of Object.entries(interessesMap)) {
+        const alvoId = Number(alvoIdStr);
+        const alvo = lookupAlvo.get(alvoId);
+        if (!alvo) continue; // atleta sumiu do cache, skip
+        conflitos.push({
+          atletaAlvoId: alvoId,
+          atletaAlvoApelido: alvo.apelido,
+          atletaAlvoClube: alvo.clube,
+          atletaAlvoPosicao: alvo.posicao,
+          interessados: lista.map((i) => {
+            const ofer = lookupElenco.get(i.oferecido);
+            const v = visuais.find((vi) => vi.chave === i.chave);
+            return {
+              chave: i.chave,
+              displayName: v?.displayName ?? i.chave,
+              accent: v?.accent ?? "var(--bf-fg-2)",
+              oferecidoId: i.oferecido,
+              oferecidoApelido: ofer?.apelido ?? `#${i.oferecido}`,
+              oferecidoPosicao: ofer?.posicao ?? "?",
+            };
+          }),
+        });
+      }
+      // Ordena: conflitos (>1 interessado) primeiro, depois alfabético
+      conflitos.sort((a, b) => {
+        const ca = a.interessados.length > 1 ? 0 : 1;
+        const cb = b.interessados.length > 1 ? 0 : 1;
+        if (ca !== cb) return ca - cb;
+        return a.atletaAlvoApelido.localeCompare(b.atletaAlvoApelido);
+      });
+    }
+
     return ctx.render({
       atribuicoes,
       visuais,
@@ -292,6 +406,7 @@ export const handler: Handlers<Data, State> = {
       sessoesAtivas,
       ultimosLogins,
       timeline: timelineTop,
+      conflitos,
       userEmail: ctx.state.session?.email ?? null,
       userRole: ctx.state.session?.role ?? null,
       userNome: ctx.state.session?.name ?? null,
@@ -305,7 +420,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=185" />
+        <link rel="stylesheet" href="/bf-styles.css?v=186" />
       </Head>
       <DesktopSidebar
         active="admin"
@@ -346,6 +461,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
             <a href="#ofertas">Ofertas pendentes</a>
             <a href="#trocas">Histórico de trocas</a>
             <a href="#draft">Draft</a>
+            <a href="#conflitos">Conflitos</a>
             <a href="#trocas-mercado">Trocas mercado</a>
             <a href="#simular">Simular rodada</a>
             <a href="#times-edit">Editar elencos</a>
@@ -638,6 +754,89 @@ export default function AdminPage({ data }: PageProps<Data>) {
                 </span>
               </header>
               <AdminDraftDias iniciais={data.diasResolucao} horaInicial={data.horaResolucao} />
+            </section>
+
+            <section id="conflitos" class="bf-admin-section">
+              <header class="bf-admin-section__header">
+                <h2>Conflitos pendentes ({data.conflitos.length})</h2>
+                <span class="bf-admin-section__sub">
+                  Interesses do draft ainda não resolvidos.
+                  {data.conflitos.filter((c) => c.interessados.length > 1)
+                    .length > 0 && (
+                    <>
+                      {" "}
+                      <strong>
+                        {data.conflitos.filter((c) =>
+                          c.interessados.length > 1
+                        ).length} disputa(s)
+                      </strong>{" "}
+                      com 2+ interessados.
+                    </>
+                  )}
+                </span>
+              </header>
+              {data.conflitos.length === 0
+                ? (
+                  <div class="bf-empty-state">
+                    Nenhum interesse pendente.
+                  </div>
+                )
+                : (
+                  <ul class="bf-admin-conflitos">
+                    {data.conflitos.map((c) => {
+                      const disputado = c.interessados.length > 1;
+                      return (
+                        <li
+                          key={c.atletaAlvoId}
+                          class={`bf-admin-conflitos__row ${
+                            disputado
+                              ? "bf-admin-conflitos__row--disputa"
+                              : ""
+                          }`}
+                        >
+                          <div class="bf-admin-conflitos__alvo">
+                            <span class="bf-admin-conflitos__pos">
+                              {POS_ABREV_ADMIN[c.atletaAlvoPosicao] ??
+                                c.atletaAlvoPosicao}
+                            </span>
+                            <span class="bf-admin-conflitos__nome">
+                              {c.atletaAlvoApelido}
+                            </span>
+                            <span class="bf-admin-conflitos__clube">
+                              {c.atletaAlvoClube}
+                            </span>
+                            {disputado && (
+                              <span class="bf-admin-conflitos__badge">
+                                {c.interessados.length} interessados
+                              </span>
+                            )}
+                          </div>
+                          <ul class="bf-admin-conflitos__interessados">
+                            {c.interessados.map((i) => (
+                              <li
+                                key={i.chave}
+                                style={{ "--c": i.accent } as Record<
+                                  string,
+                                  string
+                                >}
+                              >
+                                <span class="bf-admin-conflitos__time">
+                                  {i.displayName}
+                                </span>
+                                <span class="bf-admin-conflitos__troca">
+                                  oferece{" "}
+                                  <strong>{i.oferecidoApelido}</strong>{" "}
+                                  ({POS_ABREV_ADMIN[i.oferecidoPosicao] ??
+                                    i.oferecidoPosicao})
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
             </section>
 
             <section id="trocas-mercado" class="bf-admin-section">

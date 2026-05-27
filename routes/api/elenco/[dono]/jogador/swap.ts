@@ -15,6 +15,7 @@ import {
   getTrocasMercadoCount,
   incTrocasMercadoCount,
 } from "../../../../../lib/trocas-mercado.ts";
+import { registrarTroca } from "../../../../../lib/historico-trocas.ts";
 import type { State } from "../../../../_middleware.ts";
 
 const H = { "Content-Type": "application/json" };
@@ -205,6 +206,26 @@ export const handler: Handlers<unknown, State> = {
           trocasMercadoNovo = await incTrocasMercadoCount(chave, rodadaAtual);
         }
       }
+
+      // Registra no histórico_trocas pra admin acompanhar todo movimento
+      // de elenco (incluindo resolução de draft). chaveB = "mercado" como
+      // sentinel quando o atleta veio do pool de free agents. Desfazer
+      // só funciona pra troca entre dois elencos reais (mercado é one-way).
+      await registrarTroca({
+        chaveA: chave,
+        atletaA: {
+          atleta_id: jogadorSai.atleta_id,
+          apelido: jogadorSai.apelido_api,
+          escalacaoOriginal: jogadorSai.escalacao,
+        },
+        chaveB: elencoOrigem ?? "mercado",
+        atletaB: {
+          atleta_id: jogadorEntra.atleta_id,
+          apelido: jogadorEntra.apelido_api,
+          escalacaoOriginal: elencoOrigem ? escalacaoEntraOrigem : "Não",
+        },
+        ofertaId: `swap-${Date.now()}`, // sintetizado — não veio de oferta
+      });
 
       return new Response(
         JSON.stringify({

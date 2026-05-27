@@ -127,6 +127,16 @@ export async function desfazerTroca(
   const troca = await getTroca(id);
   if (!troca) return { ok: false, erro: "Troca não encontrada" };
   if (troca.desfeitaEm) return { ok: false, erro: "Troca já foi desfeita" };
+  // "mercado" é sentinel pra trocas com pool de free agents — admin
+  // tem que desfazer manualmente (swap reverso) porque o atleta pode
+  // já ter sido pego por outro time.
+  if (troca.chaveA === "mercado" || troca.chaveB === "mercado") {
+    return {
+      ok: false,
+      erro:
+        "Trocas com mercado têm que ser desfeitas manualmente (swap reverso)",
+    };
+  }
 
   const [elencoA, elencoB] = await Promise.all([
     getElenco(troca.chaveA),

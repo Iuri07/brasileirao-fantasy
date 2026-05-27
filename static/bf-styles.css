@@ -4921,6 +4921,103 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
     gap: 16px;
   }
 
+  /* === Conflitos pendentes (interesses do draft) === */
+  .bf-admin-conflitos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 10px;
+  }
+  .bf-admin-conflitos__row {
+    background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
+    border: 1px solid var(--bf-line);
+    border-radius: var(--bf-radius-md);
+    padding: 10px 12px;
+  }
+  .bf-admin-conflitos__row--disputa {
+    border-color: color-mix(in srgb, var(--bf-yellow) 50%, var(--bf-line));
+    background: color-mix(in srgb, var(--bf-yellow) 6%, var(--bf-chassis));
+  }
+  .bf-admin-conflitos__alvo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .bf-admin-conflitos__pos {
+    font-family: var(--bf-font-cond);
+    font-weight: 800;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--bf-fg-3);
+    padding: 2px 5px;
+    background: var(--bf-bg-2);
+    border-radius: 999px;
+  }
+  .bf-admin-conflitos__nome {
+    font-family: var(--bf-font-cond);
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: var(--bf-fg-0);
+    text-transform: uppercase;
+  }
+  .bf-admin-conflitos__clube {
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--bf-fg-3);
+    text-transform: uppercase;
+  }
+  .bf-admin-conflitos__badge {
+    margin-left: auto;
+    font-family: var(--bf-font-cond);
+    font-weight: 800;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--bf-yellow);
+    background: color-mix(in srgb, var(--bf-yellow) 18%, transparent);
+    border: 1px solid color-mix(in srgb, var(--bf-yellow) 40%, transparent);
+    border-radius: 999px;
+    padding: 2px 7px;
+  }
+  .bf-admin-conflitos__interessados {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .bf-admin-conflitos__interessados li {
+    display: flex;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.25);
+    border-left: 3px solid var(--c, var(--bf-fg-3));
+    border-radius: var(--bf-radius-sm);
+    font-family: var(--bf-font-cond);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+  .bf-admin-conflitos__time {
+    font-weight: 800;
+    color: var(--c, var(--bf-fg-0));
+    text-transform: uppercase;
+  }
+  .bf-admin-conflitos__troca {
+    color: var(--bf-fg-2);
+  }
+  .bf-admin-conflitos__troca strong {
+    color: var(--bf-fg-0);
+    font-weight: 700;
+  }
+
   /* === Trocas com mercado: painel admin === */
   .bf-admin-trocas {
     display: flex;

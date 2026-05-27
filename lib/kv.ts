@@ -186,6 +186,26 @@ export function removeInteresse(
   return Promise.resolve({ total });
 }
 
+/** Lista todos os atletas com ≥1 interessado (conflitos pendentes do
+ *  draft). Pra admin acompanhar quem disputa o quê antes da resolução. */
+export function getTodosInteresses(): Promise<
+  Record<number, InteresseRegistro[]>
+> {
+  const rows = getDb().prepare(
+    `SELECT atleta_alvo, chave, atleta_oferecido AS oferecido
+       FROM interesses
+   ORDER BY atleta_alvo, criado_em`,
+  ).all<{ atleta_alvo: number } & InteresseRegistro>();
+  const out: Record<number, InteresseRegistro[]> = {};
+  for (const r of rows) {
+    (out[r.atleta_alvo] ??= []).push({
+      chave: r.chave,
+      oferecido: r.oferecido,
+    });
+  }
+  return Promise.resolve(out);
+}
+
 export function getInteressadosBatch(
   atletaIds: number[],
 ): Promise<Record<number, InteresseRegistro[]>> {

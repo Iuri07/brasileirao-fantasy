@@ -22,6 +22,7 @@ interface Data {
 }
 
 function nomeTime(chave: string): string {
+  if (chave === "mercado") return "Mercado";
   const v = timeLigaInfo(chave);
   const m = CHAVES_TIMES[chave];
   return v?.displayName ?? m?.nome_time ?? chave;
@@ -57,7 +58,7 @@ export default function AdminTrocasPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Histórico de Trocas</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=185" />
+        <link rel="stylesheet" href="/bf-styles.css?v=186" />
       </Head>
       <div class="bf-viewport">
         <TopBar
