@@ -8,13 +8,16 @@ interface Resultado {
     nomeTime: string;
     atletaAlvoApelido: string;
     atletaOferecidoApelido: string;
+    turno: number;
   }>;
   perdedores: Array<{
     chave: string;
     atletaAlvoApelido: string;
     vencedorNomeTime: string;
+    turno: number;
   }>;
   errosCount: number;
+  turnos: number;
   duracaoMs: number;
 }
 
@@ -59,8 +62,8 @@ export default function AdminResolverDraftBtn() {
       {resultado && (
         <div class="bf-admin-resolver__out">
           <div class="bf-admin-resolver__resumo">
-            {resultado.vencedores.length} aplicada(s) ·{" "}
-            {resultado.perdedores.length} perdedor(es) ·{" "}
+            {resultado.vencedores.length} aplicada(s) em {resultado.turnos}
+            {" "}turno(s) · {resultado.perdedores.length} perdedor(es) ·{" "}
             {resultado.errosCount > 0
               ? `${resultado.errosCount} erro(s) ·`
               : ""}{" "}
@@ -70,6 +73,7 @@ export default function AdminResolverDraftBtn() {
             <ul class="bf-admin-resolver__lista">
               {resultado.vencedores.map((v, i) => (
                 <li key={i}>
+                  <span class="bf-admin-resolver__turno">T{v.turno}</span>
                   <strong>{v.nomeTime}</strong> ← {v.atletaAlvoApelido}{" "}
                   (saiu {v.atletaOferecidoApelido})
                 </li>

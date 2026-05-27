@@ -1,21 +1,22 @@
-// Aplica resolução de conflitos do draft via SNAKE/ROUND-ROBIN.
+// Aplica resolução de conflitos do draft em TURNOS.
 //
-// Algoritmo (rodada a rodada):
-//   Pra cada chave NA ORDEM DO DRAFT (maior prioridade primeiro):
-//     - Pula se não tem mais trocas com mercado restantes
-//     - Pula se não tem mais prioridades ainda não picked
-//     - Senão pega o atleta de maior prioridade dele que ainda não foi
-//       pego, aplica swap, decrementa trocas, marca como picked
-//   Repete enquanto alguém pegar algo na rodada.
+// Algoritmo:
+//   Turno = 1, 2, 3, ...:
+//     1. Cada user (na ordem atual do draft) propõe a #1 prioridade
+//        que ainda tem (se tiver trocas restantes).
+//     2. Agrupa propostas por atleta_alvo. Pra cada atleta com 2+
+//        candidatos, o mais alto na ordem do draft leva.
+//     3. Aplica swap pros vencedores; notifica perdedores.
+//     4. Remove o atleta resolvido das prioridades de TODOS os users.
+//     5. Vencedores vão pro FIM da ordem do draft (rotação snake) —
+//        múltiplos vencedores no mesmo turno mantêm a ordem relativa.
+//   Repete enquanto alguém propor algo no turno.
 //
-// Consequências:
-//   - User pode pegar VÁRIOS desde que tenha trocas restantes
-//   - Conflitos resolvidos naturalmente: quem está mais alto no draft
-//     pega antes; se 2 querem o mesmo de prioridade 1, o 1º pega e o
-//     outro vai pra próxima prioridade na próxima volta do snake.
-//   - Prioridade do USER decide qual atleta ele tenta — quem usou
-//     muitas posições do draft "cai" naturalmente (próximas rodadas
-//     ele tenta itens menos prioritários).
+// Resulta em:
+//   - User pode pegar vários atletas (1 por turno), respeitando saldo
+//     de trocas com mercado e prioridade pessoal.
+//   - Quem está mais alto no draft só ganha o 1º conflito; ao ganhar,
+//     cai pro fim e perde prioridade nos próximos turnos.
 
 import { getDb } from "./db.ts";
 import {
@@ -28,6 +29,7 @@ import {
   getRodadaStatus,
   getTodosInteresses,
   POSICAO_CHAVES_CACHE,
+  setDraftOrdem,
   setElenco,
   TODAS_CHAVES,
 } from "./kv.ts";
@@ -39,7 +41,6 @@ import {
   getMaxTrocasMercado,
   getTrocasMercadoCount,
 } from "./trocas-mercado.ts";
-import { avancarRodadaDraft } from "./draft.ts";
 import { appStateSet } from "./app-state.ts";
 import { getNomeTimeDisplay } from "./time-visual.ts";
 
@@ -51,16 +52,19 @@ export interface ResolucaoResultado {
     atletaAlvoApelido: string;
     atletaOferecidoId: number;
     atletaOferecidoApelido: string;
+    turno: number;
   }>;
   perdedores: Array<{
     chave: string;
     atletaAlvoApelido: string;
     vencedorNomeTime: string;
+    turno: number;
   }>;
-  /** Atletas com interesses mas SEM pick possível (sem trocas, ou
-   *  todos os interessados acabaram pegando outras coisas primeiro). */
+  /** Atletas com interesse mas SEM pick (oferecido sumiu, todos sem
+   *  trocas, etc.) */
   semWinner: number;
   errosCount: number;
+  turnos: number;
   duracaoMs: number;
 }
 
@@ -81,6 +85,7 @@ export async function resolverDraft(): Promise<ResolucaoResultado> {
     perdedores: [],
     semWinner: 0,
     errosCount: 0,
+    turnos: 0,
     duracaoMs: 0,
   };
   if (Object.keys(interessesMap).length === 0) {
@@ -89,41 +94,43 @@ export async function resolverDraft(): Promise<ResolucaoResultado> {
     return out;
   }
 
-  const [ordem, rodadaStatus] = await Promise.all([
+  const [ordemInicial, rodadaStatus] = await Promise.all([
     getDraftOrdem(),
     getRodadaStatus(),
   ]);
   const rodadaAtual = rodadaStatus?.rodada ?? 0;
   const max = getMaxTrocasMercado();
 
-  // Saldo de trocas restantes por chave (snapshot — vai diminuindo
-  // conforme processamos picks dentro dessa execução).
+  // Estado mutável.
+  let ordemAtual = [...ordemInicial];
   const restantes = new Map<string, number>();
   for (const chave of TODAS_CHAVES) {
     const count = getTrocasMercadoCount(chave, rodadaAtual);
     restantes.set(chave, Math.max(0, max - count));
   }
 
-  // Prioridades em ordem por chave + lookup (chave, atleta_alvo) →
-  // atleta_oferecido. Filtra prioridades que correspondem a interesses
-  // REAIS (user pode ter prioridade legacy sem interesse ativo).
-  const prioridadesPorChave = new Map<string, number[]>();
-  const oferecidoPorPar = new Map<string, number>(); // key = chave:atletaAlvo
+  // Lookup (chave, atletaAlvo) → atleta_oferecido. Vem dos interesses.
+  const oferecidoPorPar = new Map<string, number>();
   for (const [alvoIdStr, lista] of Object.entries(interessesMap)) {
     const alvoId = Number(alvoIdStr);
     for (const i of lista) {
       oferecidoPorPar.set(`${i.chave}:${alvoId}`, i.oferecido);
     }
   }
+
+  // Prioridades locais por chave — só atletas com interesse real
+  // (prioridades legacy filtradas). Vai sendo encurtada conforme
+  // resolvemos atletas.
+  const prioridadesLocal = new Map<string, number[]>();
   for (const chave of TODAS_CHAVES) {
     const prio = await getMinhaPrioridade(chave);
     const filtrada = prio.filter((id) =>
       oferecidoPorPar.has(`${chave}:${id}`)
     );
-    if (filtrada.length > 0) prioridadesPorChave.set(chave, filtrada);
+    if (filtrada.length > 0) prioridadesLocal.set(chave, filtrada);
   }
 
-  // Preload caches que vamos usar várias vezes.
+  // Preload caches.
   const cacheGlobal = new Map<number, AtletaCacheData>();
   await Promise.all(POSICAO_CHAVES_CACHE.map(async (posChave) => {
     const cache = await getAtletasCache(posChave);
@@ -142,73 +149,80 @@ export async function resolverDraft(): Promise<ResolucaoResultado> {
   const partidasCache = await getPartidasCache();
   const db = getDb();
 
-  // Snake draft loop.
-  const pickedSet = new Set<number>(); // atleta_alvos já pegos nessa execução
-  const tentativasFalhas = new Map<string, Set<number>>(); // chave → atletas já tentados sem sucesso
-  const pickers: string[] = []; // pra shift no draft (1 entrada por user que pegou pelo menos 1)
-  // Quem perdeu o quê — pra notif individual. Map: atletaAlvo → array de chaves perdedoras
-  const perdedoresPorAtleta = new Map<number, string[]>();
+  // Remove um atleta das prioridades de TODOS os users (limpa pra
+  // próximos turnos).
+  const removeAtletaDeTodos = (alvoId: number) => {
+    for (const [c, p] of prioridadesLocal.entries()) {
+      const filtrado = p.filter((id) => id !== alvoId);
+      if (filtrado.length === 0) prioridadesLocal.delete(c);
+      else if (filtrado.length !== p.length) {
+        prioridadesLocal.set(c, filtrado);
+      }
+    }
+  };
 
-  // Coleta inicial de "perdedores em potencial": todo mundo que marcou
-  // interesse num atleta. No fim da resolução, quem marcou MAS não pegou
-  // (porque outro pegou) é perdedor desse atleta específico.
-  const interessadosPorAtleta = new Map<number, string[]>();
-  for (const [alvoIdStr, lista] of Object.entries(interessesMap)) {
-    interessadosPorAtleta.set(Number(alvoIdStr), lista.map((i) => i.chave));
-  }
-
-  let safety = 0;
-  while (safety++ < 100) {
-    let picksNaRodada = 0;
-    for (const chave of ordem) {
-      const rest = restantes.get(chave) ?? 0;
-      if (rest <= 0) continue;
-      const prio = prioridadesPorChave.get(chave);
+  // Loop por turnos.
+  while (out.turnos < 50) {
+    out.turnos += 1;
+    // 1. Coletar propostas — todo user que tem prioridade e trocas
+    //    propõe seu top.
+    type Proposal = { chave: string; alvoId: number };
+    const proposals: Proposal[] = [];
+    for (const chave of ordemAtual) {
+      if ((restantes.get(chave) ?? 0) <= 0) continue;
+      const prio = prioridadesLocal.get(chave);
       if (!prio || prio.length === 0) continue;
-      // Procura próximo atleta da prioridade que ainda não foi pego e
-      // não falhou em tentativa anterior (oferecido sumiu etc.).
-      const falhas = tentativasFalhas.get(chave) ?? new Set<number>();
-      let alvoId: number | null = null;
-      for (const id of prio) {
-        if (pickedSet.has(id)) continue;
-        if (falhas.has(id)) continue;
-        alvoId = id;
-        break;
-      }
-      if (alvoId === null) continue;
+      proposals.push({ chave, alvoId: prio[0] });
+    }
+    if (proposals.length === 0) break;
 
-      const oferecidoId = oferecidoPorPar.get(`${chave}:${alvoId}`);
+    // 2. Agrupar por atleta. Pra ordem dentro de cada grupo usar a
+    //    ordemAtual (índice = prioridade no draft).
+    const ordemIdx = new Map<string, number>();
+    ordemAtual.forEach((c, i) => ordemIdx.set(c, i));
+    const byAtleta = new Map<number, string[]>();
+    for (const p of proposals) {
+      const arr = byAtleta.get(p.alvoId) ?? [];
+      arr.push(p.chave);
+      byAtleta.set(p.alvoId, arr);
+    }
+
+    const winnersTurno: string[] = [];
+
+    // 3. Resolve cada atleta. Ordem de resolução: por prioridade do
+    //    draft do "mais alto candidato" (cosmético — não afeta saídas
+    //    porque resolução é independente por atleta).
+    const atletasOrdenados = [...byAtleta.entries()].sort((a, b) => {
+      const minA = Math.min(...a[1].map((c) => ordemIdx.get(c) ?? 999));
+      const minB = Math.min(...b[1].map((c) => ordemIdx.get(c) ?? 999));
+      return minA - minB;
+    });
+
+    for (const [alvoId, candidatos] of atletasOrdenados) {
+      const sorted = [...candidatos].sort((a, b) =>
+        (ordemIdx.get(a) ?? 999) - (ordemIdx.get(b) ?? 999)
+      );
+      const winner = sorted[0];
+      const losers = sorted.slice(1);
+      const oferecidoId = oferecidoPorPar.get(`${winner}:${alvoId}`);
       if (oferecidoId == null) {
-        falhas.add(alvoId);
-        tentativasFalhas.set(chave, falhas);
+        // Defensivo: oferecido pareou errado, pula. Limpa pra todos.
+        removeAtletaDeTodos(alvoId);
         continue;
       }
 
-      // Aplica swap defensivamente — re-busca elenco do KV.
-      const elencoDest = await getElenco(chave);
-      if (!elencoDest) {
-        out.errosCount += 1;
-        falhas.add(alvoId);
-        tentativasFalhas.set(chave, falhas);
-        continue;
-      }
-      const oferecido = elencoDest.jogadores[String(oferecidoId)];
-      if (!oferecido) {
-        // Oferecido sumiu (foi trocado por oferta entre interest e
-        // resolução). Marca como falha — vai pro próximo da fila.
-        falhas.add(alvoId);
-        tentativasFalhas.set(chave, falhas);
-        continue;
-      }
+      // Aplica swap defensivamente — re-busca elenco.
+      const elencoDest = await getElenco(winner);
+      const oferecido = elencoDest?.jogadores[String(oferecidoId)];
       const alvoCache = cacheGlobal.get(alvoId);
-      if (!alvoCache) {
+      if (!elencoDest || !oferecido || !alvoCache) {
+        // Algo sumiu (oferecido foi trocado por oferta, etc.). Marca
+        // esse alvo como sem pick e remove dos picks pendentes.
         out.errosCount += 1;
-        falhas.add(alvoId);
-        tentativasFalhas.set(chave, falhas);
+        removeAtletaDeTodos(alvoId);
         continue;
       }
 
-      // Monta JogadorKV pro entrante.
       const matchAlvo = partidasCache?.[String(alvoCache.clube_id)];
       const novoJogador: JogadorKV = {
         atleta_id: alvoId,
@@ -230,12 +244,11 @@ export async function resolverDraft(): Promise<ResolucaoResultado> {
       };
       delete elencoDest.jogadores[String(oferecidoId)];
       elencoDest.jogadores[String(alvoId)] = novoJogador;
-      await setElenco(chave, elencoDest);
+      await setElenco(winner, elencoDest);
 
-      // Registra na história
       const ofertaIdSint = `draft-${Date.now()}-${alvoId}`;
       await registrarTroca({
-        chaveA: chave,
+        chaveA: winner,
         atletaA: {
           atleta_id: oferecido.atleta_id,
           apelido: oferecido.apelido_api,
@@ -250,15 +263,12 @@ export async function resolverDraft(): Promise<ResolucaoResultado> {
         ofertaId: ofertaIdSint,
       });
 
-      // Conta como troca com mercado + atualiza saldo local pra
-      // próximas iterações do loop.
       if (rodadaAtual > 0) {
-        await adjustTrocasMercadoCount(chave, rodadaAtual, +1);
+        await adjustTrocasMercadoCount(winner, rodadaAtual, +1);
       }
-      restantes.set(chave, rest - 1);
+      restantes.set(winner, (restantes.get(winner) ?? 0) - 1);
 
-      // Broadcast pra todos
-      const nomeWinner = getNomeTimeDisplay(chave);
+      const nomeWinner = getNomeTimeDisplay(winner);
       const msg =
         `${nomeWinner} pegou ${alvoCache.apelido} do mercado em troca de ${oferecido.apelido_api}`;
       for (const c of TODAS_CHAVES) {
@@ -269,70 +279,62 @@ export async function resolverDraft(): Promise<ResolucaoResultado> {
           mensagem: msg,
         });
       }
-
-      // Marca perdedores desse alvo (todos os interessados exceto o
-      // vencedor) — pra notif individual depois.
-      const todosInteressados = interessadosPorAtleta.get(alvoId) ?? [];
-      for (const losChave of todosInteressados) {
-        if (losChave === chave) continue;
-        const arr = perdedoresPorAtleta.get(alvoId) ?? [];
-        if (!arr.includes(losChave)) arr.push(losChave);
-        perdedoresPorAtleta.set(alvoId, arr);
+      // Notif individual pros perdedores desse atleta nesse turno.
+      for (const losChave of losers) {
+        await criarNotif({
+          chave: losChave,
+          tipo: "troca_mercado",
+          ofertaId: `${ofertaIdSint}-l-${losChave}`,
+          mensagem:
+            `Você perdeu o draft de ${alvoCache.apelido} pro ${nomeWinner}`,
+        });
         out.perdedores.push({
           chave: losChave,
           atletaAlvoApelido: alvoCache.apelido,
           vencedorNomeTime: nomeWinner,
+          turno: out.turnos,
         });
       }
 
       out.vencedores.push({
-        chave,
+        chave: winner,
         nomeTime: nomeWinner,
         atletaAlvoId: alvoId,
         atletaAlvoApelido: alvoCache.apelido,
         atletaOferecidoId: oferecido.atleta_id,
         atletaOferecidoApelido: oferecido.apelido_api,
+        turno: out.turnos,
       });
 
-      pickedSet.add(alvoId);
-      if (!pickers.includes(chave)) pickers.push(chave);
-      // Limpa todos os interesses nesse alvo
+      winnersTurno.push(winner);
+      // Limpa interesses no DB e prioridades locais
       db.prepare("DELETE FROM interesses WHERE atleta_alvo=?").run(alvoId);
-
-      picksNaRodada += 1;
+      removeAtletaDeTodos(alvoId);
     }
-    if (picksNaRodada === 0) break;
-  }
 
-  // Notifica perdedores (uma notif por par chave/atletaAlvo).
-  for (const [alvoId, losers] of perdedoresPorAtleta.entries()) {
-    const alvo = cacheGlobal.get(alvoId);
-    if (!alvo) continue;
-    // Acha o vencedor pra mensagem.
-    const venc = out.vencedores.find((v) => v.atletaAlvoId === alvoId);
-    if (!venc) continue;
-    for (const losChave of losers) {
-      await criarNotif({
-        chave: losChave,
-        tipo: "troca_mercado",
-        ofertaId: `draft-loser-${alvoId}-${Date.now()}`,
-        mensagem:
-          `Você perdeu o draft de ${alvo.apelido} pro ${venc.nomeTime}`,
-      });
+    // 5. Vencedores vão pro fim da ordem (snake — sempre que user pega,
+    //    cai pra última posição). Múltiplos vencedores mantêm ordem
+    //    relativa entre si dentro do bloco "usaram".
+    if (winnersTurno.length > 0) {
+      const set = new Set(winnersTurno);
+      const naoUsaram = ordemAtual.filter((c) => !set.has(c));
+      const usaram = ordemAtual.filter((c) => set.has(c));
+      ordemAtual = [...naoUsaram, ...usaram];
     }
   }
 
-  // Conta atletas que tinham interesse mas nenhum interessado conseguiu
-  // pegar (sem trocas, oferecido sumiu, etc.).
-  for (const alvoIdStr of Object.keys(interessesMap)) {
-    if (!pickedSet.has(Number(alvoIdStr))) out.semWinner += 1;
+  // Persiste nova ordem do draft (cumulativo dos turnos).
+  if (
+    ordemAtual.length === ordemInicial.length &&
+    !ordemAtual.every((c, i) => c === ordemInicial[i])
+  ) {
+    await setDraftOrdem(ordemAtual);
   }
 
-  // Shift na ordem do draft — 1 entrada por user que pegou pelo menos
-  // 1 (mesmo que tenha pegado vários, vai 1× pro fim).
-  if (pickers.length > 0 && rodadaAtual > 0) {
-    await avancarRodadaDraft(pickers, rodadaAtual);
-  }
+  // Conta atletas que tinham interesse mas ninguém pegou (oferecido
+  // sumiu, todos sem trocas, etc.).
+  const aindaInteresses = await getTodosInteresses();
+  out.semWinner = Object.keys(aindaInteresses).length;
 
   appStateSet("draft_last_resolution_at", Date.now());
   out.duracaoMs = Date.now() - t0;

@@ -421,7 +421,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=187" />
+        <link rel="stylesheet" href="/bf-styles.css?v=188" />
       </Head>
       <DesktopSidebar
         active="admin"

@@ -4966,6 +4966,19 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   .bf-admin-resolver__lista strong {
     color: var(--bf-fg-0);
   }
+  .bf-admin-resolver__turno {
+    display: inline-block;
+    min-width: 22px;
+    margin-right: 6px;
+    padding: 1px 4px;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 999px;
+    font-family: var(--bf-font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--bf-fg-2);
+    text-align: center;
+  }
 
   /* === Conflitos pendentes (interesses do draft) === */
   .bf-admin-conflitos {
