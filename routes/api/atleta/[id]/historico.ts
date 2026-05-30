@@ -1,5 +1,6 @@
 import { Handlers } from "$fresh/server.ts";
 import { getRodadaStatus } from "../../../../lib/kv.ts";
+import { getHistoricoAtleta } from "../../../../lib/historico-atleta.ts";
 
 const H = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 
@@ -73,23 +74,44 @@ export const handler: Handlers = {
     }
 
     const rodadaAtual = (await getRodadaStatus())?.rodada ?? 1;
-    // Busca rodadas 1..N em paralelo (Cartola tolera ~20 concorrentes)
-    const proms: Promise<PontuadosResp | null>[] = [];
-    for (let r = 1; r <= rodadaAtual; r++) {
-      proms.push(fetchPontuadosRodada(r));
-    }
-    const results = await Promise.all(proms);
+
+    // Primeiro tenta DB (mais rápido + sem dependência de Cartola).
+    // Snapshots vivem em historico_atleta — gravados pelo cron quando
+    // rodada fecha.
+    const local = await getHistoricoAtleta(id);
+    const rodadasNoDb = new Set(Object.keys(local).map(Number));
     const historico: Record<number, RodadaEntry> = {};
-    results.forEach((resp, idx) => {
-      if (!resp?.atletas) return;
-      const a = resp.atletas[String(id)];
-      if (a && a.entrou_em_campo) {
-        historico[idx + 1] = {
-          pontos: a.pontuacao,
-          scout: a.scout ?? {},
+    for (const [r, d] of Object.entries(local)) {
+      if (d.entrou_em_campo) {
+        historico[Number(r)] = {
+          pontos: d.pontos,
+          scout: d.scout ?? {},
         };
       }
-    });
+    }
+
+    // Fallback Cartola: só pras rodadas que NÃO estão no DB (rodadas
+    // anteriores ao deploy desse cache, ou a rodada corrente que ainda
+    // não foi snapshotada).
+    const rodadasParaBuscar: number[] = [];
+    for (let r = 1; r <= rodadaAtual; r++) {
+      if (!rodadasNoDb.has(r)) rodadasParaBuscar.push(r);
+    }
+    if (rodadasParaBuscar.length > 0) {
+      const proms = rodadasParaBuscar.map((r) => fetchPontuadosRodada(r));
+      const results = await Promise.all(proms);
+      results.forEach((resp, idx) => {
+        if (!resp?.atletas) return;
+        const rNum = rodadasParaBuscar[idx];
+        const a = resp.atletas[String(id)];
+        if (a && a.entrou_em_campo) {
+          historico[rNum] = {
+            pontos: a.pontuacao,
+            scout: a.scout ?? {},
+          };
+        }
+      });
+    }
     cacheHistorico.set(id, {
       at: Date.now(),
       data: historico,

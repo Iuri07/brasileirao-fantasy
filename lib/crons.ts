@@ -21,6 +21,7 @@ import {
 } from "./kv.ts";
 import { getDb } from "./db.ts";
 import { setHistoricoRodada } from "./historico.ts";
+import { setHistoricoAtletaBatch } from "./historico-atleta.ts";
 import { calcularMelhorTime } from "./substituicao.ts";
 import {
   appendEvento,
@@ -275,6 +276,27 @@ export async function atualizarTudo(): Promise<void> {
         escalados.reduce((s, j) => s + (j.pontos ?? 0), 0) * 100,
       ) / 100;
       if (pts > 0) await setHistoricoRodada(chave, rodadaId, pts);
+    }
+    // Snapshot da pontuação final de CADA atleta nessa rodada. Idempotente
+    // (UPSERT). Roda só quando rodada fechou (bola_rolando=false) — antes
+    // tem dados parciais e queremos só o final. Pega TUDO que está em
+    // pontuados (não filtra por escalação, pra manter histórico de atletas
+    // não-escalados em algum elenco também).
+    const atletasSnap = new Map<number, {
+      pontos: number;
+      entrou_em_campo: boolean | null;
+      scout?: Record<string, number>;
+    }>();
+    for (const [idStr, p] of Object.entries(pontuados.atletas)) {
+      if (!p) continue;
+      atletasSnap.set(Number(idStr), {
+        pontos: p.pontuacao ?? 0,
+        entrou_em_campo: p.entrou_em_campo ?? null,
+        scout: p.scout ?? undefined,
+      });
+    }
+    if (atletasSnap.size > 0) {
+      await setHistoricoAtletaBatch(rodadaId, atletasSnap);
     }
   }
 

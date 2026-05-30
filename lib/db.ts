@@ -343,6 +343,27 @@ function ensureIncrementalColumns(db: Database): void {
   // draft). Pra tipos legacy (oferta_*), mensagem fica NULL e UI cai no
   // join com ofertas.
   addColumnIfMissing(db, "notificacoes", "mensagem", "TEXT");
+
+  // Snapshot da pontuação final de cada atleta por rodada. Antes só
+  // tínhamos historico (totais por time) — pontos individuais vinham
+  // sempre direto da Cartola via /atletas/pontuados/{rodada}. Agora
+  // persiste local pra:
+  //  - não depender de chamadas Cartola na abertura do modal de atleta
+  //  - não perder histórico se Cartola mudar API
+  // Cron escreve quando bola_rolando=false (rodada fechou).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS historico_atleta (
+      atleta_id INTEGER NOT NULL,
+      rodada INTEGER NOT NULL,
+      pontos REAL NOT NULL,
+      entrou_em_campo INTEGER,
+      scout_json TEXT,
+      PRIMARY KEY (atleta_id, rodada)
+    )
+  `);
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_hist_atleta_rodada ON historico_atleta(rodada)",
+  );
 }
 
 function hasTable(db: Database, name: string): boolean {
