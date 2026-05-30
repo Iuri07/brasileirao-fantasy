@@ -146,7 +146,7 @@ async function sincronizarAtletas(): Promise<void> {
 
 export async function atualizarTudo(): Promise<void> {
   // Flag de simulação
-  const { appStateGet } = await import("./app-state.ts");
+  const { appStateGet, appStateSet } = await import("./app-state.ts");
   const sim = appStateGet<boolean>("simulando");
   if (sim === true) {
     console.log("[cron] simulação ativa — skip atualizarTudo");
@@ -216,26 +216,53 @@ export async function atualizarTudo(): Promise<void> {
     }
   }
 
+  // Detecta virada de rodada: Cartola só inclui no /atletas/pontuados
+  // quem está com jogo rolando AGORA (ou recém-finalizado). Quando vira
+  // rodada, antes dos jogos começarem, o response volta vazio/parcial
+  // — sem o reset abaixo os jogadores ficariam com pts da rodada
+  // anterior pra sempre (o cron usava `continue` pulando quem não tava
+  // na resposta).
+  const rodadaProcessadaAntes = appStateGet<number>("rodada_pontos_processada");
+  const trocouRodada = rodadaProcessadaAntes !== rodadaPontuados;
+
   // Atualiza pontos + entrou_em_campo nos elencos
   const elencos = await getAllElencos();
   for (const [chave, elenco] of Object.entries(elencos)) {
     let alterado = false;
     for (const [id, jogador] of Object.entries(elenco.jogadores)) {
       const p = pontuados.atletas[String(jogador.atleta_id)];
-      if (!p) continue;
-      const novoPontos = p.pontuacao ?? 0;
-      const novoEntrou = p.entrou_em_campo ?? null;
-      if (
-        jogador.pontos === novoPontos && jogador.entrou_em_campo === novoEntrou
-      ) continue;
-      elenco.jogadores[id] = {
-        ...jogador,
-        pontos: novoPontos,
-        entrou_em_campo: novoEntrou,
-      };
-      alterado = true;
+      if (p) {
+        const novoPontos = p.pontuacao ?? 0;
+        const novoEntrou = p.entrou_em_campo ?? null;
+        if (
+          jogador.pontos === novoPontos &&
+          jogador.entrou_em_campo === novoEntrou
+        ) continue;
+        elenco.jogadores[id] = {
+          ...jogador,
+          pontos: novoPontos,
+          entrou_em_campo: novoEntrou,
+        };
+        alterado = true;
+      } else if (trocouRodada) {
+        // Atleta não está no response E virou rodada: zera pra null
+        // (jogo dele dessa rodada ainda não começou). Se já tinha
+        // pts/entrou_em_campo, agora some.
+        if (jogador.pontos === null && jogador.entrou_em_campo === null) {
+          continue;
+        }
+        elenco.jogadores[id] = {
+          ...jogador,
+          pontos: null,
+          entrou_em_campo: null,
+        };
+        alterado = true;
+      }
     }
     if (alterado) await setElenco(chave, elenco);
+  }
+  if (trocouRodada) {
+    appStateSet("rodada_pontos_processada", rodadaPontuados);
   }
 
   // Salva snapshot da pontuação por elenco no histórico
