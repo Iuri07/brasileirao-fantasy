@@ -217,22 +217,52 @@ export async function atualizarTudo(): Promise<void> {
     }
   }
 
-  // Detecta virada de rodada: Cartola só inclui no /atletas/pontuados
-  // quem está com jogo rolando AGORA (ou recém-finalizado). Quando vira
-  // rodada, antes dos jogos começarem, o response volta vazio/parcial
-  // — sem o reset abaixo os jogadores ficariam com pts da rodada
-  // anterior pra sempre (o cron usava `continue` pulando quem não tava
-  // na resposta).
+  // Virada de rodada + confiança no response:
+  //  - Cartola pode devolver rodada_id=null durante transição, e ainda
+  //    trazer atletas da rodada anterior misturados. Se atualizamos com
+  //    esses dados achando que é a rodada nova, os pontos ficam stale
+  //    pra sempre.
+  //  - Cartola só inclui no /atletas/pontuados quem tem jogo rolando ou
+  //    recém-terminado. Fora da janela ao_vivo, os dados no cache são
+  //    representação do estado antigo — não da rodada corrente.
+  // Estratégia:
+  //  1. Detecta virada → hard reset (limpa TODO mundo, ignora response
+  //     desse tick). Rely em ticks futuros com bola_rolando=true pra
+  //     popular a rodada nova.
+  //  2. Fora de ao_vivo (bola_rolando=false), NÃO aplica updates. O que
+  //     estiver em pontuados nesse estado é lixo de transição — melhor
+  //     preservar null do que popular errado.
   const rodadaProcessadaAntes = appStateGet<number>("rodada_pontos_processada");
   const trocouRodada = rodadaProcessadaAntes !== rodadaPontuados;
+  const podeAtualizar = mercado.bola_rolando === true;
 
-  // Atualiza pontos + entrou_em_campo nos elencos
   const elencos = await getAllElencos();
-  for (const [chave, elenco] of Object.entries(elencos)) {
-    let alterado = false;
-    for (const [id, jogador] of Object.entries(elenco.jogadores)) {
-      const p = pontuados.atletas[String(jogador.atleta_id)];
-      if (p) {
+  if (trocouRodada) {
+    // HARD RESET: zera todos os pontos. Ignora pontuados desse tick.
+    for (const [chave, elenco] of Object.entries(elencos)) {
+      let alterado = false;
+      for (const [id, jogador] of Object.entries(elenco.jogadores)) {
+        if (jogador.pontos === null && jogador.entrou_em_campo === null) {
+          continue;
+        }
+        elenco.jogadores[id] = {
+          ...jogador,
+          pontos: null,
+          entrou_em_campo: null,
+        };
+        alterado = true;
+      }
+      if (alterado) await setElenco(chave, elenco);
+    }
+    appStateSet("rodada_pontos_processada", rodadaPontuados);
+  } else if (podeAtualizar) {
+    // Atualização normal — só quando bola tá rolando (garante que a
+    // resposta é da rodada corrente).
+    for (const [chave, elenco] of Object.entries(elencos)) {
+      let alterado = false;
+      for (const [id, jogador] of Object.entries(elenco.jogadores)) {
+        const p = pontuados.atletas[String(jogador.atleta_id)];
+        if (!p) continue;
         const novoPontos = p.pontuacao ?? 0;
         const novoEntrou = p.entrou_em_campo ?? null;
         if (
@@ -245,26 +275,12 @@ export async function atualizarTudo(): Promise<void> {
           entrou_em_campo: novoEntrou,
         };
         alterado = true;
-      } else if (trocouRodada) {
-        // Atleta não está no response E virou rodada: zera pra null
-        // (jogo dele dessa rodada ainda não começou). Se já tinha
-        // pts/entrou_em_campo, agora some.
-        if (jogador.pontos === null && jogador.entrou_em_campo === null) {
-          continue;
-        }
-        elenco.jogadores[id] = {
-          ...jogador,
-          pontos: null,
-          entrou_em_campo: null,
-        };
-        alterado = true;
       }
+      if (alterado) await setElenco(chave, elenco);
     }
-    if (alterado) await setElenco(chave, elenco);
   }
-  if (trocouRodada) {
-    appStateSet("rodada_pontos_processada", rodadaPontuados);
-  }
+  // else: bola_rolando=false E mesma rodada → não mexe. Preserva null
+  //       do reset anterior.
 
   // Salva snapshot da pontuação por elenco no histórico
   const rodadaId = pontuados.rodada_id ?? mercado.rodada_atual;
