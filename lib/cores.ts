@@ -77,7 +77,40 @@ const FALLBACK: CoresClube = {
   pattern: "solid",
 };
 
+// Cartola API passou a devolver abreviações (BOT, FLA, CAM, etc.) em
+// nome_fantasia e nome — antes vinham nomes completos ("Botafogo",
+// "Flamengo"). Sem esse mapa, tudo caía no FALLBACK e as camisas
+// SVG ficavam pretas.
+const ABREV_TO_NOME: Record<string, string> = {
+  BAH: "Bahia",
+  BOT: "Botafogo",
+  RBB: "RB Bragantino",
+  CHA: "Chapecoense",
+  COR: "Corinthians",
+  CFC: "Coritiba",
+  CRU: "Cruzeiro",
+  FLA: "Flamengo",
+  FLU: "Fluminense",
+  GRE: "Grêmio",
+  INT: "Internacional",
+  MIR: "Mirassol",
+  PAL: "Palmeiras",
+  REM: "Remo",
+  SAN: "Santos",
+  SAO: "São Paulo",
+  VAS: "Vasco",
+  VIT: "Vitória",
+  CAM: "Atlético-MG",
+  CAP: "Athletico-PR",
+};
+
 export function coresClube(clube: string | null | undefined): CoresClube {
   if (!clube) return FALLBACK;
-  return CORES[clube] ?? FALLBACK;
+  // Tenta lookup direto (nome completo) primeiro; se não achar,
+  // tenta normalizar de abreviação pra nome completo.
+  const direto = CORES[clube];
+  if (direto) return direto;
+  const nomeExpandido = ABREV_TO_NOME[clube.toUpperCase()];
+  if (nomeExpandido) return CORES[nomeExpandido] ?? FALLBACK;
+  return FALLBACK;
 }

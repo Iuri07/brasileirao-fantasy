@@ -217,6 +217,8 @@ export default function MercadoBrowser(
           atleta_pedido: pedido.atleta_id,
           atletas_oferecidos: oferecidos.map((j) => j.atleta_id),
           trocas_oferecidas: trocasOferecidas,
+          // Admin visualizando como outro time → server aceita override
+          as_chave: adminAsChave ?? undefined,
         }),
       });
       const d = await r.json();
@@ -235,7 +237,10 @@ export default function MercadoBrowser(
       const r = await fetch(`/api/atleta/${pedido.atleta_id}/interesse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ atleta_oferecido: oferecido.atleta_id }),
+        body: JSON.stringify({
+          atleta_oferecido: oferecido.atleta_id,
+          as_chave: adminAsChave ?? undefined,
+        }),
       });
       const d = await r.json();
       if (d.ok) {

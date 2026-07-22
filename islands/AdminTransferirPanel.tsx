@@ -14,7 +14,7 @@ interface TimeDestino {
 }
 
 interface Props {
-  /** Time atual (origem). */
+  /** Time atual (origem/destino). */
   fromChave: string;
   /** Jogadores do time atual — lista completa do elenco. */
   jogadores: Jogador[];
@@ -31,13 +31,31 @@ const POS_ABREV: Record<string, string> = {
   Técnico: "TEC",
 };
 
+interface AtletaMercadoLite {
+  atleta_id: number;
+  apelido: string;
+  clube: string;
+  posicao: string;
+}
+
 export default function AdminTransferirPanel(
   { fromChave, jogadores, outrosTimes }: Props,
 ) {
+  // Tab: "sair" = mandar jogador daqui pra outro time/mercado.
+  //      "puxar" = trazer free agent do mercado pro time atual.
+  const [tab, setTab] = useState<"sair" | "puxar">("sair");
+
   const [selecionado, setSelecionado] = useState<Jogador | null>(null);
+  // "" = nenhum; "MERCADO" = pro mercado; senão chave do time destino.
   const [destino, setDestino] = useState<string>("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+
+  // Puxar do mercado: busca livre.
+  const [buscaMercado, setBuscaMercado] = useState("");
+  const [resultadosMercado, setResultadosMercado] = useState<AtletaMercadoLite[]>([]);
+  const [buscando, setBuscando] = useState(false);
+  const [atletaMercadoSel, setAtletaMercadoSel] = useState<AtletaMercadoLite | null>(null);
 
   function abrirModal(j: Jogador) {
     setSelecionado(j);
@@ -50,9 +68,10 @@ export default function AdminTransferirPanel(
     setDestino("");
     setErro(null);
     setEnviando(false);
+    setAtletaMercadoSel(null);
   }
 
-  async function confirmar() {
+  async function confirmarSair() {
     if (!selecionado || !destino) return;
     setEnviando(true);
     setErro(null);
@@ -63,7 +82,8 @@ export default function AdminTransferirPanel(
         body: JSON.stringify({
           atleta_id: selecionado.atleta_id,
           from_chave: fromChave,
-          to_chave: destino,
+          // destino "MERCADO" = to_chave null (vai pro pool de free agents)
+          to_chave: destino === "MERCADO" ? null : destino,
         }),
       });
       const d = await r.json();
@@ -72,7 +92,6 @@ export default function AdminTransferirPanel(
         setEnviando(false);
         return;
       }
-      // Reload pra refletir o elenco novo
       location.reload();
     } catch (e) {
       setErro(String(e));
@@ -80,7 +99,53 @@ export default function AdminTransferirPanel(
     }
   }
 
-  // Ordena por posição → escalacao → apelido pra busca fácil
+  async function confirmarPuxar() {
+    if (!atletaMercadoSel) return;
+    setEnviando(true);
+    setErro(null);
+    try {
+      const r = await fetch("/api/admin/transferir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          atleta_id: atletaMercadoSel.atleta_id,
+          from_chave: null,
+          to_chave: fromChave,
+          escalacao_destino: "Banco",
+        }),
+      });
+      const d = await r.json();
+      if (!d.ok) {
+        setErro(d.erro ?? "Erro desconhecido");
+        setEnviando(false);
+        return;
+      }
+      location.reload();
+    } catch (e) {
+      setErro(String(e));
+      setEnviando(false);
+    }
+  }
+
+  async function buscarMercado(q: string) {
+    setBuscaMercado(q);
+    if (q.trim().length < 2) {
+      setResultadosMercado([]);
+      return;
+    }
+    setBuscando(true);
+    try {
+      const r = await fetch(`/api/mercado/buscar?q=${encodeURIComponent(q)}`);
+      const d = await r.json();
+      if (d.ok && Array.isArray(d.atletas)) {
+        setResultadosMercado(d.atletas.slice(0, 20));
+      }
+    } catch { /* silent */ } finally {
+      setBuscando(false);
+    }
+  }
+
+  // Ordena por posição → escalacao → apelido
   const ordemPos: Record<string, number> = {
     Goleiro: 0,
     Lateral: 1,
@@ -98,38 +163,111 @@ export default function AdminTransferirPanel(
 
   return (
     <div class="bf-admin-transferir">
-      <p class="bf-status-card__sub" style="margin:0 0 10px">
-        Transfere um jogador deste elenco pra outro time da liga. Bypass do
-        fluxo de ofertas — use pra corrigir erros ou ajustes manuais.
-      </p>
-      <div class="bf-admin-transferir__list">
-        {sorted.map((j) => (
-          <div class="bf-admin-transferir__row" key={j.atleta_id}>
-            <span class="bf-admin-transferir__pos">
-              {POS_ABREV[j.posicao] ?? "?"}
-            </span>
-            <span class="bf-admin-transferir__name">{j.apelido}</span>
-            <span class="bf-admin-transferir__clube">{j.clube}</span>
-            <span
-              class={`bf-admin-transferir__esc bf-admin-transferir__esc--${
-                j.escalacao.toLowerCase().replace("ã", "a")
-              }`}
-            >
-              {j.escalacao}
-            </span>
-            <button
-              type="button"
-              class="bf-btn bf-btn--ghost"
-              style="height:28px;font-size:10px;padding:0 10px"
-              onClick={() =>
-                abrirModal(j)}
-            >
-              transferir →
-            </button>
-          </div>
-        ))}
+      <div class="bf-admin-transferir__tabs">
+        <button
+          type="button"
+          class={`bf-btn ${tab === "sair" ? "" : "bf-btn--ghost"}`}
+          onClick={() => setTab("sair")}
+        >
+          Mandar jogador
+        </button>
+        <button
+          type="button"
+          class={`bf-btn ${tab === "puxar" ? "" : "bf-btn--ghost"}`}
+          onClick={() => setTab("puxar")}
+        >
+          Puxar do mercado
+        </button>
       </div>
 
+      {tab === "sair"
+        ? (
+          <>
+            <p class="bf-status-card__sub" style="margin:6px 0 10px">
+              Transfere um jogador deste elenco pra outro time — ou pro
+              mercado (free agent). Bypass do fluxo de ofertas.
+            </p>
+            <div class="bf-admin-transferir__list">
+              {sorted.map((j) => (
+                <div class="bf-admin-transferir__row" key={j.atleta_id}>
+                  <span class="bf-admin-transferir__pos">
+                    {POS_ABREV[j.posicao] ?? "?"}
+                  </span>
+                  <span class="bf-admin-transferir__name">{j.apelido}</span>
+                  <span class="bf-admin-transferir__clube">{j.clube}</span>
+                  <span
+                    class={`bf-admin-transferir__esc bf-admin-transferir__esc--${
+                      j.escalacao.toLowerCase().replace("ã", "a")
+                    }`}
+                  >
+                    {j.escalacao}
+                  </span>
+                  <button
+                    type="button"
+                    class="bf-btn bf-btn--ghost"
+                    style="height:28px;font-size:10px;padding:0 10px"
+                    onClick={() => abrirModal(j)}
+                  >
+                    transferir →
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )
+        : (
+          <>
+            <p class="bf-status-card__sub" style="margin:6px 0 10px">
+              Puxa um free agent do mercado direto pro elenco deste time
+              (fica no banco). Bypass do fluxo de interesses/draft.
+            </p>
+            <input
+              type="text"
+              placeholder="Buscar atleta no mercado…"
+              value={buscaMercado}
+              onInput={(e) =>
+                buscarMercado((e.target as HTMLInputElement).value)}
+              style="width:100%;padding:10px;background:var(--bf-ink-2);color:var(--bf-fg-0);border:1px solid var(--bf-line);border-radius:var(--bf-radius-md);font-family:var(--bf-font-cond);font-size:14px;margin-bottom:12px"
+            />
+            {buscando && (
+              <p class="bf-status-card__sub" style="margin:0 0 10px">
+                Buscando…
+              </p>
+            )}
+            <div class="bf-admin-transferir__list">
+              {resultadosMercado.map((a) => (
+                <div class="bf-admin-transferir__row" key={a.atleta_id}>
+                  <span class="bf-admin-transferir__pos">
+                    {POS_ABREV[a.posicao] ?? "?"}
+                  </span>
+                  <span class="bf-admin-transferir__name">{a.apelido}</span>
+                  <span class="bf-admin-transferir__clube">{a.clube}</span>
+                  <span class="bf-admin-transferir__esc">MERCADO</span>
+                  <button
+                    type="button"
+                    class="bf-btn bf-btn--ghost"
+                    style="height:28px;font-size:10px;padding:0 10px"
+                    onClick={() => {
+                      setAtletaMercadoSel(a);
+                      setErro(null);
+                    }}
+                  >
+                    puxar →
+                  </button>
+                </div>
+              ))}
+              {!buscando && buscaMercado.length >= 2 &&
+                resultadosMercado.length === 0 && (
+                <p class="bf-status-card__sub" style="margin:0">
+                  Nenhum atleta encontrado. Só aparecem free agents (não estão
+                  em nenhum elenco).
+                </p>
+              )}
+            </div>
+          </>
+        )}
+
+      {/* Modal — mandar jogador (sair) */}
       {selecionado && (
         <div
           class="bf-admin-transferir__overlay"
@@ -150,7 +288,7 @@ export default function AdminTransferirPanel(
             </p>
 
             <label style="display:block;margin-bottom:6px;font-family:var(--bf-font-cond);font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--bf-fg-2)">
-              Time destino
+              Destino
             </label>
             <select
               value={destino}
@@ -159,6 +297,7 @@ export default function AdminTransferirPanel(
               style="width:100%;padding:10px;background:var(--bf-ink-2);color:var(--bf-fg-1);border:1px solid var(--bf-line);border-radius:var(--bf-radius-md);font-family:var(--bf-font-cond);font-size:14px;margin-bottom:14px"
             >
               <option value="">— selecione —</option>
+              <option value="MERCADO">Mercado (free agent)</option>
               {outrosTimes.map((t) => (
                 <option key={t.chave} value={t.chave}>{t.displayName}</option>
               ))}
@@ -187,10 +326,63 @@ export default function AdminTransferirPanel(
                 type="button"
                 class="bf-btn"
                 style="height:36px"
-                onClick={confirmar}
+                onClick={confirmarSair}
                 disabled={!destino || enviando}
               >
                 {enviando ? "..." : "transferir"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — puxar do mercado */}
+      {atletaMercadoSel && (
+        <div
+          class="bf-admin-transferir__overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) fechar();
+          }}
+        >
+          <div class="bf-admin-transferir__modal">
+            <h3 style="margin:0 0 4px;font-family:var(--bf-font-cond);font-weight:900;font-size:16px">
+              Puxar {atletaMercadoSel.apelido}
+            </h3>
+            <p
+              class="bf-status-card__sub"
+              style="margin:0 0 16px;font-size:12px"
+            >
+              {atletaMercadoSel.clube} · {atletaMercadoSel.posicao} →{" "}
+              elenco {fromChave} (banco)
+            </p>
+
+            {erro && (
+              <p
+                style="margin:0 0 12px;font-size:12px;color:var(--bf-red)"
+                role="alert"
+              >
+                {erro}
+              </p>
+            )}
+
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button
+                type="button"
+                class="bf-btn bf-btn--ghost"
+                style="height:36px"
+                onClick={fechar}
+                disabled={enviando}
+              >
+                cancelar
+              </button>
+              <button
+                type="button"
+                class="bf-btn"
+                style="height:36px"
+                onClick={confirmarPuxar}
+                disabled={enviando}
+              >
+                {enviando ? "..." : "puxar"}
               </button>
             </div>
           </div>

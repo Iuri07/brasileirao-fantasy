@@ -14,12 +14,6 @@ const H = { "Content-Type": "application/json" };
 export const handler: Handlers<unknown, State> = {
   async POST(req, ctx) {
     const session = ctx.state.session;
-    if (!session?.chave) {
-      return new Response(
-        JSON.stringify({ ok: false, erro: "Sem time atribuído" }),
-        { status: 403, headers: H },
-      );
-    }
     const atletaId = Number(ctx.params.id);
     if (!atletaId || isNaN(atletaId)) {
       return new Response(
@@ -28,13 +22,30 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    // Body opcional: { atleta_oferecido?: number, remover?: true }
+    // Body opcional: { atleta_oferecido?: number, remover?: true, as_chave?: string }
     // - remover=true → tira interesse
     // - atleta_oferecido → registra interesse com o jogador oferecido
-    let body: { atleta_oferecido?: number; remover?: boolean } = {};
+    // - as_chave → admin visualizando como time X pode registrar
+    //   interesse "por" esse time. Ignorado pra não-admin.
+    let body: {
+      atleta_oferecido?: number;
+      remover?: boolean;
+      as_chave?: string;
+    } = {};
     try {
       body = await req.json();
     } catch { /* permite body vazio */ }
+
+    // Chave efetiva: admin pode passar as_chave; user usa chave.
+    const chave = session?.role === "admin" && body.as_chave
+      ? body.as_chave.toLowerCase()
+      : session?.chave;
+    if (!chave) {
+      return new Response(
+        JSON.stringify({ ok: false, erro: "Sem time atribuído" }),
+        { status: 403, headers: H },
+      );
+    }
 
     if (await isAoVivo()) {
       return new Response(
@@ -61,8 +72,8 @@ export const handler: Handlers<unknown, State> = {
     }
 
     if (body.remover) {
-      const r = await removeInteresse(atletaId, session.chave);
-      await removePrioridade(session.chave, atletaId);
+      const r = await removeInteresse(atletaId, chave);
+      await removePrioridade(chave, atletaId);
       return new Response(
         JSON.stringify({ ok: true, interessado: false, total: r.total }),
         { headers: H },
@@ -81,7 +92,7 @@ export const handler: Handlers<unknown, State> = {
     }
 
     // Valida: oferecido está no meu elenco
-    const meuElenco = elencos[session.chave];
+    const meuElenco = elencos[chave];
     const jogOferecido = meuElenco?.jogadores[String(oferecido)];
     if (!jogOferecido) {
       return new Response(
@@ -102,12 +113,12 @@ export const handler: Handlers<unknown, State> = {
 
     const r = await setInteresse(
       atletaId,
-      session.chave,
+      chave,
       oferecido,
     );
     // Adiciona no fim da minha lista de prioridade (idempotente: se já
     // tava na lista, fica na posição que estava)
-    await appendPrioridade(session.chave, atletaId);
+    await appendPrioridade(chave, atletaId);
     return new Response(
       JSON.stringify({ ok: true, interessado: true, total: r.total }),
       { headers: H },

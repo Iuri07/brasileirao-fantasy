@@ -30,13 +30,6 @@ export const handler: Handlers<unknown, State> = {
   },
 
   async POST(req, ctx) {
-    const chave = ctx.state.session?.chave;
-    if (!chave) {
-      return new Response(
-        JSON.stringify({ ok: false, erro: "Sem time" }),
-        { status: 403, headers: H },
-      );
-    }
     let body: {
       atletas_oferecidos?: number[];
       atleta_oferecido?: number; // compat com clients antigos (1:1)
@@ -44,6 +37,8 @@ export const handler: Handlers<unknown, State> = {
       mensagem?: string;
       /** Trocas com mercado oferecidas como moeda extra. Default 0. */
       trocas_oferecidas?: number;
+      /** Admin visualizando como time X pode criar oferta "por" ele. */
+      as_chave?: string;
     };
     try {
       body = await req.json();
@@ -51,6 +46,17 @@ export const handler: Handlers<unknown, State> = {
       return new Response(
         JSON.stringify({ ok: false, erro: "JSON inválido" }),
         { status: 400, headers: H },
+      );
+    }
+    // Chave efetiva: admin pode override via as_chave.
+    const session = ctx.state.session;
+    const chave = session?.role === "admin" && body.as_chave
+      ? body.as_chave.toLowerCase()
+      : session?.chave;
+    if (!chave) {
+      return new Response(
+        JSON.stringify({ ok: false, erro: "Sem time" }),
+        { status: 403, headers: H },
       );
     }
 

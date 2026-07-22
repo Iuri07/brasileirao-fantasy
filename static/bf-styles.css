@@ -724,6 +724,11 @@ body {
 /* ============================================================
    ADMIN — painel de transferência manual de jogadores
    ============================================================ */
+.bf-admin-transferir__tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
 .bf-admin-transferir {
   padding: 0 var(--bf-gutter);
 }
