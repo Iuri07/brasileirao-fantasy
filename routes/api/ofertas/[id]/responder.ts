@@ -16,11 +16,7 @@ import {
 } from "../../../../lib/kv.ts";
 import { getNomeTimeDisplay } from "../../../../lib/time-visual.ts";
 import { registrarTroca } from "../../../../lib/historico-trocas.ts";
-import {
-  adjustTrocasMercadoCount,
-  getMaxTrocasMercado,
-  getTrocasMercadoCount,
-} from "../../../../lib/trocas-mercado.ts";
+// trocas-mercado não é mais usado aqui (limite removido — ver responder logic).
 import type { JogadorKV } from "../../../../lib/types.ts";
 import type { State } from "../../../_middleware.ts";
 
@@ -241,37 +237,12 @@ export const handler: Handlers<unknown, State> = {
       await setElenco(oferta.deChave, elencoDe);
       await setElenco(oferta.paraChave, elencoPara);
 
-      // Transfere trocas com mercado (se a oferta incluía). deChave
-      // passa N do seu saldo restante pro paraChave: deChave.count += N
-      // (saldo cai), paraChave.count -= N (saldo sobe, pode ficar
-      // negativo = bonus acima do max). Revalida saldo do ofertante —
-      // pode ter mudado entre criação e aceite.
-      const trocasOf = oferta.trocasOferecidas ?? 0;
-      if (trocasOf > 0) {
-        const rs = await getRodadaStatus();
-        const rodada = rs?.rodada ?? 0;
-        if (rodada > 0) {
-          const max = getMaxTrocasMercado();
-          const countDe = getTrocasMercadoCount(oferta.deChave, rodada);
-          const restanteDe = max - countDe;
-          if (trocasOf > restanteDe) {
-            return new Response(
-              JSON.stringify({
-                ok: false,
-                erro:
-                  `${oferta.deChave} não tem mais ${trocasOf} troca(s) com mercado restantes — saldo caiu pra ${
-                    Math.max(0, restanteDe)
-                  } depois que a oferta foi criada`,
-              }),
-              { status: 423, headers: H },
-            );
-          }
-          // adjust* permite count negativo (= bônus acima do max
-          // pro paraChave). setTrocasMercadoCount clamparia em 0.
-          await adjustTrocasMercadoCount(oferta.deChave, rodada, +trocasOf);
-          await adjustTrocasMercadoCount(oferta.paraChave, rodada, -trocasOf);
-        }
-      }
+      // Trocas com mercado agora são ilimitadas — não transferimos
+      // "saldo restante" entre times porque não existe mais cap. A
+      // coluna trocas_oferecidas continua sendo persistida na oferta
+      // pra retrocompat / display, mas não afeta contador.
+      // (Se quiser reintroduzir mercadoria de troca no futuro, essa é
+      //  a hora de mudar — hoje é no-op.)
 
       // Tira o atletaPedido do "negociável" do dono original (paraChave).
       // Extras não precisam tirar — eles não estavam negociáveis.
@@ -298,8 +269,9 @@ export const handler: Handlers<unknown, State> = {
       // 2 envolvidos — eles já vão receber notif legacy oferta_aceita).
       const nomesA = snapshots.map((s) => s.a.apelido).join(", ");
       const nomesB = snapshots.map((s) => s.b.apelido).join(", ");
-      const trocasSuf = trocasOf > 0
-        ? ` (+ ${trocasOf} troca${trocasOf > 1 ? "s" : ""} c/ mercado)`
+      const trocasOfOferta = oferta.trocasOferecidas ?? 0;
+      const trocasSuf = trocasOfOferta > 0
+        ? ` (+ ${trocasOfOferta} troca${trocasOfOferta > 1 ? "s" : ""} c/ mercado)`
         : "";
       const msgTroca = `${getNomeTimeDisplay(oferta.deChave)} ↔ ${
         getNomeTimeDisplay(oferta.paraChave)

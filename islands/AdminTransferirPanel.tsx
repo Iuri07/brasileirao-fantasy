@@ -5,7 +5,7 @@ interface Jogador {
   apelido: string;
   clube: string;
   posicao: string;
-  escalacao: "Sim" | "Banco" | "Não";
+  escalacao: "Sim" | "Banco" | "Não" | "IR";
 }
 
 interface TimeDestino {
@@ -154,8 +154,69 @@ export default function AdminTransferirPanel(
     Atacante: 4,
     Técnico: 5,
   };
-  const ordemEsc: Record<string, number> = { Sim: 0, Banco: 1, "Não": 2 };
-  const sorted = [...jogadores].sort((a, b) =>
+  const ordemEsc: Record<string, number> = {
+    Sim: 0,
+    Banco: 1,
+    "Não": 2,
+    IR: 3,
+  };
+  // Estado local pra refletir mudanças de escalação sem reload
+  const [jogadoresLocal, setJogadoresLocal] = useState(jogadores);
+
+  async function mudarEscalacao(
+    atleta_id: number,
+    novaEscalacao: "Sim" | "Banco" | "Não" | "IR",
+  ) {
+    const anterior = jogadoresLocal.find((j) => j.atleta_id === atleta_id);
+    if (!anterior || anterior.escalacao === novaEscalacao) return;
+    // Optimistic update
+    setJogadoresLocal((arr) =>
+      arr.map((j) =>
+        j.atleta_id === atleta_id ? { ...j, escalacao: novaEscalacao } : j
+      )
+    );
+    try {
+      const r = await fetch(`/api/elenco/${fromChave}/escalacao`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ atleta_id, escalacao: novaEscalacao }),
+      });
+      const d = await r.json();
+      if (!d.ok) {
+        // Reverte se der erro
+        setJogadoresLocal((arr) =>
+          arr.map((j) =>
+            j.atleta_id === atleta_id
+              ? { ...j, escalacao: anterior.escalacao }
+              : j
+          )
+        );
+        alert(d.erro ?? "Erro ao mudar escalação");
+      }
+    } catch (e) {
+      setJogadoresLocal((arr) =>
+        arr.map((j) =>
+          j.atleta_id === atleta_id
+            ? { ...j, escalacao: anterior.escalacao }
+            : j
+        )
+      );
+      alert(String(e));
+    }
+  }
+
+  const CATEGORIAS: Array<{
+    valor: "Sim" | "Banco" | "Não" | "IR";
+    label: string;
+    cls: string;
+  }> = [
+    { valor: "Sim", label: "SIM", cls: "sim" },
+    { valor: "Banco", label: "BANCO", cls: "banco" },
+    { valor: "Não", label: "NÃO", cls: "nao" },
+    { valor: "IR", label: "IR", cls: "ir" },
+  ];
+
+  const sorted = [...jogadoresLocal].sort((a, b) =>
     (ordemPos[a.posicao] ?? 9) - (ordemPos[b.posicao] ?? 9) ||
     (ordemEsc[a.escalacao] ?? 9) - (ordemEsc[b.escalacao] ?? 9) ||
     a.apelido.localeCompare(b.apelido, "pt-BR")
@@ -195,13 +256,23 @@ export default function AdminTransferirPanel(
                   </span>
                   <span class="bf-admin-transferir__name">{j.apelido}</span>
                   <span class="bf-admin-transferir__clube">{j.clube}</span>
-                  <span
-                    class={`bf-admin-transferir__esc bf-admin-transferir__esc--${
-                      j.escalacao.toLowerCase().replace("ã", "a")
-                    }`}
-                  >
-                    {j.escalacao}
-                  </span>
+                  <div class="bf-admin-transferir__esc-group">
+                    {CATEGORIAS.map((c) => (
+                      <button
+                        key={c.valor}
+                        type="button"
+                        class={`bf-admin-transferir__esc bf-admin-transferir__esc--${c.cls} ${
+                          j.escalacao === c.valor
+                            ? "bf-admin-transferir__esc--ativa"
+                            : ""
+                        }`}
+                        onClick={() => mudarEscalacao(j.atleta_id, c.valor)}
+                        aria-pressed={j.escalacao === c.valor}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
                   <button
                     type="button"
                     class="bf-btn bf-btn--ghost"

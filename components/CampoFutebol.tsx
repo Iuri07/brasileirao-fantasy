@@ -5,7 +5,7 @@ interface Jogador {
   nome: string;
   posicao: string;
   pontuacao: number;
-  escalacao: "Sim" | "Banco" | "Não";
+  escalacao: "Sim" | "Banco" | "Não" | "IR";
   status_id?: number | null;
   clube?: string;
   substituido?: boolean;

@@ -26,7 +26,7 @@ interface JogadorParaTransferir {
   apelido: string;
   clube: string;
   posicao: string;
-  escalacao: "Sim" | "Banco" | "Não";
+  escalacao: "Sim" | "Banco" | "Não" | "IR";
 }
 
 interface TimeDestino {
@@ -76,7 +76,7 @@ export const handler: Handlers<Data, State> = {
 
     const atletas: AtletaElenco[] = Object.values(elenco.jogadores)
       .filter((j) =>
-        j.escalacao === "Sim" || j.escalacao === "Banco" ||
+        j.escalacao === "Sim" || j.escalacao === "Banco" || j.escalacao === "IR" ||
         j.escalacao === "Não"
       )
       .map((j) => ({
@@ -84,7 +84,7 @@ export const handler: Handlers<Data, State> = {
         apelido: j.apelido_api,
         clube: j.clube,
         posicao: j.posicao as AtletaElenco["posicao"],
-        escalacao: j.escalacao as "Sim" | "Banco" | "Não",
+        escalacao: j.escalacao as "Sim" | "Banco" | "Não" | "IR",
         pontos: j.pontos,
         foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
         statusId: j.status_id,
@@ -103,7 +103,7 @@ export const handler: Handlers<Data, State> = {
         apelido: j.apelido_api,
         clube: j.clube,
         posicao: j.posicao,
-        escalacao: j.escalacao as "Sim" | "Banco" | "Não",
+        escalacao: j.escalacao as "Sim" | "Banco" | "Não" | "IR",
       }));
 
     const outrosTimes: TimeDestino[] = TODAS_CHAVES
@@ -139,7 +139,7 @@ export default function AdminTimeEditor({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · {data.displayName}</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=189" />
+        <link rel="stylesheet" href="/bf-styles.css?v=190" />
       </Head>
       <div class="bf-viewport">
         <TopBar

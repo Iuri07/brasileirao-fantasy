@@ -16,7 +16,7 @@ interface Body {
   /** Time destino. null = vai pro mercado (time → free agent). */
   to_chave: string | null;
   /** Categoria no time destino. Default "Banco". Ignorado se to_chave null. */
-  escalacao_destino?: "Sim" | "Banco" | "Não";
+  escalacao_destino?: "Sim" | "Banco" | "Não" | "IR";
 }
 
 /**

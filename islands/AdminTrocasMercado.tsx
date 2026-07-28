@@ -7,14 +7,12 @@ interface Row {
   chave: string;
   displayName: string;
   count: number;
-  restante: number;
 }
 
 interface ApiResp {
   ok: boolean;
   rodada: number;
-  max: number;
-  times: Array<{ chave: string; count: number; restante: number }>;
+  times: Array<{ chave: string; count: number }>;
 }
 
 interface Props {
@@ -28,7 +26,6 @@ export default function AdminTrocasMercado(
   { nomesPorChave, rodadaAtual }: Props,
 ) {
   const [rodada, setRodada] = useState(rodadaAtual);
-  const [max, setMax] = useState<number>(10);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -44,12 +41,10 @@ export default function AdminTrocasMercado(
         setMsg("Erro ao carregar");
         return;
       }
-      setMax(json.max);
       setRows(json.times.map((t) => ({
         chave: t.chave,
         displayName: nomesPorChave[t.chave] ?? t.chave,
         count: t.count,
-        restante: t.restante,
       })));
     } catch {
       setMsg("Erro de rede");
@@ -65,15 +60,7 @@ export default function AdminTrocasMercado(
 
   const updateCount = (chave: string, novo: number) => {
     setRows((rs) =>
-      rs.map((r) =>
-        r.chave === chave
-          ? {
-            ...r,
-            count: novo,
-            restante: Math.max(0, max - novo),
-          }
-          : r
-      )
+      rs.map((r) => r.chave === chave ? { ...r, count: novo } : r)
     );
   };
 
@@ -86,17 +73,13 @@ export default function AdminTrocasMercado(
       const resp = await fetch("/api/admin/trocas-mercado", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ max, rodada, counts }),
+        body: JSON.stringify({ rodada, counts }),
       });
       const json = await resp.json();
       if (!json.ok) {
         setMsg(json.erro ?? "Erro");
       } else {
         setMsg("Salvo");
-        // Recalcula restantes com novo max
-        setRows((rs) =>
-          rs.map((r) => ({ ...r, restante: Math.max(0, max - r.count) }))
-        );
       }
     } catch {
       setMsg("Erro de rede");
@@ -120,16 +103,6 @@ export default function AdminTrocasMercado(
               )}
           />
         </label>
-        <label class="bf-admin-trocas__campo">
-          <span class="bf-label-micro">Máximo por time</span>
-          <input
-            type="number"
-            min={0}
-            value={String(max)}
-            onChange={(e) =>
-              setMax(Math.max(0, parseInt((e.target as HTMLInputElement).value, 10) || 0))}
-          />
-        </label>
         <button
           type="button"
           class="bf-btn bf-btn--primary"
@@ -146,14 +119,7 @@ export default function AdminTrocasMercado(
         : (
           <ul class="bf-admin-trocas__lista">
             {rows.map((r) => (
-              <li
-                key={r.chave}
-                class={`bf-admin-trocas__row ${
-                  r.count >= max
-                    ? "bf-admin-trocas__row--esgotado"
-                    : ""
-                }`}
-              >
+              <li key={r.chave} class="bf-admin-trocas__row">
                 <span class="bf-admin-trocas__nome">{r.displayName}</span>
                 <input
                   class="bf-admin-trocas__input"
@@ -166,11 +132,7 @@ export default function AdminTrocasMercado(
                       Math.max(0, parseInt((e.target as HTMLInputElement).value, 10) || 0),
                     )}
                 />
-                <span class="bf-admin-trocas__restante">
-                  {r.count >= max
-                    ? "esgotado"
-                    : `${r.restante} restantes`}
-                </span>
+                <span class="bf-admin-trocas__restante">trocas c/ mercado</span>
               </li>
             ))}
           </ul>

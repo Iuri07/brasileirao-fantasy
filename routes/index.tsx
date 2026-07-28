@@ -41,10 +41,7 @@ import { getNomeTimeDisplay } from "../lib/time-visual.ts";
 import { fotoUrl } from "../lib/fotos.ts";
 import { timeLigaInfo } from "../lib/times-liga.ts";
 import { getHistorico, rodadasJogadas, totalPontos } from "../lib/historico.ts";
-import {
-  getMaxTrocasMercado,
-  getTrocasMercadoCount,
-} from "../lib/trocas-mercado.ts";
+import { getTrocasMercadoTotal } from "../lib/trocas-mercado.ts";
 
 import type { State } from "./_middleware.ts";
 
@@ -105,7 +102,7 @@ interface HomeData {
   subsMax: number;
   /** Trocas com mercado já feitas / limite na rodada atual.
    *  null pra admin sem chave própria. */
-  trocasMercado: { count: number; max: number; restante: number } | null;
+  trocasMercado: { total: number } | null;
   /** Edição da escalação bloqueada (mercado fechado / rodada rolando) */
   edicaoBloqueada: boolean;
   /** atleta_ids marcados como "à venda" pelo dono */
@@ -367,7 +364,7 @@ export const handler: Handlers<HomeData, State> = {
         // Não (reserva inativa que pode subir via swap-escalacao)
         .filter((j) =>
           j.escalacao === "Sim" || j.escalacao === "Banco" ||
-          j.escalacao === "Não"
+          j.escalacao === "Não" || j.escalacao === "IR"
         )
         .map((j) => {
           const m = melhorMap.get(j.atleta_id);
@@ -377,7 +374,7 @@ export const handler: Handlers<HomeData, State> = {
             apelido: j.apelido_api,
             clube: j.clube,
             posicao: j.posicao as AtletaElenco["posicao"],
-            escalacao: j.escalacao as "Sim" | "Banco" | "Não",
+            escalacao: j.escalacao as "Sim" | "Banco" | "Não" | "IR",
             pontos: liveP(j.atleta_id, j.pontos),
             foto: fotos[String(j.atleta_id)] ?? fotoUrl(j.apelido_api) ?? null,
             statusId: j.status_id,
@@ -485,12 +482,9 @@ export const handler: Handlers<HomeData, State> = {
       subsUsadas,
       subsAuto,
       subsMax: MAX_SUBS_AO_VIVO,
-      trocasMercado: (() => {
-        if (!CHAVE_USUARIO || rodadaAtual === 0) return null;
-        const max = getMaxTrocasMercado();
-        const count = getTrocasMercadoCount(CHAVE_USUARIO, rodadaAtual);
-        return { count, max, restante: Math.max(0, max - count) };
-      })(),
+      trocasMercado: CHAVE_USUARIO
+        ? { total: getTrocasMercadoTotal(CHAVE_USUARIO) }
+        : null,
       // Edição: bloqueada durante a rodada ao vivo OU quando mercado
       // fechado (sem fonte dizendo "aguardando").
       edicaoBloqueada: aoVivoReal || !mercadoAberto,
@@ -557,7 +551,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=189" />
+        <link rel="stylesheet" href="/bf-styles.css?v=190" />
       </Head>
       <DesktopSidebar
         active="home"
@@ -598,23 +592,15 @@ export default function Home({ data }: PageProps<HomeData>) {
             </div>
           </div>
           <div class="bf-home-head__pills">
-            {data.trocasMercado && (() => {
-              const tm = data.trocasMercado;
-              const sev = tm.restante === 0
-                ? "danger"
-                : (tm.count / tm.max >= 0.8 ? "warn" : "normal");
-              return (
-                <span
-                  class={`bf-pill bf-pill--timing-${sev}`}
-                  title={tm.restante === 0
-                    ? "Você atingiu o limite de trocas com mercado da rodada"
-                    : `Você fez ${tm.count} de ${tm.max} trocas com mercado essa rodada`}
-                >
-                  <span class="bf-pill__lbl">Trocas mercado</span>
-                  <span class="bf-pill__val">{tm.count}/{tm.max}</span>
-                </span>
-              );
-            })()}
+            {data.trocasMercado && (
+              <span
+                class="bf-pill bf-pill--timing-normal"
+                title={`Você fez ${data.trocasMercado.total} troca(s) com mercado no total`}
+              >
+                <span class="bf-pill__lbl">Trocas mercado</span>
+                <span class="bf-pill__val">{data.trocasMercado.total}</span>
+              </span>
+            )}
             {data.aoVivoReal && (
               <span class="bf-pill bf-pill--lime" title="Rodada em andamento">
                 <span class="bf-pill__dot" />

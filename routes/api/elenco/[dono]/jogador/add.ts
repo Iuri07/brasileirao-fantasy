@@ -31,7 +31,7 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    let body: { atleta_id: number; escalacao?: "Sim" | "Banco" | "Não" };
+    let body: { atleta_id: number; escalacao?: "Sim" | "Banco" | "Não" | "IR" };
     try {
       body = await req.json();
     } catch {

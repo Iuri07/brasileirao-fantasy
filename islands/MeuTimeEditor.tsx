@@ -16,7 +16,7 @@ export interface AtletaElenco {
   clube: string;
   posicao: "Goleiro" | "Lateral" | "Zagueiro" | "Meia" | "Atacante";
   /** Sim = titular, Banco = reserva ativa, Não = reserva inativa (pool) */
-  escalacao: "Sim" | "Banco" | "Não";
+  escalacao: "Sim" | "Banco" | "Não" | "IR";
   pontos: number | null;
   foto: string | null;
   statusId: number | null;
@@ -282,8 +282,14 @@ export default function MeuTimeEditor(
   }
 
   // Constrói escalação + banco + não-escalados a partir do estado atual
-  const { escalacao, banco, naoEscalados, bancoView, naoEscaladosView } =
-    useMemo(() => {
+  const {
+    escalacao,
+    banco,
+    naoEscalados,
+    bancoView,
+    naoEscaladosView,
+    irView,
+  } = useMemo(() => {
       const pino = (j: AtletaElenco): Pino => ({
         atletaId: j.atleta_id,
         nome: j.apelido,
@@ -335,7 +341,18 @@ export default function MeuTimeEditor(
       const naoEscaladosView: BancoPino[] = [...naoEscalados]
         .sort(sortPos)
         .map((j) => ({ ...pino(j), posicao: j.posicao }));
-      return { escalacao, banco, naoEscalados, bancoView, naoEscaladosView };
+      const irView: BancoPino[] = atletas
+        .filter((j) => j.escalacao === "IR")
+        .sort(sortPos)
+        .map((j) => ({ ...pino(j), posicao: j.posicao }));
+      return {
+        escalacao,
+        banco,
+        naoEscalados,
+        bancoView,
+        naoEscaladosView,
+        irView,
+      };
     }, [atletas]);
 
   return (
@@ -523,6 +540,13 @@ export default function MeuTimeEditor(
             <ReservasRow
               label="Não escalados"
               jogadores={naoEscaladosView}
+              showPoints={showPoints}
+              showStatus={!aoVivo}
+              liveMode={aoVivo}
+            />
+            <ReservasRow
+              label="IR"
+              jogadores={irView}
               showPoints={showPoints}
               showStatus={!aoVivo}
               liveMode={aoVivo}

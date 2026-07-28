@@ -776,27 +776,47 @@ body {
   color: var(--bf-fg-3);
   white-space: nowrap;
 }
+.bf-admin-transferir__esc-group {
+  display: inline-flex;
+  gap: 4px;
+}
 .bf-admin-transferir__esc {
   font-family: var(--bf-font-cond);
   font-weight: 800;
   font-size: 9px;
   letter-spacing: 0.1em;
-  padding: 2px 5px;
+  padding: 3px 6px;
   border-radius: 3px;
   text-transform: uppercase;
   text-align: center;
-}
-.bf-admin-transferir__esc--sim {
-  color: var(--bf-lime);
-  background: color-mix(in srgb, var(--bf-lime) 12%, transparent);
-}
-.bf-admin-transferir__esc--banco {
-  color: var(--bf-blue);
-  background: color-mix(in srgb, var(--bf-blue) 12%, transparent);
-}
-.bf-admin-transferir__esc--nao {
+  background: transparent;
+  border: 1px solid var(--bf-line);
   color: var(--bf-fg-3);
-  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.bf-admin-transferir__esc:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.bf-admin-transferir__esc--sim.bf-admin-transferir__esc--ativa {
+  color: var(--bf-lime);
+  background: color-mix(in srgb, var(--bf-lime) 18%, transparent);
+  border-color: color-mix(in srgb, var(--bf-lime) 40%, transparent);
+}
+.bf-admin-transferir__esc--banco.bf-admin-transferir__esc--ativa {
+  color: var(--bf-blue);
+  background: color-mix(in srgb, var(--bf-blue) 18%, transparent);
+  border-color: color-mix(in srgb, var(--bf-blue) 40%, transparent);
+}
+.bf-admin-transferir__esc--nao.bf-admin-transferir__esc--ativa {
+  color: var(--bf-fg-1);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--bf-line-strong, var(--bf-line));
+}
+.bf-admin-transferir__esc--ir.bf-admin-transferir__esc--ativa {
+  color: var(--bf-red);
+  background: color-mix(in srgb, var(--bf-red) 18%, transparent);
+  border-color: color-mix(in srgb, var(--bf-red) 40%, transparent);
 }
 .bf-admin-transferir__overlay {
   position: fixed;
@@ -4986,6 +5006,57 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
   }
 
   /* === Conflitos pendentes (interesses do draft) === */
+  /* === Admin: ordem do draft (reorder) === */
+  .bf-admin-draft-ordem__list {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 400px;
+  }
+  .bf-admin-draft-ordem__row {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: color-mix(in srgb, var(--bf-chassis) 55%, transparent);
+    border: 1px solid var(--bf-line);
+    border-radius: var(--bf-radius-sm);
+  }
+  .bf-admin-draft-ordem__pos {
+    font-family: var(--bf-font-mono);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--bf-fg-3);
+    text-align: center;
+  }
+  .bf-admin-draft-ordem__nome {
+    font-family: var(--bf-font-cond);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--bf-fg-0);
+  }
+  .bf-admin-draft-ordem__acoes {
+    display: flex;
+    gap: 4px;
+  }
+  .bf-admin-draft-ordem__footer {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .bf-admin-draft-ordem__msg {
+    font-family: var(--bf-font-cond);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bf-fg-2);
+  }
+
   .bf-admin-conflitos {
     list-style: none;
     margin: 0;

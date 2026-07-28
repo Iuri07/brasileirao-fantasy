@@ -344,6 +344,50 @@ function ensureIncrementalColumns(db: Database): void {
   // join com ofertas.
   addColumnIfMissing(db, "notificacoes", "mensagem", "TEXT");
 
+  // A tabela jogadores foi criada com CHECK IN ('Sim','Banco','Não').
+  // Precisamos adicionar 'IR' como categoria. SQLite não suporta ALTER
+  // TABLE pra CHECK constraint — recria a tabela sem check (validação
+  // fica em TypeScript). Idempotente via flag em app_state.
+  const jogadoresMigrated = getDb().prepare(
+    "SELECT data_json FROM app_state WHERE key='jogadores_check_removed'",
+  ).get<{ data_json: string }>();
+  if (!jogadoresMigrated) {
+    db.exec(`
+      CREATE TABLE jogadores_new (
+        chave TEXT NOT NULL,
+        atleta_id INTEGER NOT NULL,
+        apelido_api TEXT NOT NULL,
+        clube TEXT NOT NULL,
+        clube_id INTEGER NOT NULL,
+        posicao TEXT NOT NULL,
+        posicao_id INTEGER NOT NULL,
+        escalacao TEXT NOT NULL,
+        status_id INTEGER,
+        provavel INTEGER,
+        lesionado INTEGER,
+        suspenso INTEGER,
+        nulo INTEGER,
+        entrou_em_campo INTEGER,
+        clube_casa TEXT,
+        clube_fora TEXT,
+        pontos REAL,
+        PRIMARY KEY (chave, atleta_id),
+        FOREIGN KEY (chave) REFERENCES elencos(chave) ON DELETE CASCADE
+      );
+      INSERT INTO jogadores_new SELECT
+        chave, atleta_id, apelido_api, clube, clube_id, posicao, posicao_id,
+        escalacao, status_id, provavel, lesionado, suspenso, nulo,
+        entrou_em_campo, clube_casa, clube_fora, pontos
+      FROM jogadores;
+      DROP TABLE jogadores;
+      ALTER TABLE jogadores_new RENAME TO jogadores;
+      CREATE INDEX IF NOT EXISTS idx_jogadores_atleta ON jogadores(atleta_id);
+    `);
+    db.prepare(
+      "INSERT OR REPLACE INTO app_state (key, data_json, updated_at) VALUES ('jogadores_check_removed', 'true', ?)",
+    ).run(Date.now());
+  }
+
   // Snapshot da pontuação final de cada atleta por rodada. Antes só
   // tínhamos historico (totais por time) — pontos individuais vinham
   // sempre direto da Cartola via /atletas/pontuados/{rodada}. Agora

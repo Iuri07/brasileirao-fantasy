@@ -58,7 +58,7 @@ export default function AdminTrocasPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Histórico de Trocas</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=189" />
+        <link rel="stylesheet" href="/bf-styles.css?v=190" />
       </Head>
       <div class="bf-viewport">
         <TopBar

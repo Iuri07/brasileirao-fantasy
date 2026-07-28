@@ -51,6 +51,8 @@ interface TimeLinha {
   banco: BancoPino[];
   /** Resto do elenco — marcados como "Não" (fora do banco). */
   naoEscalados: BancoPino[];
+  /** Lesionados/fora — marcados como "IR". */
+  ir: BancoPino[];
   historico: Record<string, number>;
 }
 
@@ -134,6 +136,9 @@ export const handler: Handlers<Data, State> = {
       const naoEscalados: BancoPino[] = todos
         .filter((j) => j.escalacao === "Não")
         .map(toBanco);
+      const ir: BancoPino[] = todos
+        .filter((j) => j.escalacao === "IR")
+        .map(toBanco);
       const ptsRodada = Math.round(
         escalados.reduce((s, j) => s + (j.pontos ?? 0), 0) * 100,
       ) / 100;
@@ -178,6 +183,7 @@ export const handler: Handlers<Data, State> = {
         escalacao,
         banco,
         naoEscalados,
+        ir,
         historico: historicoStandings,
       });
     }
@@ -229,7 +235,7 @@ export default function Liga({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=189" />
+        <link rel="stylesheet" href="/bf-styles.css?v=190" />
       </Head>
       <DesktopSidebar
         active="liga"
@@ -310,6 +316,12 @@ export default function Liga({ data }: PageProps<Data>) {
                         <ReservasRow
                           label="Não escalados"
                           jogadores={t.naoEscalados}
+                          showPoints={false}
+                          showStatus={mostraStatus}
+                        />
+                        <ReservasRow
+                          label="IR"
+                          jogadores={t.ir}
                           showPoints={false}
                           showStatus={mostraStatus}
                         />

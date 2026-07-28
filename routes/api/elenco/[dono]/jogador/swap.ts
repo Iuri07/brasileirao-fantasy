@@ -11,8 +11,6 @@ import {
 } from "../../../../../lib/kv.ts";
 import type { JogadorKV } from "../../../../../lib/types.ts";
 import {
-  getMaxTrocasMercado,
-  getTrocasMercadoCount,
   incTrocasMercadoCount,
 } from "../../../../../lib/trocas-mercado.ts";
 import { registrarTroca } from "../../../../../lib/historico-trocas.ts";
@@ -46,7 +44,7 @@ export const handler: Handlers<unknown, State> = {
     let body: {
       atleta_id_sai: number;
       atleta_id_entra: number;
-      escalacao: "Sim" | "Banco" | "Não";
+      escalacao: "Sim" | "Banco" | "Não" | "IR";
       /** Admin pode forçar o swap mesmo se o time já atingiu o limite
        *  de trocas com mercado da rodada. Default false. */
       bypass_limite_mercado?: boolean;
@@ -114,7 +112,7 @@ export const handler: Handlers<unknown, State> = {
 
       // Encontra de qual elenco o atleta que entra vem (se vier de algum)
       let elencoOrigem: string | null = null;
-      let escalacaoEntraOrigem: "Sim" | "Banco" | "Não" = "Banco";
+      let escalacaoEntraOrigem: "Sim" | "Banco" | "Não" | "IR" = "Banco";
       for (const [k, e] of Object.entries(elencos)) {
         if (k === chave) continue;
         if (e.jogadores[idEntra]) {
@@ -124,31 +122,11 @@ export const handler: Handlers<unknown, State> = {
         }
       }
 
-      // Limite de trocas com mercado por rodada. elencoOrigem === null
-      // significa que o atleta veio do pool de free agents — conta como
-      // troca com mercado. Trocas entre dois elencos (user-to-user) são
-      // ilimitadas. Admin pode forçar via bypass_limite_mercado=true.
+      // Trocas com mercado agora são ILIMITADAS — só continuamos
+      // contando pra auditoria. Trocas user-to-user seguem sem entrar
+      // nessa contagem (elencoOrigem !== null).
       const ehTrocaMercado = elencoOrigem === null;
       let trocasMercadoNovo: number | null = null;
-      if (ehTrocaMercado && !body.bypass_limite_mercado) {
-        const rodadaStatus = await getRodadaStatus();
-        const rodadaAtual = rodadaStatus?.rodada ?? 0;
-        if (rodadaAtual > 0) {
-          const max = getMaxTrocasMercado();
-          const atual = getTrocasMercadoCount(chave, rodadaAtual);
-          if (atual >= max) {
-            return new Response(
-              JSON.stringify({
-                ok: false,
-                erro:
-                  `Limite de ${max} trocas com mercado já atingido para ${chave} na rodada ${rodadaAtual}. ` +
-                  `Use bypass_limite_mercado=true pra forçar.`,
-              }),
-              { status: 423, headers: H },
-            );
-          }
-        }
-      }
 
       // Monta JogadorKV para o atleta que entra
       const sid = atletaCache.status_id ?? null;

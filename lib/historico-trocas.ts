@@ -6,7 +6,7 @@ import { getElenco, setElenco } from "./kv.ts";
 import { getDb, i64 } from "./db.ts";
 import type { JogadorKV } from "./types.ts";
 
-export type EscCat = "Sim" | "Banco" | "Não";
+export type EscCat = "Sim" | "Banco" | "Não" | "IR";
 
 export interface TrocaConcluida {
   id: string;

@@ -6,9 +6,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import {
-  getMaxTrocasMercado,
   getTrocasMercadoRodada,
-  setMaxTrocasMercado,
   setTrocasMercadoCount,
 } from "../../../lib/trocas-mercado.ts";
 import { getRodadaStatus, TODAS_CHAVES } from "../../../lib/kv.ts";
@@ -29,17 +27,15 @@ export const handler: Handlers<unknown, State> = {
     const rodada = rodadaParam
       ? parseInt(rodadaParam, 10)
       : ((await getRodadaStatus())?.rodada ?? 0);
-    const max = getMaxTrocasMercado();
     const rows = await getTrocasMercadoRodada(rodada);
     // Inclui chaves com count=0 pro admin ter todas as linhas pra editar
     const map = new Map(rows.map((r) => [r.chave, r.count]));
     const times = TODAS_CHAVES.map((chave) => ({
       chave,
       count: map.get(chave) ?? 0,
-      restante: Math.max(0, max - (map.get(chave) ?? 0)),
     }));
     return new Response(
-      JSON.stringify({ ok: true, rodada, max, times }),
+      JSON.stringify({ ok: true, rodada, times }),
       { headers: H },
     );
   },
@@ -52,7 +48,6 @@ export const handler: Handlers<unknown, State> = {
       );
     }
     let body: {
-      max?: number;
       rodada?: number;
       counts?: Record<string, number>;
     };
@@ -63,9 +58,6 @@ export const handler: Handlers<unknown, State> = {
         JSON.stringify({ ok: false, erro: "JSON inválido" }),
         { status: 400, headers: H },
       );
-    }
-    if (typeof body.max === "number") {
-      await setMaxTrocasMercado(body.max);
     }
     if (body.counts && typeof body.counts === "object") {
       const rodada = body.rodada ??

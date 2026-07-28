@@ -27,7 +27,7 @@ type DadosJSON = {
       clube_id: number;
       posicao: string;
       posicao_id: number;
-      escalacao: "Sim" | "Banco" | "Não";
+      escalacao: "Sim" | "Banco" | "Não" | "IR";
     }>;
   }>;
 };

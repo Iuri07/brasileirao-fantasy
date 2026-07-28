@@ -4,6 +4,7 @@ import { getEmailMap } from "../lib/auth.ts";
 import {
   CHAVES_TIMES,
   getAllElencos,
+  getDraftOrdem,
   getRodadaStatus,
   getTodosInteresses,
   TODAS_CHAVES,
@@ -19,6 +20,7 @@ import TopBar from "../components/TopBar.tsx";
 import DesktopSidebar from "../components/DesktopSidebar.tsx";
 import AdminEmailMap from "../islands/AdminEmailMap.tsx";
 import AdminDraftDias from "../islands/AdminDraftDias.tsx";
+import AdminDraftOrdem from "../islands/AdminDraftOrdem.tsx";
 import AdminSimularRodada from "../islands/AdminSimularRodada.tsx";
 import AdminHistoricoMatriz from "../islands/AdminHistoricoMatriz.tsx";
 import AdminTimesGrid from "../islands/AdminTimesGrid.tsx";
@@ -112,6 +114,7 @@ interface Data {
   historicoTimes: HistoricoTimeItem[];
   historicos: Record<string, Record<string, number>>;
   diasResolucao: number[];
+  draftOrdem: string[];
   horaResolucao: number;
   simulando: boolean;
   rodadaAtual: number;
@@ -142,6 +145,7 @@ export const handler: Handlers<Data, State> = {
       rodadaStatus,
       ofertas,
       trocas,
+      draftOrdem,
     ] = await Promise.all([
       getEmailMap(),
       getAllTimeVisuais(),
@@ -151,6 +155,7 @@ export const handler: Handlers<Data, State> = {
       getRodadaStatus(),
       listarTodasOfertas({ status: "pendente" }),
       listarTrocas(),
+      getDraftOrdem(),
     ]);
 
     const chaveToEmail: Record<string, string> = {};
@@ -400,6 +405,7 @@ export const handler: Handlers<Data, State> = {
       historicos,
       diasResolucao,
       horaResolucao,
+      draftOrdem,
       simulando,
       rodadaAtual: rodadaStatus?.rodada ?? 1,
       ofertasPendentesCount: ofertas.length,
@@ -421,7 +427,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=189" />
+        <link rel="stylesheet" href="/bf-styles.css?v=190" />
       </Head>
       <DesktopSidebar
         active="admin"
@@ -462,6 +468,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
             <a href="#ofertas">Ofertas pendentes</a>
             <a href="#trocas">Histórico de trocas</a>
             <a href="#draft">Draft</a>
+            <a href="#draft-ordem">Ordem draft</a>
             <a href="#conflitos">Conflitos</a>
             <a href="#trocas-mercado">Trocas mercado</a>
             <a href="#simular">Simular rodada</a>
@@ -755,6 +762,24 @@ export default function AdminPage({ data }: PageProps<Data>) {
                 </span>
               </header>
               <AdminDraftDias iniciais={data.diasResolucao} horaInicial={data.horaResolucao} />
+            </section>
+
+            <section id="draft-ordem" class="bf-admin-section">
+              <header class="bf-admin-section__header">
+                <h2>Draft · Ordem de prioridade</h2>
+                <span class="bf-admin-section__sub">
+                  Sobe/desce cada time. Depois de salvar, os shifts
+                  automáticos da resolução continuam funcionando (quem
+                  pega vai pro fim).
+                </span>
+              </header>
+              <AdminDraftOrdem
+                ordemInicial={data.draftOrdem}
+                times={data.atribuicoes.reduce((acc, a) => {
+                  acc[a.chave] = a.displayName;
+                  return acc;
+                }, {} as Record<string, string>)}
+              />
             </section>
 
             <section id="conflitos" class="bf-admin-section">

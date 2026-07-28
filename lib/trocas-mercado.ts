@@ -1,22 +1,31 @@
-// Contador de trocas com mercado por time/rodada. Limite (default 10)
-// aplicado quando admin executa swap envolvendo o pool de free agents.
+// Contador de trocas com mercado por time. Antes tinha limite (10 por
+// rodada) e reset por rodada; agora é apenas contador ACUMULADO SEM
+// LIMITE — mantemos a granularidade por rodada no DB pra admin poder
+// auditar quando cada troca aconteceu, mas o total mostrado é a soma.
 // Trocas user-to-user ficam ilimitadas (não passam por aqui).
 
 import { getDb } from "./db.ts";
 import { appStateGet, appStateSet } from "./app-state.ts";
 
-const MAX_DEFAULT = 10;
-
+/** Compat: valor "máximo" antigo. Agora retorna Infinity — sem cap.
+ *  Mantido pra endpoints/UI ainda usarem sem crashar. */
 export function getMaxTrocasMercado(): number {
-  const stored = appStateGet<number>("max_trocas_mercado");
-  if (typeof stored !== "number" || stored < 0) return MAX_DEFAULT;
-  return Math.trunc(stored);
+  return Infinity;
 }
 
-export function setMaxTrocasMercado(n: number): Promise<void> {
-  const v = Math.max(0, Math.trunc(n));
-  appStateSet("max_trocas_mercado", v);
+/** Compat: aceita mas ignora. Não temos mais max. */
+export function setMaxTrocasMercado(_n: number): Promise<void> {
   return Promise.resolve();
+}
+
+/** Total ACUMULADO de trocas com mercado do time, somando todas as
+ *  rodadas. Antes contávamos só a rodada corrente e resetava — agora
+ *  é histórico completo. */
+export function getTrocasMercadoTotal(chave: string): number {
+  const r = getDb().prepare(
+    "SELECT COALESCE(SUM(count), 0) AS total FROM trocas_mercado WHERE chave=?",
+  ).get<{ total: number }>(chave);
+  return r?.total ?? 0;
 }
 
 /** Quantas trocas com mercado o time já fez nessa rodada. 0 se nunca. */

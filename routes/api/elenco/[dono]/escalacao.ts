@@ -26,7 +26,8 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    let body: { atleta_id: number; escalacao: "Sim" | "Banco" | "Não" };
+    let body: { atleta_id: number; escalacao: "Sim" | "Banco" | "Não" | "IR" };
+    // (validação abaixo aceita as 4 categorias)
     try {
       body = await req.json();
     } catch {
@@ -36,7 +37,10 @@ export const handler: Handlers<unknown, State> = {
       );
     }
 
-    if (!body.atleta_id || !["Sim", "Banco", "Não"].includes(body.escalacao)) {
+    if (
+      !body.atleta_id ||
+      !["Sim", "Banco", "Não", "IR"].includes(body.escalacao)
+    ) {
       return new Response(
         JSON.stringify({
           ok: false,

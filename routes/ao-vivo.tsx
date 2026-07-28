@@ -53,6 +53,8 @@ interface TimeLinha {
   banco: BancoPino[];
   /** Resto do elenco — fora do banco. */
   naoEscalados: BancoPino[];
+  /** Lesionados/fora — marcados como "IR". */
+  ir: BancoPino[];
   historico: Record<string, number>;
   subsAplicadas: number;
 }
@@ -152,6 +154,7 @@ export const handler: Handlers<Data, State> = {
       const escalados = calculados.filter((j) => j.escalacao === "Sim");
       const reservas = calculados.filter((j) => j.escalacao === "Banco");
       const naoEscaladosRaw = calculados.filter((j) => j.escalacao === "Não");
+      const irRaw = calculados.filter((j) => j.escalacao === "IR");
       const subsAplicadas = escalados.filter((j) => j.substituido).length;
       const toBanco = (j: typeof calculados[number]): BancoPino => ({
         nome: j.apelido_api,
@@ -166,6 +169,7 @@ export const handler: Handlers<Data, State> = {
       });
       const banco: BancoPino[] = reservas.map(toBanco);
       const naoEscalados: BancoPino[] = naoEscaladosRaw.map(toBanco);
+      const ir: BancoPino[] = irRaw.map(toBanco);
       const ptsRodada = Math.round(
         escalados.reduce((s, j) => s + (j.pontos ?? 0), 0) * 100,
       ) / 100;
@@ -207,6 +211,7 @@ export const handler: Handlers<Data, State> = {
         escalacao,
         banco,
         naoEscalados,
+        ir,
         historico: historicoStandings,
         subsAplicadas,
       });
@@ -294,7 +299,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=189" />
+        <link rel="stylesheet" href="/bf-styles.css?v=190" />
       </Head>
       <DesktopSidebar
         active="live"
@@ -395,6 +400,12 @@ function AoVivoLiga({ data }: { data: Data }) {
                       <ReservasRow
                         label="Não escalados"
                         jogadores={t.naoEscalados}
+                        showPoints={data.aoVivo}
+                        liveMode={data.aoVivo}
+                      />
+                      <ReservasRow
+                        label="IR"
+                        jogadores={t.ir}
                         showPoints={data.aoVivo}
                         liveMode={data.aoVivo}
                       />

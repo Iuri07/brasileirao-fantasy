@@ -1,3 +1,7 @@
+/** Categoria de escalação de um jogador dentro do elenco. IR = lesionados
+ *  ou fora, tratado como categoria separada abaixo do banco e reservas. */
+export type Escalacao = "Sim" | "Banco" | "Não" | "IR";
+
 export interface JogadorKV {
   // Estáticos (seed)
   atleta_id: number;
@@ -6,7 +10,7 @@ export interface JogadorKV {
   clube_id: number;
   posicao: string;
   posicao_id: number;
-  escalacao: "Sim" | "Banco" | "Não";
+  escalacao: Escalacao;
   // Dinâmicos – cron de status
   status_id: number | null;
   provavel: boolean | null;

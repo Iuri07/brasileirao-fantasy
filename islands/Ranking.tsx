@@ -20,8 +20,8 @@ interface Jogador {
   nome: string;
   posicao: string;
   pontuacao: number;
-  escalacao: "Sim" | "Banco" | "Não";
-  escalacao_elenco: "Sim" | "Banco" | "Não";
+  escalacao: "Sim" | "Banco" | "Não" | "IR";
+  escalacao_elenco: "Sim" | "Banco" | "Não" | "IR";
   status_id: number | null;
   clube: string;
   substituido: boolean;
@@ -152,14 +152,14 @@ function PainelGerenciamento(
     jogadores: Jogador[];
     chave: string;
     onAtualizar: () => void;
-    onEscalacao: (atletaId: number, escalacao: "Sim" | "Banco" | "Não") => void;
+    onEscalacao: (atletaId: number, escalacao: "Sim" | "Banco" | "Não" | "IR") => void;
   },
 ) {
   const [trocando, setTrocando] = useState<
     {
       atletaId: number;
       posicao: string;
-      escalacaoAtual: "Sim" | "Banco" | "Não";
+      escalacaoAtual: "Sim" | "Banco" | "Não" | "IR";
     } | null
   >(null);
   const [buscaQ, setBuscaQ] = useState("");
@@ -371,7 +371,7 @@ export default function Ranking() {
   const mudarEscalacaoTime = (
     chave: string,
     atletaId: number,
-    escalacao: "Sim" | "Banco" | "Não",
+    escalacao: "Sim" | "Banco" | "Não" | "IR",
   ) => {
     setDados((prev) => {
       if (!prev) return prev;
