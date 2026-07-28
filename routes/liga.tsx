@@ -235,7 +235,7 @@ export default function Liga({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=190" />
+        <link rel="stylesheet" href="/bf-styles.css?v=191" />
       </Head>
       <DesktopSidebar
         active="liga"
@@ -324,6 +324,7 @@ export default function Liga({ data }: PageProps<Data>) {
                           jogadores={t.ir}
                           showPoints={false}
                           showStatus={mostraStatus}
+                          alwaysShow
                         />
                       </>
                     )

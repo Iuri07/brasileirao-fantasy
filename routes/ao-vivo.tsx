@@ -299,7 +299,7 @@ export default function AoVivoPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Ao Vivo · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=190" />
+        <link rel="stylesheet" href="/bf-styles.css?v=191" />
       </Head>
       <DesktopSidebar
         active="live"
@@ -408,6 +408,7 @@ function AoVivoLiga({ data }: { data: Data }) {
                         jogadores={t.ir}
                         showPoints={data.aoVivo}
                         liveMode={data.aoVivo}
+                        alwaysShow
                       />
                     </>
                   )

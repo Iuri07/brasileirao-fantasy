@@ -550,6 +550,7 @@ export default function MeuTimeEditor(
               showPoints={showPoints}
               showStatus={!aoVivo}
               liveMode={aoVivo}
+              alwaysShow
             />
           </>
         )}

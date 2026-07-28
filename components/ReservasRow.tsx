@@ -18,6 +18,10 @@ interface Props {
       Fora do live, melhorTime ainda calcula substituido/descido como
       preview — mostrar os pips confunde, então gateamos atrás disso. */
   liveMode?: boolean;
+  /** Se true, renderiza a section mesmo com lista vazia (mostra "0"
+      no contador). Usado pra IR — categoria fixa que aparece sempre
+      abaixo de Banco e Não Escalados, mesmo se ninguém tá lá. */
+  alwaysShow?: boolean;
 }
 
 const POS_TO_CLASS: Record<string, string> = {
@@ -41,16 +45,24 @@ export default function ReservasRow(
     showPoints = false,
     showStatus = false,
     liveMode = false,
+    alwaysShow = false,
   }: Props,
 ) {
-  if (!jogadores.length) return null;
+  if (!jogadores.length && !alwaysShow) return null;
 
   return (
     <div class="bf-pool">
       <div class="bf-pool__label">
         {label} <span class="bf-pool__grupo-qtd">{jogadores.length}</span>
       </div>
-      <div class="bf-pool__row">
+      {jogadores.length === 0
+        ? (
+          <div class="bf-pool__row bf-pool__row--empty">
+            Ninguém aqui.
+          </div>
+        )
+        : (
+          <div class="bf-pool__row">
         {jogadores.map((p, i) => {
           const posCls = POS_TO_CLASS[p.posicao ?? ""] ?? "mei";
           const hasCutout = !!p.foto &&
@@ -141,7 +153,8 @@ export default function ReservasRow(
             </div>
           );
         })}
-      </div>
+          </div>
+        )}
     </div>
   );
 }

@@ -742,12 +742,36 @@ body {
   padding: 4px;
 }
 .bf-admin-transferir__row {
-  display: grid;
-  grid-template-columns: 30px 1fr auto 50px auto;
+  display: flex;
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
   border-radius: var(--bf-radius-sm);
+  flex-wrap: wrap;
+}
+.bf-admin-transferir__row > .bf-admin-transferir__name {
+  flex: 1 1 100px;
+  min-width: 80px;
+}
+.bf-admin-transferir__row > .bf-admin-transferir__clube {
+  flex: 0 0 auto;
+}
+.bf-admin-transferir__row > .bf-admin-transferir__esc-group {
+  flex: 0 0 auto;
+}
+@media (max-width: 640px) {
+  /* Mobile: buttons em linha própria, largura toda pra caber os 4. */
+  .bf-admin-transferir__row {
+    row-gap: 6px;
+  }
+  .bf-admin-transferir__row > .bf-admin-transferir__esc-group {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+  .bf-admin-transferir__esc {
+    flex: 1 1 auto;
+    min-width: 48px;
+  }
 }
 .bf-admin-transferir__row:hover {
   background: rgba(255, 255, 255, 0.03);
@@ -4445,6 +4469,18 @@ body.bf-live-active .bf-bottom-nav__item[data-nav="live"]::after {
 }
 .bf-pool__row::-webkit-scrollbar {
   display: none;
+}
+.bf-pool__row--empty {
+  padding: 12px 8px;
+  font-family: var(--bf-font-cond);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bf-fg-3);
+  border: 1px dashed var(--bf-line);
+  border-radius: var(--bf-radius-sm);
+  text-align: center;
+  overflow: visible;
 }
 .bf-pool__item {
   position: relative;
