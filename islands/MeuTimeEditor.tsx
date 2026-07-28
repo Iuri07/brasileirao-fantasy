@@ -286,6 +286,7 @@ export default function MeuTimeEditor(
     escalacao,
     banco,
     naoEscalados,
+    irAtletas,
     bancoView,
     naoEscaladosView,
     irView,
@@ -320,6 +321,7 @@ export default function MeuTimeEditor(
         .filter((j) => j.escalacao === "Banco")
         .map((j) => ({ ...pino(j), posicao: j.posicao }));
       const naoEscalados = atletas.filter((j) => j.escalacao === "Não");
+      const irAtletas = atletas.filter((j) => j.escalacao === "IR");
       // View mode: Banco e Reservas em rows separadas (Banco = pode entrar
       // via auto-sub, Reservas = resto do elenco). Sort por posição igual
       // ao NaoSection do edit mode pra consistência.
@@ -349,6 +351,7 @@ export default function MeuTimeEditor(
         escalacao,
         banco,
         naoEscalados,
+        irAtletas,
         bancoView,
         naoEscaladosView,
         irView,
@@ -514,7 +517,7 @@ export default function MeuTimeEditor(
 
       {editando
         ? (
-          naoEscalados.length > 0 && (
+          <>
             <NaoSection
               atletas={naoEscalados}
               selecionado={selecionado ?? undefined}
@@ -523,8 +526,20 @@ export default function MeuTimeEditor(
                   null
                 : null}
               onSelect={selecionar}
+              label="Reservas do elenco"
             />
-          )
+            <NaoSection
+              atletas={irAtletas}
+              selecionado={selecionado ?? undefined}
+              posicaoFiltro={selecionado != null
+                ? atletas.find((x) => x.atleta_id === selecionado)?.posicao ??
+                  null
+                : null}
+              onSelect={selecionar}
+              label="IR"
+              alwaysShow
+            />
+          </>
         )
         : (
           /* View mode: Banco e Reservas em rows separadas, igual
@@ -559,13 +574,16 @@ export default function MeuTimeEditor(
 }
 
 function NaoSection(
-  { atletas, selecionado, posicaoFiltro, onSelect }: {
+  { atletas, selecionado, posicaoFiltro, onSelect, label = "Reservas do elenco", alwaysShow = false }: {
     atletas: AtletaElenco[];
     selecionado?: number;
     posicaoFiltro: AtletaElenco["posicao"] | null;
     onSelect: (id: number) => void;
+    label?: string;
+    alwaysShow?: boolean;
   },
 ) {
+  if (!atletas.length && !alwaysShow) return null;
   // Ordena por posição (mesma ordem de cima pra baixo do campo) e nome
   const ordemPos: Record<AtletaElenco["posicao"], number> = {
     Goleiro: 0,
@@ -581,11 +599,16 @@ function NaoSection(
   return (
     <div class="bf-pool">
       <div class="bf-pool__label">
-        Reservas do elenco{" "}
+        {label}{" "}
         <span class="bf-pool__grupo-qtd">{atletas.length}</span>
       </div>
-      <div class="bf-pool__row">
-        {sorted.map((p) => {
+      {atletas.length === 0
+        ? (
+          <div class="bf-pool__row bf-pool__row--empty">Ninguém aqui.</div>
+        )
+        : (
+          <div class="bf-pool__row">
+            {sorted.map((p) => {
           const desbotado = posicaoFiltro != null &&
             p.posicao !== posicaoFiltro;
           const hasCutout = !!p.foto &&
@@ -642,7 +665,8 @@ function NaoSection(
             </button>
           );
         })}
-      </div>
+          </div>
+        )}
     </div>
   );
 }
