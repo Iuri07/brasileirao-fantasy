@@ -255,6 +255,30 @@ export async function atualizarTudo(): Promise<void> {
       if (alterado) await setElenco(chave, elenco);
     }
     appStateSet("rodada_pontos_processada", rodadaPontuados);
+
+    // Reset da ordem do draft a cada N=5 rodadas (fim de ciclo). Antes
+    // era só via /admin com reset manual. Agora: quando a rodada nova
+    // cruza a fronteira do ciclo (computeDraftMeta detecta cicloOffset
+    // > 0), inverte a classificação (pior colocado abre o novo ciclo)
+    // e reinicia rodadaCiclo=1. Só roda 1x por virada de rodada (garantido
+    // pela flag trocouRodada acima).
+    try {
+      const { getDraftMeta, computeDraftMeta, resetDraft } = await import(
+        "./draft.ts"
+      );
+      const meta = await getDraftMeta();
+      if (meta && rodadaPontuados > 0) {
+        const proxima = computeDraftMeta(meta, rodadaPontuados);
+        if (proxima.ciclo > meta.ciclo) {
+          console.log(
+            `[cron] draft: virou ciclo ${meta.ciclo}→${proxima.ciclo} na rodada ${rodadaPontuados}. Resetando ordem (inverso da classificação).`,
+          );
+          await resetDraft(rodadaPontuados);
+        }
+      }
+    } catch (e) {
+      console.error("[cron] reset draft ciclo erro:", e);
+    }
   } else if (podeAtualizar) {
     // Atualização normal — só quando bola tá rolando (garante que a
     // resposta é da rodada corrente).

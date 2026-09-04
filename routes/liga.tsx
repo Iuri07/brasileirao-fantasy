@@ -18,6 +18,7 @@ import Field, {
 } from "../components/Field.tsx";
 import CollapsibleTeamRow from "../islands/CollapsibleTeamRow.tsx";
 import LeagueChart, { type LinhaTime } from "../islands/LeagueChart.tsx";
+import AutoRefreshLive from "../islands/AutoRefreshLive.tsx";
 import SectionHeader from "../components/SectionHeader.tsx";
 import ReservasRow from "../components/ReservasRow.tsx";
 import { escudoUrl } from "../lib/escudos.ts";
@@ -235,7 +236,7 @@ export default function Liga({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Liga · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=192" />
+        <link rel="stylesheet" href="/bf-styles.css?v=193" />
       </Head>
       <DesktopSidebar
         active="liga"
@@ -359,6 +360,7 @@ export default function Liga({ data }: PageProps<Data>) {
           active="liga"
           liveDisabled={!isRodadaEmAndamento(data.rodadaStatus)}
         />
+        <AutoRefreshLive />
       </div>
     </>
   );

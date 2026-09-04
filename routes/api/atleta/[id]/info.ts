@@ -2,6 +2,7 @@ import { Handlers } from "$fresh/server.ts";
 import { fetchAtletasMercadoCacheado } from "../../../../lib/cartola.ts";
 import { getAllElencos, getAVendaGlobal } from "../../../../lib/kv.ts";
 import { getInteressados } from "../../../../lib/kv.ts";
+import type { State } from "../../../_middleware.ts";
 
 const H = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 
@@ -16,7 +17,7 @@ const H = { "Content-Type": "application/json", "Cache-Control": "no-store" };
  *  Não retorna histórico per-rodada porque Cartola não expõe — só o
  *  total acumulado em `scout`.
  */
-export const handler: Handlers = {
+export const handler: Handlers<unknown, State> = {
   async GET(_req, ctx) {
     const id = Number(ctx.params.id);
     if (!Number.isFinite(id) || id <= 0) {
@@ -60,8 +61,16 @@ export const handler: Handlers = {
       }
       const negociavel = aVenda[id] != null;
 
-      // Interesses (só pra free agents — quem ofereceu por ele)
-      const interesses = donoChave ? [] : await getInteressados(id);
+      // Interesses (só pra free agents — quem ofereceu por ele).
+      // Sigilo: user comum só recebe o PRÓPRIO interesse (pra UI
+      // mostrar "você ofereceu X"). Admin recebe a lista completa
+      // de disputantes.
+      const chaveLogada = ctx.state.session?.chave;
+      const ehAdmin = ctx.state.session?.role === "admin";
+      const todosInteresses = donoChave ? [] : await getInteressados(id);
+      const interesses = ehAdmin
+        ? todosInteresses
+        : todosInteresses.filter((i) => i.chave === chaveLogada);
 
       return new Response(
         JSON.stringify({

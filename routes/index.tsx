@@ -35,6 +35,7 @@ import {
 } from "../components/Field.tsx";
 import MeuTimeEditor, { type AtletaElenco } from "../islands/MeuTimeEditor.tsx";
 import PartidasExpandable from "../islands/PartidasExpandable.tsx";
+import AutoRefreshLive from "../islands/AutoRefreshLive.tsx";
 import { escudoUrl } from "../lib/escudos.ts";
 import { coresClube } from "../lib/cores.ts";
 import { getNomeTimeDisplay } from "../lib/time-visual.ts";
@@ -551,7 +552,7 @@ export default function Home({ data }: PageProps<HomeData>) {
     <>
       <Head>
         <title>Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=192" />
+        <link rel="stylesheet" href="/bf-styles.css?v=193" />
       </Head>
       <DesktopSidebar
         active="home"
@@ -788,6 +789,7 @@ export default function Home({ data }: PageProps<HomeData>) {
           active="home"
           liveDisabled={!isRodadaEmAndamento(data.status)}
         />
+        <AutoRefreshLive />
       </div>
     </>
   );

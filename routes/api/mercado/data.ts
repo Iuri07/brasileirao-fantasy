@@ -85,6 +85,11 @@ export const handler: Handlers<unknown, State> = {
       if (!owner || naVenda) idsDisponiveis.push(a.atleta_id);
     }
     const interessadosMap = await getInteressadosBatch(idsDisponiveis);
+    // Sigilo: users comuns só enxergam O PRÓPRIO interesse (pra UI
+    // mostrar "você já ofereceu X por ele"). A lista completa de
+    // interessados fica só pra admin — assim ninguém sabe quem mais
+    // está de olho num free agent até a resolução do draft.
+    const ehAdmin = ctx.state.session?.role === "admin";
 
     const jogadores: unknown[] = [];
     for (const a of mercadoResp?.atletas ?? []) {
@@ -119,7 +124,9 @@ export const handler: Handlers<unknown, State> = {
         donoTime: owner
           ? getNomeTimeDisplay(owner, CHAVES_TIMES[owner]?.nome_time)
           : null,
-        interessados: regs.map((r) => r.chave),
+        interessados: ehAdmin
+          ? regs.map((r) => r.chave)
+          : (meuReg ? [chaveLogadaAux!] : []),
         meuOferecido: meuReg?.oferecido ?? null,
       });
     }
@@ -197,7 +204,9 @@ export const handler: Handlers<unknown, State> = {
           statusId: a.status_id,
           oferecidoId: meuReg.oferecido,
           oferecidoNome: oferecidoJog?.apelido_api ?? "—",
-          totalInteressados: regs.length,
+          // Sigilo: users veem sempre 1 (só o próprio interesse).
+          // Admin vê a contagem real de disputantes.
+          totalInteressados: ehAdmin ? regs.length : 1,
         });
       }
     }
