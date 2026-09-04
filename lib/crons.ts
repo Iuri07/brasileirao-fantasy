@@ -366,8 +366,13 @@ export async function atualizarTudo(): Promise<void> {
 }
 
 export function registrarCrons(): void {
-  // Sync do catálogo de atletas: 1× por dia às 9h UTC (= 6h BRT)
-  Deno.cron("sync-atletas", "0 9 * * *", async () => {
+  // Sync do catálogo de atletas: a cada 15 min. Antes era 1x/dia
+  // (0 9 * * *) — mas status_id (provável/dúvida/suspenso/contundido)
+  // muda a qualquer hora que Cartola atualiza. Se time era anunciado
+  // suspenso durante o dia, o app mostrava "provável" por até 24h.
+  // fetchAtletasMercado é 1 call de tamanho médio; 96 calls/dia é
+  // amplamente aceitável pra Cartola.
+  Deno.cron("sync-atletas", "*/15 * * * *", async () => {
     try {
       await sincronizarAtletas();
     } catch (e) {
