@@ -500,8 +500,11 @@ export function setAtletasCache(
   const db = getDb();
   db.transaction(() => {
     db.prepare("DELETE FROM atletas_cache WHERE posicao_id=?").run(posId);
+    // OR REPLACE porque um atleta pode ter mudado de posição desde o
+    // último sync: a linha antiga (com outra posicao_id) ainda existe e
+    // colidiria no PRIMARY KEY (atleta_id).
     const ins = db.prepare(
-      "INSERT INTO atletas_cache (atleta_id, apelido, clube, clube_id, posicao, posicao_id, status_id, foto, atualizado_em) " +
+      "INSERT OR REPLACE INTO atletas_cache (atleta_id, apelido, clube, clube_id, posicao, posicao_id, status_id, foto, atualizado_em) " +
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     );
     for (const [idStr, a] of Object.entries(cache.atletas)) {
