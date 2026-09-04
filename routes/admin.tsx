@@ -427,7 +427,7 @@ export default function AdminPage({ data }: PageProps<Data>) {
     <>
       <Head>
         <title>Admin · Brasileirão Fantasy</title>
-        <link rel="stylesheet" href="/bf-styles.css?v=193" />
+        <link rel="stylesheet" href="/bf-styles.css?v=194" />
       </Head>
       <DesktopSidebar
         active="admin"
@@ -877,7 +877,6 @@ export default function AdminPage({ data }: PageProps<Data>) {
                 </span>
               </header>
               <AdminTrocasMercado
-                rodadaAtual={data.rodadaAtual}
                 nomesPorChave={data.atribuicoes.reduce((acc, a) => {
                   acc[a.chave] = a.displayName;
                   return acc;

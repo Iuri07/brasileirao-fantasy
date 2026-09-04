@@ -1,5 +1,6 @@
-// Painel admin: gerencia o limite + contagem de trocas com mercado
-// por time na rodada selecionada. PUT atomico no save.
+// Painel admin: gerencia o contador LIFETIME de trocas com mercado
+// por time. Sem rodada (é acumulado — não reseta). Save = PUT
+// atomico.
 
 import { useEffect, useState } from "preact/hooks";
 
@@ -11,31 +12,25 @@ interface Row {
 
 interface ApiResp {
   ok: boolean;
-  rodada: number;
   times: Array<{ chave: string; count: number }>;
 }
 
 interface Props {
-  /** Map chave → displayName pra label de cada linha. Vem do admin
-   *  (já tem todos os times resolvidos). */
+  /** Map chave → displayName pra label. Vem do admin (já resolvido). */
   nomesPorChave: Record<string, string>;
-  rodadaAtual: number;
 }
 
-export default function AdminTrocasMercado(
-  { nomesPorChave, rodadaAtual }: Props,
-) {
-  const [rodada, setRodada] = useState(rodadaAtual);
+export default function AdminTrocasMercado({ nomesPorChave }: Props) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const carregar = async (r: number) => {
+  const carregar = async () => {
     setLoading(true);
     setMsg(null);
     try {
-      const resp = await fetch(`/api/admin/trocas-mercado?rodada=${r}`);
+      const resp = await fetch("/api/admin/trocas-mercado");
       const json = await resp.json() as ApiResp;
       if (!json.ok) {
         setMsg("Erro ao carregar");
@@ -54,9 +49,9 @@ export default function AdminTrocasMercado(
   };
 
   useEffect(() => {
-    carregar(rodada);
+    carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rodada]);
+  }, []);
 
   const updateCount = (chave: string, novo: number) => {
     setRows((rs) =>
@@ -73,7 +68,7 @@ export default function AdminTrocasMercado(
       const resp = await fetch("/api/admin/trocas-mercado", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rodada, counts }),
+        body: JSON.stringify({ counts }),
       });
       const json = await resp.json();
       if (!json.ok) {
@@ -91,18 +86,6 @@ export default function AdminTrocasMercado(
   return (
     <div class="bf-admin-trocas">
       <div class="bf-admin-trocas__topo">
-        <label class="bf-admin-trocas__campo">
-          <span class="bf-label-micro">Rodada</span>
-          <input
-            type="number"
-            min={1}
-            value={String(rodada)}
-            onChange={(e) =>
-              setRodada(
-                Math.max(1, parseInt((e.target as HTMLInputElement).value, 10) || 1),
-              )}
-          />
-        </label>
         <button
           type="button"
           class="bf-btn bf-btn--primary"
@@ -129,7 +112,10 @@ export default function AdminTrocasMercado(
                   onInput={(e) =>
                     updateCount(
                       r.chave,
-                      Math.max(0, parseInt((e.target as HTMLInputElement).value, 10) || 0),
+                      Math.max(
+                        0,
+                        parseInt((e.target as HTMLInputElement).value, 10) || 0,
+                      ),
                     )}
                 />
                 <span class="bf-admin-trocas__restante">trocas c/ mercado</span>

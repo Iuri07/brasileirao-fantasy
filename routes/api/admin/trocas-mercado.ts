@@ -1,41 +1,33 @@
-// Admin endpoint pra gerenciar limite + contagens de trocas com mercado.
+// Admin endpoint pra gerenciar o contador LIFETIME de trocas com
+// mercado por time. Sem rodada — é acumulado (não reseta).
 //
-// GET  /api/admin/trocas-mercado?rodada=N → snapshot da rodada N
-// PUT  /api/admin/trocas-mercado          → atualiza limite e/ou
-//                                           override de contagens
+// GET  /api/admin/trocas-mercado → lifetime por time
+// PUT  /api/admin/trocas-mercado → { counts: { chave: N } } — override
 
 import { Handlers } from "$fresh/server.ts";
 import {
-  getTrocasMercadoRodada,
-  setTrocasMercadoCount,
+  getTrocasMercadoTotal,
+  setTrocasMercadoTotal,
 } from "../../../lib/trocas-mercado.ts";
-import { getRodadaStatus, TODAS_CHAVES } from "../../../lib/kv.ts";
+import { TODAS_CHAVES } from "../../../lib/kv.ts";
 import type { State } from "../../_middleware.ts";
 
 const H = { "Content-Type": "application/json" };
 
 export const handler: Handlers<unknown, State> = {
-  async GET(req, ctx) {
+  GET(_req, ctx) {
     if (ctx.state.session?.role !== "admin") {
       return new Response(
         JSON.stringify({ ok: false, erro: "Só admin" }),
         { status: 403, headers: H },
       );
     }
-    const url = new URL(req.url);
-    const rodadaParam = url.searchParams.get("rodada");
-    const rodada = rodadaParam
-      ? parseInt(rodadaParam, 10)
-      : ((await getRodadaStatus())?.rodada ?? 0);
-    const rows = await getTrocasMercadoRodada(rodada);
-    // Inclui chaves com count=0 pro admin ter todas as linhas pra editar
-    const map = new Map(rows.map((r) => [r.chave, r.count]));
     const times = TODAS_CHAVES.map((chave) => ({
       chave,
-      count: map.get(chave) ?? 0,
+      count: getTrocasMercadoTotal(chave),
     }));
     return new Response(
-      JSON.stringify({ ok: true, rodada, times }),
+      JSON.stringify({ ok: true, times }),
       { headers: H },
     );
   },
@@ -47,10 +39,7 @@ export const handler: Handlers<unknown, State> = {
         { status: 403, headers: H },
       );
     }
-    let body: {
-      rodada?: number;
-      counts?: Record<string, number>;
-    };
+    let body: { counts?: Record<string, number> };
     try {
       body = await req.json();
     } catch {
@@ -60,18 +49,10 @@ export const handler: Handlers<unknown, State> = {
       );
     }
     if (body.counts && typeof body.counts === "object") {
-      const rodada = body.rodada ??
-        ((await getRodadaStatus())?.rodada ?? 0);
-      if (rodada === 0) {
-        return new Response(
-          JSON.stringify({ ok: false, erro: "Rodada inválida (0)" }),
-          { status: 400, headers: H },
-        );
-      }
       for (const [chave, count] of Object.entries(body.counts)) {
         if (!TODAS_CHAVES.includes(chave)) continue;
         if (typeof count !== "number") continue;
-        await setTrocasMercadoCount(chave, rodada, count);
+        await setTrocasMercadoTotal(chave, count);
       }
     }
     return new Response(

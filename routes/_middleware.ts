@@ -141,11 +141,11 @@ export async function handler(req: Request, ctx: FreshContext<State>) {
       });
     }
 
-    // 5b. Páginas SSR autenticadas — browser pode cachear por 30s,
-    // entrega instantânea em repeat navs. `private` = só cache do
-    // usuário (não compartilhar entre users via proxy/CDN).
-    // `stale-while-revalidate` = serve stale enquanto refetcha em
-    // background — UX perfeita pra back/forward.
+    // 5b. Páginas SSR autenticadas.
+    // - Fora do ao vivo: 30s stale-while-revalidate pra UX de back/forward
+    // - Durante o ao vivo: no-store, senão o reload do AutoRefreshLive
+    //   pode servir SSR com pts velhos (SWR devolve o cache stale
+    //   enquanto revalida em background).
     const isPagina = !p.startsWith("/api/") &&
       !p.startsWith("/_frsh/") &&
       session !== null && // só pra usuários logados
@@ -153,9 +153,16 @@ export async function handler(req: Request, ctx: FreshContext<State>) {
       resp.headers.get("Content-Type")?.includes("text/html");
     if (isPagina) {
       const headers = new Headers(resp.headers);
+      let aoVivoAgora = false;
+      try {
+        const { isAoVivo } = await import("../lib/kv.ts");
+        aoVivoAgora = await isAoVivo();
+      } catch { /* silent */ }
       headers.set(
         "Cache-Control",
-        "private, max-age=0, stale-while-revalidate=30",
+        aoVivoAgora
+          ? "private, no-store"
+          : "private, max-age=0, stale-while-revalidate=30",
       );
       return new Response(resp.body, {
         status: resp.status,
